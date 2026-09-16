@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import { AppShell, RoutePlaceholder } from './app-shell'
+import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
 
 export const routes = [
@@ -10,12 +11,7 @@ export const routes = [
     children: [
       {
         index: true,
-        element: (
-          <RoutePlaceholder
-            title="Mission Control"
-            description="The shell route is ready for the Phase 4.5 read-only Mission Control implementation."
-          />
-        ),
+        element: <MissionControl />,
       },
       {
         path: 'work-orders',
