@@ -1,20 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
+import { useI18n } from './i18n'
 import { useOperationsData } from './operations-data'
-
-function formatValue(value: unknown): string {
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false'
-  }
-  if (value === null || value === undefined || value === '') {
-    return 'UNKNOWN'
-  }
-  if (typeof value === 'object') {
-    return JSON.stringify(value)
-  }
-  return String(value)
-}
 
 function ContractValue({
   contract,
@@ -25,39 +13,41 @@ function ContractValue({
   field: string
   label: string
 }) {
+  const { t } = useI18n()
   const value = readAvailableField<unknown>(contract, field)
   const reason = readUnavailableReason(contract, field)
+  const formattedValue =
+    typeof value === 'boolean'
+      ? value
+        ? t('common.true')
+        : t('common.false')
+      : value === null || value === undefined || value === ''
+        ? t('common.unknown')
+        : typeof value === 'object'
+          ? JSON.stringify(value)
+          : String(value)
 
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <span className="break-words font-mono text-sm text-slate-100">{formatValue(value)}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      <span className="break-words font-mono text-sm text-slate-100">{formattedValue}</span>
       {reason ? <span className="text-xs text-slate-500">{reason}</span> : null}
     </div>
   )
 }
 
 function UnavailableValue({ label, reason }: { label: string; reason: string }) {
+  const { t } = useI18n()
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <span className="font-mono text-sm text-slate-100">UNKNOWN</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      <span className="font-mono text-sm text-slate-100">{t('common.unknown')}</span>
       <span className="text-xs text-slate-500">{reason}</span>
     </div>
   )
 }
 
-function Panel({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section
       aria-label={title}
@@ -70,9 +60,10 @@ function Panel({
 }
 
 function MissingAuthority({ message }: { message: string }) {
+  const { t } = useI18n()
   return (
     <div className="rounded-md border border-amber-300/20 bg-amber-300/5 px-3 py-3 text-sm text-amber-50/80">
-      <strong className="font-semibold text-amber-100">UNAVAILABLE</strong>
+      <strong className="font-semibold text-amber-100">{t('common.unavailable')}</strong>
       <p className="mt-1 text-xs leading-5 text-amber-50/60">{message}</p>
     </div>
   )
@@ -87,222 +78,210 @@ function ContractList({
   emptyMessage: string
   render: (contract: ViewContract, index: number) => ReactNode
 }) {
-  if (!contracts) {
-    return <MissingAuthority message={emptyMessage} />
-  }
-
-  if (contracts.length === 0) {
-    return <p className="text-sm text-slate-400">0 backend-reported records.</p>
-  }
-
+  const { t } = useI18n()
+  if (!contracts) return <MissingAuthority message={emptyMessage} />
+  if (contracts.length === 0) return <p className="text-sm text-slate-400">{t('common.backendRecordsZero')}</p>
   return <div className="space-y-3">{contracts.map(render)}</div>
 }
 
 export function SystemSwarm() {
   const { snapshot, authorityAvailable } = useOperationsData()
+  const { t } = useI18n()
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Phase 4.8 · Read-only</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight">System / Swarm</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            System, agent and connector facts remain separated by backend source class. Missing runtime, telemetry, policy and health authority is shown explicitly instead of inferred.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">{t('common.phase48ReadOnly')}</p>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight">{t('system.title')}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{t('system.description')}</p>
         </div>
         <div className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
-          Authority {authorityAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}
+          {t('common.authority')} {authorityAvailable ? t('common.available') : t('common.unavailable')}
         </div>
       </header>
 
       {!authorityAvailable ? (
         <div role="status" className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm text-amber-50/80">
-          Authoritative System / Swarm snapshot unavailable. Domain and runtime state remain UNKNOWN until backend-owned view contracts are supplied.
+          {t('system.authorityUnavailable')}
         </div>
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Panel title="System Overview">
+        <Panel title={t('system.overview')}>
           <div className="space-y-4">
             {snapshot?.systemState ? (
               <div className="grid gap-3 sm:grid-cols-3">
-                <ContractValue contract={snapshot.systemState} field="mode" label="System mode" />
-                <ContractValue contract={snapshot.systemState} field="writes_enabled" label="Writes enabled" />
-                <ContractValue contract={snapshot.systemState} field="state_version" label="State version" />
+                <ContractValue contract={snapshot.systemState} field="mode" label={t('app.systemMode')} />
+                <ContractValue contract={snapshot.systemState} field="writes_enabled" label={t('field.writesEnabled')} />
+                <ContractValue contract={snapshot.systemState} field="state_version" label={t('field.stateVersion')} />
               </div>
             ) : (
-              <MissingAuthority message="No authoritative SYSTEM_STATE contract is present." />
+              <MissingAuthority message={t('system.noSystemState')} />
             )}
 
             {snapshot?.canonicalState ? (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <ContractValue contract={snapshot.canonicalState} field="repository" label="Repository" />
-                <ContractValue contract={snapshot.canonicalState} field="branch" label="Branch" />
-                <ContractValue contract={snapshot.canonicalState} field="head_sha" label="HEAD" />
-                <ContractValue contract={snapshot.canonicalState} field="observed_at" label="Observed at" />
-                <ContractValue contract={snapshot.canonicalState} field="freshness_result" label="Freshness" />
+                <ContractValue contract={snapshot.canonicalState} field="repository" label={t('app.repository')} />
+                <ContractValue contract={snapshot.canonicalState} field="branch" label={t('field.branch')} />
+                <ContractValue contract={snapshot.canonicalState} field="head_sha" label={t('field.head')} />
+                <ContractValue contract={snapshot.canonicalState} field="observed_at" label={t('field.observedAt')} />
+                <ContractValue contract={snapshot.canonicalState} field="freshness_result" label={t('field.freshness')} />
               </div>
             ) : (
-              <MissingAuthority message="No authoritative CANONICAL_STATE contract is present." />
+              <MissingAuthority message={t('system.noCanonicalState')} />
             )}
           </div>
         </Panel>
 
-        <Panel title="Agents">
+        <Panel title={t('system.agents')}>
           <ContractList
             contracts={snapshot?.agents}
-            emptyMessage="No AGENT view contracts are present. Agent identity, Health, Runtime State and Activity remain UNKNOWN."
+            emptyMessage={t('system.noAgents')}
             render={(agent, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <ContractValue contract={agent} field="agent_id" label="Agent" />
-                  <ContractValue contract={agent} field="role" label="Role" />
-                  <ContractValue contract={agent} field="health" label="Health" />
-                  <ContractValue contract={agent} field="runtime_state" label="Runtime State" />
-                  <ContractValue contract={agent} field="activity" label="Activity" />
+                  <ContractValue contract={agent} field="agent_id" label={t('field.agent')} />
+                  <ContractValue contract={agent} field="role" label={t('field.role')} />
+                  <ContractValue contract={agent} field="health" label={t('field.health')} />
+                  <ContractValue contract={agent} field="runtime_state" label={t('field.runtimeState')} />
+                  <ContractValue contract={agent} field="activity" label={t('field.activity')} />
                 </div>
                 <div className="mt-3">
-                  <MissingAuthority message="NO_PER_AGENT_TELEMETRY_CONTRACT — global TELEMETRY is not re-labeled as per-agent telemetry." />
+                  <MissingAuthority message={t('system.agentTelemetryUnavailable')} />
                 </div>
               </article>
             )}
           />
-          <p className="mt-3 text-xs leading-5 text-slate-500">
-            Health, Runtime State, Activity and Telemetry are separate concepts. Activity values such as THINKING are never interpreted as Health or permission state.
-          </p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">{t('system.agentSeparationNote')}</p>
         </Panel>
 
-        <Panel title="Connectors">
+        <Panel title={t('system.connectors')}>
           <ContractList
             contracts={snapshot?.connectors}
-            emptyMessage="No CONNECTOR view contracts are present. Connector identity, state, health and auth state remain UNKNOWN."
+            emptyMessage={t('system.noConnectors')}
             render={(connector, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <ContractValue contract={connector} field="connector_id" label="Connector" />
-                  <ContractValue contract={connector} field="state" label="State" />
-                  <ContractValue contract={connector} field="health" label="Health" />
-                  <ContractValue contract={connector} field="auth_state" label="Auth state" />
+                  <ContractValue contract={connector} field="connector_id" label={t('field.connector')} />
+                  <ContractValue contract={connector} field="state" label={t('field.state')} />
+                  <ContractValue contract={connector} field="health" label={t('field.health')} />
+                  <ContractValue contract={connector} field="auth_state" label={t('field.authState')} />
                 </div>
               </article>
             )}
           />
         </Panel>
 
-        <Panel title="Locks">
+        <Panel title={t('system.locks')}>
           <ContractList
             contracts={snapshot?.locks}
-            emptyMessage="No authoritative LOCK collection is present."
+            emptyMessage={t('system.noLocks')}
             render={(lock, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <ContractValue contract={lock} field="resource" label="Resource" />
-                  <ContractValue contract={lock} field="owner" label="Owner" />
-                  <ContractValue contract={lock} field="order_id" label="Order ID" />
-                  <ContractValue contract={lock} field="acquired_at" label="Acquired at" />
+                  <ContractValue contract={lock} field="resource" label={t('field.resource')} />
+                  <ContractValue contract={lock} field="owner" label={t('field.owner')} />
+                  <ContractValue contract={lock} field="order_id" label={t('field.orderId')} />
+                  <ContractValue contract={lock} field="acquired_at" label={t('field.acquiredAt')} />
                 </div>
               </article>
             )}
           />
         </Panel>
 
-        <Panel title="Policies">
-          <MissingAuthority message="NO_POLICY_VIEW_CONTRACT — repository policy configuration is not promoted into runtime or security authority without an explicit backend view contract." />
+        <Panel title={t('system.policies')}>
+          <MissingAuthority message={t('system.noPolicyContract')} />
         </Panel>
 
-        <Panel title="Control Plane">
+        <Panel title={t('system.controlPlane')}>
           <div className="space-y-4">
             {snapshot?.systemState ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <ContractValue contract={snapshot.systemState} field="mode" label="System mode" />
-                <ContractValue contract={snapshot.systemState} field="writes_enabled" label="Writes enabled" />
+                <ContractValue contract={snapshot.systemState} field="mode" label={t('app.systemMode')} />
+                <ContractValue contract={snapshot.systemState} field="writes_enabled" label={t('field.writesEnabled')} />
               </div>
             ) : (
-              <MissingAuthority message="No SYSTEM_STATE contract is present for Control Plane facts." />
+              <MissingAuthority message={t('system.noSystemStateControlPlane')} />
             )}
 
             <ContractList
               contracts={snapshot?.gates}
-              emptyMessage="No authoritative GATE decisions are present."
+              emptyMessage={t('system.noGates')}
               render={(gate, index) => (
                 <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <ContractValue contract={gate} field="gate_id" label="Gate" />
-                    <ContractValue contract={gate} field="allowed" label="Allowed" />
-                    <ContractValue contract={gate} field="reason" label="Reason" />
+                    <ContractValue contract={gate} field="gate_id" label={t('field.gate')} />
+                    <ContractValue contract={gate} field="allowed" label={t('field.allowed')} />
+                    <ContractValue contract={gate} field="reason" label={t('field.reason')} />
                   </div>
                 </article>
               )}
             />
-            <p className="text-xs leading-5 text-slate-500">
-              This surface exposes no agent command, writer enablement, policy override, force unlock, force deploy or force approval control.
-            </p>
+            <p className="text-xs leading-5 text-slate-500">{t('system.controlPlaneNote')}</p>
           </div>
         </Panel>
 
-        <Panel title="System Health">
+        <Panel title={t('system.health')}>
           <div className="space-y-4">
             {snapshot?.runtime ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <ContractValue contract={snapshot.runtime} field="state" label="Runtime state" />
-                <ContractValue contract={snapshot.runtime} field="observed_at" label="Runtime observed at" />
+                <ContractValue contract={snapshot.runtime} field="state" label={t('field.runtimeState')} />
+                <ContractValue contract={snapshot.runtime} field="observed_at" label={t('field.runtimeObservedAt')} />
               </div>
             ) : (
-              <MissingAuthority message="No RUNTIME view contract is present." />
+              <MissingAuthority message={t('system.noRuntime')} />
             )}
 
             {snapshot?.telemetry ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                <ContractValue contract={snapshot.telemetry} field="metrics" label="Telemetry metrics" />
-                <ContractValue contract={snapshot.telemetry} field="observed_at" label="Telemetry observed at" />
+                <ContractValue contract={snapshot.telemetry} field="metrics" label={t('field.telemetryMetrics')} />
+                <ContractValue contract={snapshot.telemetry} field="observed_at" label={t('field.telemetryObservedAt')} />
               </div>
             ) : (
-              <MissingAuthority message="No TELEMETRY view contract is present." />
+              <MissingAuthority message={t('system.noTelemetry')} />
             )}
 
-            <MissingAuthority message="NO_AGGREGATE_SYSTEM_HEALTH_CONTRACT — the UI does not derive a health verdict from Runtime, Telemetry, Agents, Connectors, Gates or Locks." />
+            <MissingAuthority message={t('system.noAggregateHealth')} />
           </div>
         </Panel>
 
-        <Panel title="Live Topology">
+        <Panel title={t('system.liveTopology')}>
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Phase 4.9 · read-only topology</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">
-                Node placement is presentation-only. Topology relationships are shown only when backed by explicit backend contracts.
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{t('common.phase49ReadOnlyTopology')}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">{t('system.topologyNote')}</p>
             </div>
 
             <div className="rounded-lg border border-dashed border-white/15 bg-black/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Leader node</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{t('system.leaderNode')}</p>
               <div className="mt-3">
                 {snapshot?.leader ? (
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <ContractValue contract={snapshot.leader} field="agent_id" label="Agent" />
-                    <ContractValue contract={snapshot.leader} field="role" label="Role" />
-                    <ContractValue contract={snapshot.leader} field="runtime_state" label="Runtime State" />
-                    <ContractValue contract={snapshot.leader} field="activity" label="Activity" />
+                    <ContractValue contract={snapshot.leader} field="agent_id" label={t('field.agent')} />
+                    <ContractValue contract={snapshot.leader} field="role" label={t('field.role')} />
+                    <ContractValue contract={snapshot.leader} field="runtime_state" label={t('field.runtimeState')} />
+                    <ContractValue contract={snapshot.leader} field="activity" label={t('field.activity')} />
                   </div>
                 ) : (
-                  <MissingAuthority message="NO_BACKEND_SELECTED_LEADER_NODE — the frontend does not promote an Agent into Leader state by role, position or activity." />
+                  <MissingAuthority message={t('system.noLeaderNode')} />
                 )}
               </div>
             </div>
 
             <div className="rounded-lg border border-dashed border-white/15 bg-black/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Worker nodes</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{t('system.workerNodes')}</p>
               <div className="mt-3 space-y-3">
-                <MissingAuthority message="NO_EXPLICIT_WORKER_MEMBERSHIP_CONTRACT — available AGENT contracts are not classified as workers by the frontend." />
+                <MissingAuthority message={t('system.noWorkerMembership')} />
                 <ContractList
                   contracts={snapshot?.agents}
-                  emptyMessage="No AGENT contracts are available for topology presentation."
+                  emptyMessage={t('system.noAgentsForTopology')}
                   render={(agent, index) => (
                     <article key={index} className="rounded-md border border-white/10 bg-white/[0.02] p-3">
                       <div className="grid gap-3 sm:grid-cols-3">
-                        <ContractValue contract={agent} field="agent_id" label="Agent node" />
-                        <ContractValue contract={agent} field="role" label="Role" />
-                        <ContractValue contract={agent} field="activity" label="Activity" />
+                        <ContractValue contract={agent} field="agent_id" label={t('field.agentNode')} />
+                        <ContractValue contract={agent} field="role" label={t('field.role')} />
+                        <ContractValue contract={agent} field="activity" label={t('field.activity')} />
                       </div>
                     </article>
                   )}
@@ -310,40 +289,34 @@ export function SystemSwarm() {
               </div>
             </div>
 
-            <MissingAuthority message="NO_RUNTIME_ACTIVITY_EDGE_CONTRACT — the frontend does not create or animate Agent-to-Agent or Leader-to-Agent activity edges from co-occurrence, Activity, Audit or Telemetry." />
-            <p className="text-xs leading-5 text-slate-500">
-              Safety semantics: animated edge ≠ verified; glow ≠ approved; active agent ≠ write permitted. This view adds no verification, approval or write authority.
-            </p>
+            <MissingAuthority message={t('system.noActivityEdge')} />
+            <p className="text-xs leading-5 text-slate-500">{t('system.topologySafety')}</p>
           </div>
         </Panel>
 
-        <Panel title="Agent Grid">
+        <Panel title={t('system.agentGrid')}>
           <div className="space-y-4">
-            <p className="text-sm leading-6 text-slate-400">
-              Grid rows expose backend-supplied Agent facts only. Work Order association and per-Agent performance telemetry stay UNKNOWN until explicitly modeled.
-            </p>
+            <p className="text-sm leading-6 text-slate-400">{t('system.agentGridNote')}</p>
             <ContractList
               contracts={snapshot?.agents}
-              emptyMessage="No AGENT contracts are available for the Agent Grid."
+              emptyMessage={t('system.noAgentsForGrid')}
               render={(agent, index) => (
                 <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <ContractValue contract={agent} field="agent_id" label="Agent" />
-                    <ContractValue contract={agent} field="role" label="Role" />
-                    <ContractValue contract={agent} field="health" label="Health" />
-                    <ContractValue contract={agent} field="runtime_state" label="Runtime State" />
-                    <ContractValue contract={agent} field="activity" label="Activity" />
-                    <UnavailableValue label="Work Order" reason="NO_AGENT_WORK_ORDER_ASSOCIATION_CONTRACT" />
-                    <UnavailableValue label="Latency" reason="NO_PER_AGENT_LATENCY_CONTRACT" />
-                    <UnavailableValue label="Tokens / s" reason="NO_PER_AGENT_TOKENS_RATE_CONTRACT" />
-                    <UnavailableValue label="Context usage" reason="NO_PER_AGENT_CONTEXT_USAGE_CONTRACT" />
+                    <ContractValue contract={agent} field="agent_id" label={t('field.agent')} />
+                    <ContractValue contract={agent} field="role" label={t('field.role')} />
+                    <ContractValue contract={agent} field="health" label={t('field.health')} />
+                    <ContractValue contract={agent} field="runtime_state" label={t('field.runtimeState')} />
+                    <ContractValue contract={agent} field="activity" label={t('field.activity')} />
+                    <UnavailableValue label={t('field.workOrder')} reason="NO_AGENT_WORK_ORDER_ASSOCIATION_CONTRACT" />
+                    <UnavailableValue label={t('field.latency')} reason="NO_PER_AGENT_LATENCY_CONTRACT" />
+                    <UnavailableValue label={t('field.tokensPerSecond')} reason="NO_PER_AGENT_TOKENS_RATE_CONTRACT" />
+                    <UnavailableValue label={t('field.contextUsage')} reason="NO_PER_AGENT_CONTEXT_USAGE_CONTRACT" />
                   </div>
                 </article>
               )}
             />
-            <p className="text-xs leading-5 text-slate-500">
-              Global TELEMETRY is never redistributed across Agent rows. No latency, token rate, context usage or Work Order relationship is inferred from unrelated collections.
-            </p>
+            <p className="text-xs leading-5 text-slate-500">{t('system.globalTelemetryNote')}</p>
           </div>
         </Panel>
       </div>

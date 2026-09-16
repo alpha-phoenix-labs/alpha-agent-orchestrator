@@ -4,6 +4,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { routes } from './App'
+import { I18nProvider } from './i18n'
 import { OperationsDataProvider } from './operations-data'
 
 afterEach(cleanup)
@@ -11,11 +12,18 @@ afterEach(cleanup)
 function renderShell(initialEntry = '/') {
   const router = createMemoryRouter(routes, { initialEntries: [initialEntry] })
   render(
-    <OperationsDataProvider>
-      <RouterProvider router={router} />
-    </OperationsDataProvider>,
+    <I18nProvider>
+      <OperationsDataProvider>
+        <RouterProvider router={router} />
+      </OperationsDataProvider>
+    </I18nProvider>,
   )
   return router
+}
+
+function expectNoOperationalWriteControls() {
+  expect(screen.queryByRole('button', { name: /approve|execute|deploy|unlock|enable writer|force/i })).not.toBeInTheDocument()
+  expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
 }
 
 describe('Phase 4.4 app shell', () => {
@@ -27,6 +35,7 @@ describe('Phase 4.4 app shell', () => {
     expect(nav).toHaveTextContent('Work Orders')
     expect(nav).toHaveTextContent('Evidence & Audit')
     expect(nav).toHaveTextContent('System / Swarm')
+    expect(screen.getByRole('group', { name: 'Interface language' })).toBeInTheDocument()
   })
 
   it('fails closed when no authoritative backend snapshot is present', () => {
@@ -45,8 +54,8 @@ describe('Phase 4.4 app shell', () => {
 
     await user.click(screen.getByRole('link', { name: 'Work Orders' }))
     expect(await screen.findByRole('heading', { name: 'Work Orders' })).toBeInTheDocument()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.getByText(/Backend-owned Work Order state is displayed/i)).toBeInTheDocument()
+    expectNoOperationalWriteControls()
   })
 
   it('routes to the Phase 4.10 Trace / Waterfall inside Evidence & Audit', async () => {
@@ -57,8 +66,7 @@ describe('Phase 4.4 app shell', () => {
     expect(await screen.findByRole('heading', { name: 'Evidence & Audit' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'Trace / Waterfall' })).toBeInTheDocument()
     expect(screen.getByText('Phase 4.10 · Read-only observability')).toBeInTheDocument()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expectNoOperationalWriteControls()
   })
 
   it('routes to the Phase 4.8 System / Swarm read-only surface', async () => {
@@ -68,7 +76,6 @@ describe('Phase 4.4 app shell', () => {
     await user.click(screen.getByRole('link', { name: 'System / Swarm' }))
     expect(await screen.findByRole('heading', { name: 'System / Swarm' })).toBeInTheDocument()
     expect(screen.getByText('Phase 4.8 · Read-only')).toBeInTheDocument()
-    expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expectNoOperationalWriteControls()
   })
 })
