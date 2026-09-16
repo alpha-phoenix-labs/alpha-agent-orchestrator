@@ -14,22 +14,30 @@ const navItems: readonly { to: string; labelKey: MessageKey; end?: boolean }[] =
 ]
 
 function ActiveContextBar() {
-  const { snapshot, authorityAvailable } = useOperationsData()
+  const {
+    snapshot,
+    authorityAvailable,
+    connectionManaged,
+    connectionStatus,
+    snapshotStatus,
+  } = useOperationsData()
   const { t } = useI18n()
   const mode = readAvailableField<string>(snapshot?.systemState, 'mode')
   const repository = readAvailableField<string>(snapshot?.canonicalState, 'repository')
   const branch = readAvailableField<string>(snapshot?.canonicalState, 'branch')
   const headSha = readAvailableField<string>(snapshot?.canonicalState, 'head_sha')
+  const authorityValue = connectionManaged
+    ? `${authorityAvailable ? t('common.available') : t('common.unavailable')} · ${connectionStatus} · ${snapshotStatus}`
+    : authorityAvailable
+      ? t('common.available')
+      : t('common.unavailable')
 
   return (
     <section
       aria-label={t('app.activeContext')}
       className="grid gap-3 border-y border-white/10 bg-slate-950/70 px-4 py-3 text-xs text-slate-300 md:grid-cols-4 md:px-6"
     >
-      <ContextItem
-        label={t('common.authority')}
-        value={authorityAvailable ? t('common.available') : t('common.unavailable')}
-      />
+      <ContextItem label={t('common.authority')} value={authorityValue} />
       <ContextItem label={t('app.systemMode')} value={mode ?? t('common.unknown')} />
       <ContextItem label={t('app.repository')} value={repository ?? t('common.unknown')} />
       <ContextItem
