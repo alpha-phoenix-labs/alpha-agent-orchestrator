@@ -1,17 +1,8 @@
 import type { ReactNode } from 'react'
 
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
+import { useI18n } from './i18n'
 import { useOperationsData } from './operations-data'
-
-function formatValue(value: unknown): string {
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false'
-  }
-  if (value === null || value === undefined || value === '') {
-    return 'UNKNOWN'
-  }
-  return String(value)
-}
 
 function ContractValue({
   contract,
@@ -22,15 +13,22 @@ function ContractValue({
   field: string
   label: string
 }) {
+  const { t } = useI18n()
   const value = readAvailableField<unknown>(contract, field)
   const reason = readUnavailableReason(contract, field)
+  const formattedValue =
+    typeof value === 'boolean'
+      ? value
+        ? t('common.true')
+        : t('common.false')
+      : value === null || value === undefined || value === ''
+        ? t('common.unknown')
+        : String(value)
 
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <span className="break-words font-mono text-sm text-slate-100">{formatValue(value)}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      <span className="break-words font-mono text-sm text-slate-100">{formattedValue}</span>
       {reason ? <span className="text-xs text-slate-500">{reason}</span> : null}
     </div>
   )
@@ -49,9 +47,10 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 function MissingAuthority({ message }: { message: string }) {
+  const { t } = useI18n()
   return (
     <div className="rounded-md border border-amber-300/20 bg-amber-300/5 px-3 py-3 text-sm text-amber-50/80">
-      <strong className="font-semibold text-amber-100">UNAVAILABLE</strong>
+      <strong className="font-semibold text-amber-100">{t('common.unavailable')}</strong>
       <p className="mt-1 text-xs leading-5 text-amber-50/60">{message}</p>
     </div>
   )
@@ -66,162 +65,150 @@ function ContractList({
   emptyMessage: string
   render: (contract: ViewContract, index: number) => ReactNode
 }) {
+  const { t } = useI18n()
   if (!contracts) {
     return <MissingAuthority message={emptyMessage} />
   }
-
   if (contracts.length === 0) {
-    return <p className="text-sm text-slate-400">0 backend-reported records.</p>
+    return <p className="text-sm text-slate-400">{t('common.backendRecordsZero')}</p>
   }
-
   return <div className="space-y-3">{contracts.map(render)}</div>
 }
 
 export function WorkOrders() {
   const { snapshot, authorityAvailable } = useOperationsData()
+  const { t } = useI18n()
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Phase 4.6 · Read-only</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight">Work Orders</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-            Backend-owned Work Order state is displayed without local approval, execution, verification, lifecycle-stage or policy inference.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">{t('common.phase46ReadOnly')}</p>
+          <h2 className="mt-1 text-3xl font-semibold tracking-tight">{t('work.title')}</h2>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{t('work.description')}</p>
         </div>
         <div className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
-          Authority {authorityAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}
+          {t('common.authority')} {authorityAvailable ? t('common.available') : t('common.unavailable')}
         </div>
       </header>
 
       {!authorityAvailable ? (
         <div role="status" className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm text-amber-50/80">
-          Authoritative Work Order snapshot unavailable. The page remains read-only and does not synthesize domain state.
+          {t('work.authorityUnavailable')}
         </div>
       ) : null}
 
-      <p className="text-xs leading-5 text-slate-500">
-        Collections are rendered exactly as supplied by the snapshot. Cross-record relationships are not inferred when the backend contract does not provide them.
-      </p>
+      <p className="text-xs leading-5 text-slate-500">{t('work.relationshipNote')}</p>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <Section title="Overview">
+        <Section title={t('work.overview')}>
           <ContractList
             contracts={snapshot?.workOrders}
-            emptyMessage="No authoritative Work Order collection is present."
+            emptyMessage={t('work.noOrders')}
             render={(order, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <ContractValue contract={order} field="order_id" label="Order ID" />
-                  <ContractValue contract={order} field="status" label="Status" />
-                  <ContractValue contract={order} field="risk" label="Risk" />
-                  <ContractValue contract={order} field="action" label="Action" />
-                  <ContractValue contract={order} field="target" label="Target" />
-                  <ContractValue contract={order} field="base_state_version" label="Base state" />
-                  <ContractValue contract={order} field="expected_effect" label="Expected effect" />
-                  <ContractValue contract={order} field="evidence_verified" label="Evidence verified" />
-                  <ContractValue
-                    contract={order}
-                    field="independent_review_confirmed"
-                    label="Independent review"
-                  />
-                  <ContractValue contract={order} field="plan_hash" label="Plan hash" />
-                  <ContractValue contract={order} field="created_at" label="Created at" />
+                  <ContractValue contract={order} field="order_id" label={t('field.orderId')} />
+                  <ContractValue contract={order} field="status" label={t('field.status')} />
+                  <ContractValue contract={order} field="risk" label={t('field.risk')} />
+                  <ContractValue contract={order} field="action" label={t('field.action')} />
+                  <ContractValue contract={order} field="target" label={t('field.target')} />
+                  <ContractValue contract={order} field="base_state_version" label={t('field.baseState')} />
+                  <ContractValue contract={order} field="expected_effect" label={t('field.expectedEffect')} />
+                  <ContractValue contract={order} field="evidence_verified" label={t('field.evidenceVerified')} />
+                  <ContractValue contract={order} field="independent_review_confirmed" label={t('field.independentReview')} />
+                  <ContractValue contract={order} field="plan_hash" label={t('field.planHash')} />
+                  <ContractValue contract={order} field="created_at" label={t('field.createdAt')} />
                 </div>
               </article>
             )}
           />
         </Section>
 
-        <Section title="Lifecycle">
+        <Section title={t('work.lifecycle')}>
           {snapshot?.lifecycle ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <ContractValue contract={snapshot.lifecycle} field="order_status" label="Order status" />
-              <ContractValue contract={snapshot.lifecycle} field="stage" label="Lifecycle stage" />
+              <ContractValue contract={snapshot.lifecycle} field="order_status" label={t('field.orderStatus')} />
+              <ContractValue contract={snapshot.lifecycle} field="stage" label={t('field.lifecycleStage')} />
             </div>
           ) : (
-            <MissingAuthority message="No authoritative Lifecycle contract is present. Lifecycle stage is not derived from OrderStatus." />
+            <MissingAuthority message={t('work.noLifecycle')} />
           )}
-          <p className="mt-3 text-xs leading-5 text-slate-500">
-            Approval, Execution and Post Verify remain non-operative until their backend-owned Phase 5 contracts and controls exist.
-          </p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">{t('work.lifecycleNote')}</p>
         </Section>
 
-        <Section title="Evidence">
+        <Section title={t('work.evidence')}>
           <ContractList
             contracts={snapshot?.evidence}
-            emptyMessage="No authoritative Evidence collection is present."
+            emptyMessage={t('work.noEvidence')}
             render={(evidence, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <ContractValue contract={evidence} field="source" label="Source" />
-                  <ContractValue contract={evidence} field="reference" label="Reference" />
-                  <ContractValue contract={evidence} field="observed_at" label="Observed at" />
-                  <ContractValue contract={evidence} field="digest" label="Digest" />
-                  <ContractValue contract={evidence} field="verification_state" label="Verification state" />
+                  <ContractValue contract={evidence} field="source" label={t('field.source')} />
+                  <ContractValue contract={evidence} field="reference" label={t('field.reference')} />
+                  <ContractValue contract={evidence} field="observed_at" label={t('field.observedAt')} />
+                  <ContractValue contract={evidence} field="digest" label={t('field.digest')} />
+                  <ContractValue contract={evidence} field="verification_state" label={t('field.verificationState')} />
                 </div>
               </article>
             )}
           />
         </Section>
 
-        <Section title="Findings">
+        <Section title={t('work.findings')}>
           <ContractList
             contracts={snapshot?.findings}
-            emptyMessage="No authoritative Finding collection is present."
+            emptyMessage={t('work.noFindings')}
             render={(finding, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <ContractValue contract={finding} field="reader_id" label="Reader" />
-                  <ContractValue contract={finding} field="claim" label="Claim" />
-                  <ContractValue contract={finding} field="observation_id" label="Observation" />
-                  <ContractValue contract={finding} field="classification" label="Classification" />
+                  <ContractValue contract={finding} field="reader_id" label={t('field.reader')} />
+                  <ContractValue contract={finding} field="claim" label={t('field.claim')} />
+                  <ContractValue contract={finding} field="observation_id" label={t('field.observation')} />
+                  <ContractValue contract={finding} field="classification" label={t('field.classification')} />
                 </div>
               </article>
             )}
           />
         </Section>
 
-        <Section title="Plan">
+        <Section title={t('work.plan')}>
           {snapshot?.plan ? (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              <ContractValue contract={snapshot.plan} field="order_id" label="Order ID" />
-              <ContractValue contract={snapshot.plan} field="action" label="Action" />
-              <ContractValue contract={snapshot.plan} field="target" label="Target" />
-              <ContractValue contract={snapshot.plan} field="expected_effect" label="Expected effect" />
-              <ContractValue contract={snapshot.plan} field="risk" label="Risk" />
-              <ContractValue contract={snapshot.plan} field="base_state_version" label="Base state" />
-              <ContractValue contract={snapshot.plan} field="plan_hash" label="Plan hash" />
-              <ContractValue contract={snapshot.plan} field="proposed_writer" label="Proposed writer" />
-              <ContractValue contract={snapshot.plan} field="created_at" label="Created at" />
-              <ContractValue contract={snapshot.plan} field="simulation_only" label="Simulation only" />
+              <ContractValue contract={snapshot.plan} field="order_id" label={t('field.orderId')} />
+              <ContractValue contract={snapshot.plan} field="action" label={t('field.action')} />
+              <ContractValue contract={snapshot.plan} field="target" label={t('field.target')} />
+              <ContractValue contract={snapshot.plan} field="expected_effect" label={t('field.expectedEffect')} />
+              <ContractValue contract={snapshot.plan} field="risk" label={t('field.risk')} />
+              <ContractValue contract={snapshot.plan} field="base_state_version" label={t('field.baseState')} />
+              <ContractValue contract={snapshot.plan} field="plan_hash" label={t('field.planHash')} />
+              <ContractValue contract={snapshot.plan} field="proposed_writer" label={t('field.proposedWriter')} />
+              <ContractValue contract={snapshot.plan} field="created_at" label={t('field.createdAt')} />
+              <ContractValue contract={snapshot.plan} field="simulation_only" label={t('field.simulationOnly')} />
             </div>
           ) : (
-            <MissingAuthority message="No authoritative Plan contract is present for the current Work Order context." />
+            <MissingAuthority message={t('work.noPlan')} />
           )}
         </Section>
 
-        <Section title="Audit">
+        <Section title={t('work.audit')}>
           <ContractList
             contracts={snapshot?.audit}
-            emptyMessage="No authoritative Audit collection is present."
+            emptyMessage={t('work.noAudit')}
             render={(event, index) => (
               <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <ContractValue contract={event} field="seq" label="Sequence" />
-                  <ContractValue contract={event} field="event_type" label="Event type" />
-                  <ContractValue contract={event} field="created_at" label="Created at" />
-                  <ContractValue contract={event} field="prev_hash" label="Previous hash" />
-                  <ContractValue contract={event} field="event_hash" label="Event hash" />
-                  <ContractValue contract={event} field="payload" label="Payload" />
+                  <ContractValue contract={event} field="seq" label={t('field.sequence')} />
+                  <ContractValue contract={event} field="event_type" label={t('field.eventType')} />
+                  <ContractValue contract={event} field="created_at" label={t('field.createdAt')} />
+                  <ContractValue contract={event} field="prev_hash" label={t('field.previousHash')} />
+                  <ContractValue contract={event} field="event_hash" label={t('field.eventHash')} />
+                  <ContractValue contract={event} field="payload" label={t('field.payload')} />
                 </div>
               </article>
             )}
           />
-          <p className="mt-3 text-xs leading-5 text-slate-500">
-            Raw Audit payload remains unavailable when the backend marks it unsafe for UI display.
-          </p>
+          <p className="mt-3 text-xs leading-5 text-slate-500">{t('work.auditNote')}</p>
         </Section>
       </div>
     </div>
