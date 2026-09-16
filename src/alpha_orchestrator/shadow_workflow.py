@@ -7,6 +7,7 @@ import uuid
 
 from .actions import CODE_ACTIONS, INFRA_ACTIONS, writer_for_action
 from .models import EvidenceRef, RiskClass, SystemMode, WorkOrder
+from .read_plane import ReadPolicyDenied, require_fresh_timestamp
 from .shadow_read import ShadowFinding
 from .state import StateStore
 
@@ -62,6 +63,7 @@ class ShadowWorkflow:
 
     CODE_ACTIONS = CODE_ACTIONS
     INFRA_ACTIONS = INFRA_ACTIONS
+    MAX_EVIDENCE_AGE_SECONDS = 60.0
     ALLOWED_READERS = frozenset({
         "github_branch_reader", "render_service_reader", "ci_pipeline_reader",
         "security_reader", "database_reader", "runtime_reader", "api_contract_reader",
@@ -77,6 +79,7 @@ class ShadowWorkflow:
         "body_digest",
         "body_size",
         "freshness_result",
+        "freshness_max_age_seconds",
         "collector_id",
         "transport_id",
         "verification_state",
@@ -129,16 +132,42 @@ class ShadowWorkflow:
                 raise ShadowWorkflowError("PROVENANCE_EVIDENCE_MISMATCH")
             if provenance["freshness_result"] != "FRESH":
                 raise ShadowWorkflowError("PROVENANCE_NOT_FRESH")
-            if not (
-                provenance["target_id"]
-                and provenance["collector_id"]
-                and provenance["transport_id"]
-                and provenance["verification_state"]
-            ):
+
+            status = provenance["status"]
+            if not isinstance(status, int) or isinstance(status, bool) or not 200 <= status < 300:
                 raise ShadowWorkflowError("INVALID_PROVENANCE")
             body_size = provenance["body_size"]
             if not isinstance(body_size, int) or isinstance(body_size, bool) or body_size < 0:
                 raise ShadowWorkflowError("INVALID_PROVENANCE")
+            body_digest = provenance["body_digest"]
+            if (
+                not isinstance(body_digest, str)
+                or len(body_digest) != 64
+                or any(char not in "0123456789abcdef" for char in body_digest.lower())
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            freshness_window = provenance["freshness_max_age_seconds"]
+            if (
+                not isinstance(freshness_window, (int, float))
+                or isinstance(freshness_window, bool)
+                or freshness_window <= 0
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            if not (
+                provenance["target_id"]
+                and provenance["collector_id"]
+                and provenance["transport_id"]
+                and provenance["verification_state"] == "READ_VALIDATED"
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+
+            try:
+                require_fresh_timestamp(
+                    observed_at=provenance["observed_at"],
+                    max_age_seconds=min(float(freshness_window), ShadowWorkflow.MAX_EVIDENCE_AGE_SECONDS),
+                )
+            except (ReadPolicyDenied, ValueError) as exc:
+                raise ShadowWorkflowError("PROVENANCE_NOT_FRESH") from exc
 
             key = (ref.source, ref.reference, ref.digest)
             if key in seen:
