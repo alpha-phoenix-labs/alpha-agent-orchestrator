@@ -39,6 +39,18 @@ function ContractValue({
   )
 }
 
+function UnavailableValue({ label, reason }: { label: string; reason: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1 rounded-md border border-white/10 bg-black/20 px-3 py-2">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      <span className="font-mono text-sm text-slate-100">UNKNOWN</span>
+      <span className="text-xs text-slate-500">{reason}</span>
+    </div>
+  )
+}
+
 function Panel({
   title,
   children,
@@ -250,6 +262,88 @@ export function SystemSwarm() {
             )}
 
             <MissingAuthority message="NO_AGGREGATE_SYSTEM_HEALTH_CONTRACT — the UI does not derive a health verdict from Runtime, Telemetry, Agents, Connectors, Gates or Locks." />
+          </div>
+        </Panel>
+
+        <Panel title="Live Topology">
+          <div className="space-y-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Phase 4.9 · read-only topology</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Node placement is presentation-only. Topology relationships are shown only when backed by explicit backend contracts.
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-dashed border-white/15 bg-black/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Leader node</p>
+              <div className="mt-3">
+                {snapshot?.leader ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <ContractValue contract={snapshot.leader} field="agent_id" label="Agent" />
+                    <ContractValue contract={snapshot.leader} field="role" label="Role" />
+                    <ContractValue contract={snapshot.leader} field="runtime_state" label="Runtime State" />
+                    <ContractValue contract={snapshot.leader} field="activity" label="Activity" />
+                  </div>
+                ) : (
+                  <MissingAuthority message="NO_BACKEND_SELECTED_LEADER_NODE — the frontend does not promote an Agent into Leader state by role, position or activity." />
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-dashed border-white/15 bg-black/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Worker nodes</p>
+              <div className="mt-3 space-y-3">
+                <MissingAuthority message="NO_EXPLICIT_WORKER_MEMBERSHIP_CONTRACT — available AGENT contracts are not classified as workers by the frontend." />
+                <ContractList
+                  contracts={snapshot?.agents}
+                  emptyMessage="No AGENT contracts are available for topology presentation."
+                  render={(agent, index) => (
+                    <article key={index} className="rounded-md border border-white/10 bg-white/[0.02] p-3">
+                      <div className="grid gap-3 sm:grid-cols-3">
+                        <ContractValue contract={agent} field="agent_id" label="Agent node" />
+                        <ContractValue contract={agent} field="role" label="Role" />
+                        <ContractValue contract={agent} field="activity" label="Activity" />
+                      </div>
+                    </article>
+                  )}
+                />
+              </div>
+            </div>
+
+            <MissingAuthority message="NO_RUNTIME_ACTIVITY_EDGE_CONTRACT — the frontend does not create or animate Agent-to-Agent or Leader-to-Agent activity edges from co-occurrence, Activity, Audit or Telemetry." />
+            <p className="text-xs leading-5 text-slate-500">
+              Safety semantics: animated edge ≠ verified; glow ≠ approved; active agent ≠ write permitted. This view adds no verification, approval or write authority.
+            </p>
+          </div>
+        </Panel>
+
+        <Panel title="Agent Grid">
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-slate-400">
+              Grid rows expose backend-supplied Agent facts only. Work Order association and per-Agent performance telemetry stay UNKNOWN until explicitly modeled.
+            </p>
+            <ContractList
+              contracts={snapshot?.agents}
+              emptyMessage="No AGENT contracts are available for the Agent Grid."
+              render={(agent, index) => (
+                <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <ContractValue contract={agent} field="agent_id" label="Agent" />
+                    <ContractValue contract={agent} field="role" label="Role" />
+                    <ContractValue contract={agent} field="health" label="Health" />
+                    <ContractValue contract={agent} field="runtime_state" label="Runtime State" />
+                    <ContractValue contract={agent} field="activity" label="Activity" />
+                    <UnavailableValue label="Work Order" reason="NO_AGENT_WORK_ORDER_ASSOCIATION_CONTRACT" />
+                    <UnavailableValue label="Latency" reason="NO_PER_AGENT_LATENCY_CONTRACT" />
+                    <UnavailableValue label="Tokens / s" reason="NO_PER_AGENT_TOKENS_RATE_CONTRACT" />
+                    <UnavailableValue label="Context usage" reason="NO_PER_AGENT_CONTEXT_USAGE_CONTRACT" />
+                  </div>
+                </article>
+              )}
+            />
+            <p className="text-xs leading-5 text-slate-500">
+              Global TELEMETRY is never redistributed across Agent rows. No latency, token rate, context usage or Work Order relationship is inferred from unrelated collections.
+            </p>
           </div>
         </Panel>
       </div>
