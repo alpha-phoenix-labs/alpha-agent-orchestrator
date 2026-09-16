@@ -1,0 +1,28 @@
+leader:
+  write_access: false
+  purpose: orchestration, synthesis, work-order creation
+
+readers:
+  - github_branch_reader
+  - render_service_reader
+  - ci_pipeline_reader
+  - security_reader
+  - database_reader
+  - runtime_reader
+  - api_contract_reader
+  - visual_pipeline_reader
+  - observability_reader
+  - dependency_supply_chain_reader
+  write_access: false
+
+verifiers:
+  - evidence_verifier
+  - independent_reviewer
+  - post_write_verifier
+  write_access: false
+
+writers:
+  code_writer:
+    scope: [git_commit, git_branch, pull_request, merge]
+  infra_writer:
+    scope: [render_deploy, approved_runtime_config]
