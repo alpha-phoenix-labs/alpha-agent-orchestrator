@@ -1,47 +1,93 @@
-# Integrated Development Roadmap
+# ALPHA Agent Orchestrator - Integrated Development Roadmap
 
-Status: CURRENT INTEGRATED DEVELOPMENT ROADMAP DRAFT
-
-Last revised: 2026-09-16
-
+Status: **FROZEN PROJECT ROADMAP - BINDING AFTER PDF PUBLICATION**  
+Freeze trigger: publication of the corresponding premium roadmap PDF generated from this content.  
+Effective date: 2026-09-16  
 Repository: `alpha-phoenix-labs/alpha-agent-orchestrator`
 
-## 1. Purpose and authority
+## 1. Purpose, authority and freeze rule
 
-This document is the current integrated execution roadmap for the ALPHA Agent Orchestrator main program.
+This document is the integrated execution roadmap for the ALPHA Agent Orchestrator main program.
 
-It does **not** delete or replace the historical baseline in `docs/GO_LIVE_GATES.md`. That file remains preserved as the original safety-phase baseline and gate record.
+It does **not** delete or replace `docs/GO_LIVE_GATES.md`. The historical gate file remains preserved as the original safety-phase baseline and phase-order evidence.
 
-This roadmap extends that baseline by placing the approved Operations Console / UI, observability, evidence, runtime and resilience work inside the same sequential development program.
+This roadmap extends that baseline by integrating the approved Operations Console / UI, observability, evidence, runtime and resilience work into the **same sequential development program**. There is no parallel UI development track.
 
-There is no parallel UI development track.
+Authority order:
 
-For ongoing development after this revision:
+1. Current code, current tests and real runtime evidence are the highest technical source of truth.
+2. This roadmap is the binding development-sequence and scope source after its PDF freeze trigger.
+3. `docs/GO_LIVE_GATES.md` remains the historical safety-order baseline.
+4. The project-source UI concept is an architecture/product requirement source, not an independent implementation roadmap.
+5. Contradictions between this roadmap and verified code/runtime evidence must be surfaced and resolved explicitly.
 
-1. Current code, current tests and real runtime evidence remain the highest technical source of truth.
-2. This document governs the intended development sequence and scope where the original gate file is intentionally high-level.
-3. `docs/GO_LIVE_GATES.md` remains authoritative for the original safety ordering and historical phase definition.
-4. The project-source UI concept document `AGENT_SWARM_UI_KONZEPT_KENNTNISNAHME_MAIN_DEV.txt` is an architecture/product requirement source, not an independent implementation roadmap.
-5. If this roadmap conflicts with verified runtime behavior or current code, the contradiction must be surfaced and resolved explicitly rather than silently interpreted.
+### Freeze rule
 
-## 2. Non-negotiable architecture rules
+After publication of the corresponding premium PDF:
 
-The integrated roadmap follows these rules throughout all phases:
+- this roadmap is frozen and binding for the project;
+- no phase, gate, ordering, acceptance criterion or execution pointer may be silently changed;
+- any roadmap change requires explicit user approval;
+- every approved change must be documented as an amendment with reason, scope and evidence;
+- a roadmap amendment must not weaken an existing security boundary merely to make a test or phase pass;
+- historical versions remain preserved for traceability;
+- no separate or parallel roadmap may become authoritative without explicit user approval.
 
-- one main development sequence;
-- no parallel product branch with an independent architectural truth;
-- backend/control-plane authority before frontend interpretation;
-- `TELEMETRY != AUTHORITY`;
-- readers before writers;
-- Shadow before Sandbox Write;
-- Sandbox Write before Adversarial Acceptance;
-- Adversarial Acceptance before `LIVE_GATED`;
-- no production write integration before all required gates pass;
-- no UI component may independently grant write eligibility, validate approval, verify evidence, resolve locks, evaluate policies or define canonical state;
-- no secret, credential, capability token, cookie, private key or sensitive raw payload may be exposed through UI, audit, logs or telemetry;
-- all write-capable behavior remains human-gated according to the user-only Human Gate model.
+## 2. Non-negotiable architecture and UI rules
 
-## 3. Phase 1 — OFFLINE
+These rules apply to every phase.
+
+- One main development sequence.
+- No parallel product branch with an independent architectural truth.
+- Backend / Control Plane authority before frontend interpretation.
+- `TELEMETRY != AUTHORITY`.
+- Readers before writers.
+- Shadow before Sandbox Write.
+- Sandbox Write before Adversarial Acceptance.
+- Adversarial Acceptance before `LIVE_GATED`.
+- No production write integration before all required gates pass.
+- All write-capable behavior remains bound to the user-only Human Gate model.
+- Unknown, stale, conflicting or unavailable security state fails closed.
+
+### Frontend responsibility boundary
+
+The frontend may render, navigate, filter, sort, paginate, visualize graphs, display backend state and submit explicitly permitted human decisions to the designated backend endpoint.
+
+The frontend must **not independently**:
+
+- grant or infer write eligibility;
+- validate approval;
+- verify Evidence;
+- classify Findings;
+- resolve Evidence conflicts;
+- calculate domain Freshness;
+- calculate Risk Class;
+- evaluate policies;
+- acquire, release or override locks;
+- grant capabilities;
+- activate Writers;
+- change System Mode;
+- define Canonical State;
+- declare Plan validity;
+- declare Post Verify complete;
+- invent Provenance relationships;
+- rewrite Audit history;
+- derive security state from telemetry, animation, local UI state or Agent self-report.
+
+### Secret boundary
+
+No UI, Audit, log, telemetry stream, trace view or error surface may expose:
+
+- API keys;
+- bearer tokens;
+- passwords;
+- cookies;
+- private keys;
+- raw capability tokens;
+- signed sensitive payloads;
+- full sensitive credential-bearing payloads.
+
+## 3. Phase 1 - OFFLINE
 
 Status: **COMPLETE**
 
@@ -58,7 +104,7 @@ Establish a deterministic, fully offline control-plane core with no credentials 
 - guards;
 - capability foundation;
 - WriteProxy foundation;
-- audit foundation;
+- Audit foundation;
 - no credentials;
 - no network writes.
 
@@ -66,7 +112,7 @@ Establish a deterministic, fully offline control-plane core with no credentials 
 
 No frontend implementation is required in Phase 1.
 
-The backend concepts defined here later become authoritative UI inputs; the UI must not redefine them.
+The backend concepts defined here later become authoritative UI inputs. The UI must not redefine them.
 
 ### Exit gate
 
@@ -80,24 +126,24 @@ Status: **COMPLETE**
 
 ### Required controls
 
-- WriteProxy revalidates mode, writes-enabled state, current state and exact target lock immediately before dispatch;
-- execution capability is bound to the approved base-state version;
-- one approval and at most one execution are permitted per Work Order;
-- resource locks are derived from the exact Work Order target;
-- Shadow plans require an explicit independent-review result;
-- Shadow, WriteProxy and resource scopes use one canonical action schema;
-- read credentials are owned only by backend transport and are never caller supplied;
+- WriteProxy revalidates mode, writes-enabled state, current state and exact target lock immediately before dispatch.
+- Execution capability is bound to the approved base-state version.
+- One approval and at most one execution are permitted per Work Order.
+- Resource locks are derived from the exact Work Order target.
+- Shadow plans require an explicit independent-review result.
+- Shadow, WriteProxy and resource scopes use one canonical action schema.
+- Read credentials are owned only by backend transport and are never caller supplied.
 - GitHub reads are restricted to an explicit repository allowlist.
 
 ### UI / observability placement
 
 No frontend implementation is required here.
 
-These controls later feed the authoritative status shown by gates, locks, writer state, approval state and Control Rail views.
+These controls later feed authoritative gate, lock, writer, approval and Control Rail views.
 
 ---
 
-## 5. Phase 2 — MOCK
+## 5. Phase 2 - MOCK
 
 Status: **COMPLETE**
 
@@ -115,13 +161,13 @@ Validate the full control flow using only mock external targets.
 - scope tests;
 - Human Gate behavior;
 - post-write failure behavior;
-- exact target lock behavior.
+- exact-target lock behavior.
 
 ### UI / observability placement
 
 No production UI implementation is required.
 
-Mock data may later be reused for development-only frontend fixtures, but mock output must never be represented as real Evidence or runtime state.
+Mock data may later be reused for development-only frontend fixtures, but mock output must never be represented as real Evidence or live runtime state.
 
 ### Exit gate
 
@@ -129,7 +175,7 @@ Mock workflow passes with no real external mutation.
 
 ---
 
-## 6. Phase 3 — REAL READ-ONLY
+## 6. Phase 3 - REAL READ-ONLY
 
 Status: **IN PROGRESS**
 
@@ -139,7 +185,7 @@ Allow the orchestrator to observe real external systems through constrained read
 
 ### 6.1 GitHub real read-only
 
-Status: **RUNTIME VERIFIED**
+Status: **RUNTIME EVIDENCE EXISTS**
 
 Required properties:
 
@@ -151,6 +197,8 @@ Required properties:
 - freshness;
 - real read evidence;
 - no write capability through the read path.
+
+A successful direct GitHub real-read run is already available. This does **not** by itself close the redirect-safety gate below.
 
 ### 6.2 Render read-only boundary
 
@@ -166,24 +214,50 @@ Required properties:
 - no caller-defined auth headers;
 - credential redaction.
 
-### 6.3 Render repository runtime verification
+### 6.3 Credentialed HTTP redirect fail-closed hardening
 
-Status: **OPEN**
+Status: **OPEN - NEXT ACTIVE TECHNICAL GATE**
 
-This is the next active technical gate.
+Before any further credentialed runtime validation, both credentialed HTTP transports must prove fail-closed redirect handling.
+
+Applies to:
+
+- `GitHubReadTransport`;
+- `RenderReadTransport`.
 
 Acceptance requires:
 
-- one real request through the repository `RenderReadTransport` or an explicitly approved technically equivalent constrained GET-only proxy;
+- Authorization-bearing requests do not automatically follow an HTTP redirect to an unvalidated destination;
+- credentials cannot be forwarded to a redirected host;
+- redirect behavior is explicit, deterministic and covered by regression tests;
+- failure is sanitized and does not leak the credential;
+- the fix does not weaken existing host/path allowlists;
+- normal direct 2xx behavior remains functional.
+
+A post-redirect validation is insufficient if Authorization may already have been transmitted to the redirect destination. The boundary must prevent unsafe dispatch before credential forwarding.
+
+### 6.4 Render repository runtime verification
+
+Status: **OPEN - BLOCKED BY 6.3 AND CREDENTIAL/PROXY GATE**
+
+Acceptance requires:
+
+- one real request through repository `RenderReadTransport` or an explicitly approved technically equivalent constrained GET-only proxy;
 - backend-only credential handling;
 - an allowlisted non-secret endpoint;
 - successful provenance capture;
 - successful freshness check;
 - no credential output;
 - no deploy, restart, environment mutation, secret mutation or database write;
-- no reachable write capability through the read path.
+- no reachable write capability through the approved read surface.
 
-### 6.4 Evidence provenance and freshness closure
+Important credential rule:
+
+A privileged raw Render API key must not be described as provider-side read-only merely because the repository transport exposes only GET. If provider permissions are not technically non-mutating, use an explicitly approved constrained backend reader/proxy or equivalent isolation boundary.
+
+No user should paste a credential into chat.
+
+### 6.5 Evidence provenance and freshness closure
 
 Before Phase 3 closes, real readers must expose a stable minimum Evidence/provenance contract sufficient to identify:
 
@@ -197,9 +271,9 @@ Before Phase 3 closes, real readers must expose a stable minimum Evidence/proven
 - collector/transport provenance;
 - verification state.
 
-Stale, invalid or ambiguous observations must never be silently interpreted as current.
+Stale, invalid, future-dated or ambiguous observations must never be silently interpreted as current.
 
-### 6.5 UI contract baseline
+### 6.6 UI contract baseline
 
 This is architecture preparation only. **No frontend implementation is required to close Phase 3.**
 
@@ -221,7 +295,7 @@ Before Phase 4, the real backend vocabulary must be inventoried and mapped for U
 - post-verification state;
 - agent runtime/health/activity;
 - connector state;
-- audit event identity and relationships.
+- Audit event identity and relationships.
 
 Rule: **backend model -> UI model**, never **mock UI model -> backend model**.
 
@@ -232,16 +306,17 @@ Confirmed example: `WRITE_ENABLED` must not be invented as a backend `SystemMode
 Phase 3 closes only when:
 
 - GitHub repository read transport has real runtime evidence;
-- Render repository read transport has real runtime evidence;
+- credentialed redirect handling is proven fail-closed;
+- Render repository read path has real runtime evidence through an approved safe credential/proxy boundary;
 - read credentials remain backend-owned;
 - provenance is demonstrated;
 - freshness is demonstrated;
-- real read paths expose no mutation capability;
+- real read paths expose no mutation capability through the approved surface;
 - required authoritative data concepts are mapped sufficiently for Phase 4.
 
 ---
 
-## 7. Phase 4 — SHADOW + READ-ONLY OPERATIONS CONSOLE
+## 7. Phase 4 - SHADOW + READ-ONLY OPERATIONS CONSOLE
 
 Status: **NOT STARTED**
 
@@ -325,7 +400,7 @@ Primary navigation target:
 - Evidence & Audit;
 - System / Swarm.
 
-### 7.5 Mission Control — read-only first
+### 7.5 Mission Control - read-only first
 
 Implement a real read-only Mission Control view for:
 
@@ -397,6 +472,21 @@ Agent state must keep separate concepts for:
 
 For example, `THINKING` is an Activity, not a Health or permission state.
 
+Direct V1 agent-control actions are excluded from the normal Operations Console:
+
+- no START AGENT;
+- no STOP AGENT;
+- no SEND COMMAND;
+- no ASSIGN TASK;
+- no CHANGE PROMPT;
+- no ENABLE WRITER;
+- no OVERRIDE POLICY;
+- no FORCE UNLOCK;
+- no FORCE DEPLOY;
+- no FORCE APPROVAL.
+
+Allowed interactions are read/drill-down actions such as opening Agent, Work Order, Evidence, Trace or related Events.
+
 ### 7.9 Live topology and Agent Grid
 
 Only after stable data contracts:
@@ -430,18 +520,20 @@ Show the temporal flow of real work such as:
 
 Trace/Activity is observability, not authoritative Audit.
 
-### 7.11 Live event ingestion
+### 7.11 Live event ingestion and schema safety
 
 Select WebSocket, SSE or another mechanism only after requirements are verified.
 
-Regardless of transport, event design should provide sufficient identity/versioning to detect as applicable:
+Regardless of transport, event design must provide sufficient identity/versioning to detect as applicable:
 
-- duplicates;
+- duplicate events;
 - missing sequence;
 - stale events;
 - out-of-order events;
 - state-version drift;
 - snapshot/resync requirement.
+
+The client must also include explicit schema validation and malformed-event handling. Invalid or schema-incompatible events must not mutate authoritative UI state.
 
 ### 7.12 Connection resilience
 
@@ -458,7 +550,18 @@ Before Phase 4 closes, the live UI must handle:
 
 Loss of connection must never leave stale data visually presented as current.
 
-### 7.13 Secret redaction
+### 7.13 State drift and historical-state separation
+
+When displayed state changes while a view remains open:
+
+- `viewed state` and `current state` must be distinguishable;
+- stale context must be explicit;
+- refresh/resync must not silently combine historical and current data;
+- backend-reported Approval invalidation must be visible.
+
+Historical views must clearly distinguish historical state from current live system state.
+
+### 7.14 Secret redaction
 
 Never render:
 
@@ -469,7 +572,7 @@ Never render:
 - raw capability tokens;
 - full sensitive payloads.
 
-### 7.14 Accessibility and safety UX
+### 7.15 Accessibility and safety UX
 
 Minimum requirements:
 
@@ -491,21 +594,25 @@ with:
 
 - no writes;
 - no operative approval execution;
-- no frontend evidence verification;
+- no frontend Evidence verification;
+- no frontend Finding classification;
+- no frontend Freshness or Risk calculation;
 - no frontend policy decision;
 - no security state derived from telemetry;
 - stale/unknown state visible;
+- malformed events rejected safely;
+- historical/current state separated;
 - Control Plane retained as authority.
 
 ---
 
-## 8. Phase 5 — SANDBOX WRITE + HUMAN-GATED CONTROL UX
+## 8. Phase 5 - SANDBOX WRITE + HUMAN-GATED CONTROL UX
 
 Status: **NOT STARTED**
 
 ### Goal
 
-Enable the first real write-capable workflow only in a controlled sandbox and expose that workflow through a Human-Gated UI backed directly by real control-plane contracts.
+Enable the first real write-capable workflow only in a controlled sandbox and expose that workflow through a Human-Gated UI backed directly by real Control Plane contracts.
 
 ### 8.1 Sandbox writer core first
 
@@ -602,6 +709,8 @@ Post Verify must evaluate the relevant expected outcomes, potentially including:
 - Audit completeness;
 - lock release.
 
+The frontend displays the backend Post Verify result and must not self-declare completion.
+
 ### 8.8 Emergency Freeze UX
 
 Connect the real Freeze control only after the backend Freeze boundary is ready.
@@ -636,13 +745,13 @@ with:
 
 ---
 
-## 9. Phase 6 — ADVERSARIAL ACCEPTANCE
+## 9. Phase 6 - ADVERSARIAL ACCEPTANCE
 
 Status: **NOT STARTED**
 
 ### Goal
 
-Prove that both core control-plane logic and integrated UI/observability behavior remain fail-closed under hostile, stale, inconsistent and degraded conditions.
+Prove that both core Control Plane logic and integrated UI/observability behavior remain fail-closed under hostile, stale, inconsistent and degraded conditions.
 
 ### 9.1 Existing core adversarial cases
 
@@ -667,6 +776,7 @@ Add tests for:
 - sequence gap;
 - reconnect during active Work Order;
 - failed snapshot/resync;
+- malformed event/schema violation;
 - telemetry contradicting Canonical State;
 - telemetry showing RUNNING while Control Plane reports BLOCKED;
 - authority unavailable;
@@ -696,7 +806,8 @@ Prove:
 - no policy override;
 - no force unlock;
 - no force deploy;
-- no direct writer activation;
+- no direct Writer activation;
+- no direct Agent task/prompt control in the normal Operations Console;
 - no security action available only through hidden hover controls.
 
 ### 9.4 Resilience and performance acceptance
@@ -715,7 +826,7 @@ Core, runtime, UI and observability layers all remain fail-closed under the defi
 
 ---
 
-## 10. Phase 7 — LIVE_GATED
+## 10. Phase 7 - LIVE_GATED
 
 Status: **NOT STARTED**
 
@@ -756,7 +867,7 @@ Before any productive write capability:
 - recovery behavior documented;
 - real authentication/authorization boundaries reviewed.
 
-The UI concept mentions RBAC as a quality target, but no concrete RBAC model is currently established by that concept alone. No authorization model may be invented only for the UI.
+The UI concept mentions RBAC as a quality target, but no concrete RBAC model is established by that concept alone. No authorization model may be invented only for the UI.
 
 ### 10.2 Human go-live gate
 
@@ -768,7 +879,7 @@ There is no automatic promotion from Phase 6.
 
 ## 11. Deferred post-live product enhancements
 
-These are sequential future backlog items, not a parallel development track and not V1 safety prerequisites unless later promoted by explicit decision:
+These are sequential future backlog items, not a parallel development track and not V1 safety prerequisites unless later promoted by explicit user decision:
 
 - Light Theme;
 - alternative WebGL topology rendering;
@@ -780,16 +891,22 @@ These are sequential future backlog items, not a parallel development track and 
 - additional premium motion/visual effects;
 - Redis Pub/Sub, multiplexed WebSocket Gateway or delta-compression infrastructure unless real scale requirements justify them.
 
-## 12. Current execution pointer
+---
 
-At the time of this revision:
+## 12. Binding execution pointer after roadmap PDF freeze
 
-- Phase 1: complete;
-- pre-Phase-2 hardening: complete;
-- Phase 2: complete;
-- Phase 3: in progress;
-- GitHub real read-only path: runtime verified;
-- Render read-only boundary: merged and CI verified;
-- next active technical gate: **Phase 3 Render repository `RenderReadTransport` runtime verification**.
+After publication of the premium PDF generated from this roadmap, development resumes at exactly:
 
-No Phase 4 implementation should begin before the Phase 3 exit gate is satisfied.
+**Phase 3.3 - Credentialed HTTP redirect fail-closed hardening**
+
+Order of continuation:
+
+1. confirm current main / branch / HEAD and open changes;
+2. patch redirect behavior for credentialed GitHub and Render transports with the smallest responsible diff;
+3. add regression tests proving credentials cannot follow an unsafe redirect;
+4. run relevant CI/regression tests;
+5. only after that gate passes, proceed to **Phase 3.4 Render repository runtime verification**;
+6. then complete Phase 3 Evidence provenance/freshness closure and UI contract baseline;
+7. Phase 4 must not begin before the Phase 3 exit gate is satisfied.
+
+This execution pointer is part of the frozen roadmap and may only be changed through the explicit roadmap amendment process above.
