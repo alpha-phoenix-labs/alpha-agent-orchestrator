@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import math
 from typing import Mapping, Protocol
 from urllib.parse import urlparse
 import uuid
@@ -87,8 +88,13 @@ def require_fresh_timestamp(
     now: datetime | None = None,
 ) -> None:
     """Fail closed when a provenance timestamp is stale, invalid, ambiguous or future-dated."""
-    if max_age_seconds <= 0:
-        raise ValueError("max_age_seconds must be positive")
+    if (
+        not isinstance(max_age_seconds, (int, float))
+        or isinstance(max_age_seconds, bool)
+        or not math.isfinite(float(max_age_seconds))
+        or max_age_seconds <= 0
+    ):
+        raise ValueError("max_age_seconds must be a positive finite number")
     try:
         observed = datetime.fromisoformat(observed_at)
     except (TypeError, ValueError) as exc:
