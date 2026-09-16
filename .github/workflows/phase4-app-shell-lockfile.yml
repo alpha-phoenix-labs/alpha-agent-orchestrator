@@ -5,7 +5,7 @@ on:
     branches: [phase4/app-shell]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
@@ -13,8 +13,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
@@ -22,9 +20,14 @@ jobs:
       - name: Resolve frontend lockfile
         working-directory: frontend
         run: npm install --package-lock-only --ignore-scripts
-      - name: Upload lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: phase4-app-shell-package-lock
-          path: frontend/package-lock.json
-          if-no-files-found: error
+      - name: Commit lockfile only when changed
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add frontend/package-lock.json
+          if git diff --cached --quiet; then
+            echo 'LOCKFILE_UNCHANGED'
+          else
+            git commit -m 'Pin Phase 4.4 frontend dependency graph'
+            git push origin HEAD:phase4/app-shell
+          fi
