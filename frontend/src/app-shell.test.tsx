@@ -48,4 +48,15 @@ describe('Phase 4.4 app shell', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.getByText(/Backend-owned Work Order state is displayed/i)).toBeInTheDocument()
   })
+
+  it('routes to the Phase 4.8 System / Swarm read-only surface', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    await user.click(screen.getByRole('link', { name: 'System / Swarm' }))
+    expect(await screen.findByRole('heading', { name: 'System / Swarm' })).toBeInTheDocument()
+    expect(screen.getByText('Phase 4.8 · Read-only')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
 })
