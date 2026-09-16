@@ -1,8 +1,13 @@
 import type { ReactNode } from 'react'
 
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
-import { useI18n } from './i18n'
+import { useI18n, type SupportedLocale } from './i18n'
 import { useOperationsData } from './operations-data'
+
+const futureChainRegionLabels: Record<SupportedLocale, string> = {
+  'de-DE': 'Zukünftige Kette',
+  'en-US': 'Future chain',
+}
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -111,7 +116,7 @@ function ProvenanceTrace({ finding, index }: { finding: ViewContract; index: num
 
 export function EvidenceAudit() {
   const { snapshot, authorityAvailable } = useOperationsData()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
   return (
     <div className="space-y-6">
@@ -214,7 +219,7 @@ export function EvidenceAudit() {
         </Section>
       </div>
 
-      <section aria-label={t('evidence.futureChain')} className="rounded-xl border border-white/10 bg-slate-900/60 p-5">
+      <section aria-label={futureChainRegionLabels[locale]} className="rounded-xl border border-white/10 bg-slate-900/60 p-5">
         <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">{t('evidence.futureChain')}</h3>
         <p className="mt-3 font-mono text-sm text-slate-400">{t('evidence.futureChainValue')}</p>
         <p className="mt-2 text-xs leading-5 text-slate-500">{t('evidence.futureChainNote')}</p>
