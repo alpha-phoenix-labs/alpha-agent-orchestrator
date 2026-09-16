@@ -28,31 +28,24 @@ The transport has these enforced properties:
 
 `ReadObservation.require_fresh()` fails closed on stale, future-dated, malformed or timezone-less observation timestamps.
 
-## Real-read smoke
+## GitHub real-read smoke
 
 `scripts/phase3_github_real_read.py` is the single-purpose acceptance smoke for GitHub. It performs exactly one authenticated GET to:
 
 `https://api.github.com/repos/alpha-phoenix-labs/alpha-agent-orchestrator`
 
-The script checks:
-- repository identity in the returned payload;
-- 2xx JSON through the broker;
-- observation freshness <= 60 seconds;
-- provenance fields including source, observed time, digest and body size;
-- no write surface is exposed by the smoke path.
-
-The script prints provenance metadata only; it does not print the response payload or credential.
+The script checks repository identity, 2xx JSON, observation freshness <= 60 seconds and provenance fields while exposing no credential or write surface.
 
 ## GitHub real-read runtime evidence
 
-The user explicitly approved the GitHub real-read gate. A one-time validation workflow was executed from branch `phase3/real-read-validation` and then removed from the proposed persistent repository state.
+The user explicitly approved the GitHub real-read gate. A one-time validation workflow was executed from branch `phase3/real-read-validation` and then removed from the persistent repository state.
 
 Evidence:
 - validation commit: `036feb0734f97c747927b5dfb43169cbf2b0a8f8`;
 - workflow run: `35093964987` (`phase3-real-read-validation`);
 - job: `104786641659` (`real-read`);
 - result: `SUCCESS`;
-- GitHub-provided token permissions in the job log: `Contents: read`, `Metadata: read`;
+- GitHub-provided token permissions: `Contents: read`, `Metadata: read`;
 - checkout used `persist-credentials: false`;
 - runtime mode: `READ_ONLY`;
 - writes enabled: `false`;
@@ -66,27 +59,72 @@ Evidence:
 
 No repository secret was created or changed for this validation. The credential was the ephemeral GitHub Actions token constrained by the workflow to read permissions. The token value was masked and is not recorded in repository content or evidence output.
 
-### What this evidence proves
+GitHub REAL READ-ONLY is **RUNTIME VERIFIED for the validated GitHub path only**.
+
+## Render Phase-3 root-cause finding
+
+The previous Render policy used broad prefix allowlisting for `/v1/services`, `/v1/deploys` and `/v1/postgres`. That is not sufficient as a secret boundary.
+
+Render exposes sensitive GET endpoints below otherwise valid resource paths, including service environment-variable reads and Postgres credential/export reads. Therefore a prefix such as `/v1/services` would also admit a URL like `/v1/services/{serviceId}/env-vars` unless an additional positive path constraint is enforced.
+
+This is a confirmed security defect in the previous Render read-policy model, not a reason to weaken Phase-3 acceptance.
+
+The corrected runtime policy uses positive path templates only:
+- `/v1/services`;
+- `/v1/services/{serviceId}`;
+- `/v1/services/{serviceId}/deploys`;
+- `/v1/services/{serviceId}/deploys/{deployId}`;
+- `/v1/postgres`.
+
+Sensitive descendants such as `/env-vars`, `/secret-files`, `/credentials` and `/export` are outside the positive allowlist and fail closed.
+
+## Render backend transport
+
+`RenderReadTransport` is the Render equivalent of the GitHub read transport. It has a fixed `GET` method, owns its bearer credential inside the backend transport, accepts no caller headers or method override, bounds response size, sanitizes transport errors and redacts the credential from representation/output.
+
+The backend environment variable is `ALPHA_RENDER_READ_TOKEN`. It must never be committed.
+
+Important limitation: a Render API key is a privileged provider credential. The security boundary therefore depends on keeping the key reachable only through the constrained GET-only transport/proxy. Provider-side credential privilege itself must not be described as read-only unless independently proven.
+
+## Render provider-side live-read evidence
+
+After explicit user approval of workspace `ventomlabs` (`tea-da5lqvuk1f9s73918ul0`), live Render connector reads were performed in this development session.
+
+CONFIRMED observations:
+- workspace list resolved the approved workspace;
+- service listing returned 11 Render services;
+- Postgres listing returned 3 instances;
+- a representative deploy-history read for service `alpha-creator-sandbox` (`srv-daf7u6v40ujc73a22lg0`) returned recent deploy metadata;
+- the newest returned deploy was `dep-dal541lg1s2s73e9e1h0`, status `live`, commit `3a7c51c3ed316874ed8ad5cf1db705846151e3b3`, finished at `2026-09-16T08:24:24.85783Z`;
+- no deploy, restart, environment-variable change, secret change, database write or other Render mutation was invoked;
+- no provider credential value was exposed in the returned metadata.
+
+This live connector evidence proves current provider connectivity and readable metadata for the approved workspace. It does **not** prove that the underlying Render account/API credential is intrinsically non-mutating, and it is not the same execution path as `RenderReadTransport` inside this repository.
+
+## Render real-read smoke
+
+`scripts/phase3_render_real_read.py` is the repository-runtime acceptance smoke. It performs one authenticated GET to the Render services list scoped by `ALPHA_RENDER_WORKSPACE_ID`, checks 2xx JSON plus freshness <= 60 seconds, and prints provenance metadata only.
+
+The smoke must not be executed until a backend-only credential or equivalent constrained proxy is explicitly approved for this runtime path.
+
+## Phase-3 status
 
 CONFIRMED:
-- the GitHub read transport successfully performed a real authenticated GET against the allowlisted private repository;
-- the broker accepted a fresh, correctly identified GitHub observation;
-- the runtime path emitted provenance metadata without exposing the credential;
-- the GitHub Actions credential used for this run was provider-reported as read-only for repository contents plus metadata;
-- no write operation was part of the validation workflow or smoke path.
-
-### What this evidence does not prove
+- GitHub repository runtime read path is live and runtime-verified;
+- Render provider connectivity is live-read verified through the approved connected Render reader;
+- Render runtime policy is constrained to explicit non-secret metadata URL templates;
+- Render backend transport is GET-only by construction and has no caller method/header injection surface once tests pass.
 
 NOT YET VERIFIED:
-- Render real-read transport/runtime behavior;
-- all future GitHub credentials will have the same permissions;
-- Phase 3 as a whole is complete across every configured provider.
+- `RenderReadTransport` performing a real authenticated Render API request with a backend credential/proxy;
+- provider-side non-mutation of a raw Render API key independent of the constrained transport boundary;
+- Phase 3 completion across the repository runtime path for Render.
 
-GitHub REAL READ-ONLY is therefore **RUNTIME VERIFIED for the validated GitHub path only**. Phase 3 remains open until the remaining configured real-read provider scope is validated or explicitly removed from Phase-3 scope.
+Phase 3 therefore remains **OPEN** until the repository `RenderReadTransport` real-read smoke is executed successfully through an approved backend-only credential/proxy and its provenance/freshness evidence is captured.
 
 ## Activation gate
 
-Real credentials must not be committed. Provider access used for Phase 3 must be technically non-mutating. If provider permissions cannot be made technically read-only, use a constrained proxy/connector that exposes only approved GET operations.
+Real credentials must not be committed. Provider access used for Phase 3 must be technically non-mutating at the exposed runtime surface. If provider permissions cannot be made technically read-only, use a constrained proxy/connector that exposes only approved GET operations.
 
 ## Prohibited in Phase 3
 
