@@ -32,6 +32,10 @@ export type OperationsSnapshot = {
   locks?: readonly ViewContract[]
   writer?: ViewContract
   leader?: ViewContract
+  agents?: readonly ViewContract[]
+  connectors?: readonly ViewContract[]
+  runtime?: ViewContract
+  telemetry?: ViewContract
 }
 
 export function readAvailableField<T>(
