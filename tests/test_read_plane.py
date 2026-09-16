@@ -11,14 +11,14 @@ from alpha_orchestrator.read_plane import (
 from alpha_orchestrator.shadow_read import ShadowReadService
 
 
-def ok_transport(*, url, headers, timeout):
+def ok_transport(*, url, timeout):
     body = json.dumps({"ok": True, "url": url}).encode()
     return TransportResponse(200, {"Content-Type": "application/json; charset=utf-8"}, body)
 
 
 def broker(transport=ok_transport):
     return ReadBroker(
-        policies={"github": github_policy(), "render": render_policy()},
+        policies={"github": github_policy(("o/r",)), "render": render_policy()},
         transport=transport,
     )
 
@@ -51,6 +51,16 @@ def test_non_allowlisted_path_denied():
         broker().fetch_json(source_id="github", url="https://api.github.com/user")
 
 
+def test_non_allowlisted_repository_denied():
+    with pytest.raises(ReadPolicyDenied, match="PATH_NOT_ALLOWLISTED"):
+        broker().fetch_json(source_id="github", url="https://api.github.com/repos/o/other")
+
+
+def test_repository_prefix_collision_denied():
+    with pytest.raises(ReadPolicyDenied, match="PATH_NOT_ALLOWLISTED"):
+        broker().fetch_json(source_id="github", url="https://api.github.com/repos/o/r-evil")
+
+
 def test_url_embedded_credentials_denied():
     with pytest.raises(ReadPolicyDenied, match="CREDENTIALS_IN_URL_FORBIDDEN"):
         broker().fetch_json(source_id="github", url="https://x:y@api.github.com/repos/o/r")
@@ -78,7 +88,7 @@ def test_invalid_json_fails_closed():
 
 
 def test_response_size_limit_enforced():
-    pol = github_policy()
+    pol = github_policy(("o/r",))
     tiny = type(pol)(pol.source_id, pol.allowed_hosts, pol.allowed_path_prefixes, max_response_bytes=3, timeout_seconds=pol.timeout_seconds)
     b = ReadBroker(policies={"github": tiny}, transport=ok_transport)
     with pytest.raises(ReadTransportError, match="RESPONSE_TOO_LARGE"):
@@ -94,14 +104,16 @@ def test_transport_exception_is_sanitized():
     assert str(exc.value) == "READ_TRANSPORT_FAILED"
 
 
-def test_credentials_not_present_in_observation_or_evidence():
+def test_credentials_are_backend_transport_only():
     token = "SECRET-TOKEN-123"
-    b = broker()
-    obs = b.fetch_json(
-        source_id="github",
-        url="https://api.github.com/repos/o/r",
-        headers={"Authorization": f"Bearer {token}"},
-    )
+
+    def authenticated_transport(*, url, timeout):
+        assert token == "SECRET-TOKEN-123"
+        body = json.dumps({"ok": True}).encode()
+        return TransportResponse(200, {"Content-Type": "application/json"}, body)
+
+    b = broker(authenticated_transport)
+    obs = b.fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
     assert token not in repr(obs)
     shadow = ShadowReadService(b)
     finding = shadow.inspect_json(
@@ -109,9 +121,22 @@ def test_credentials_not_present_in_observation_or_evidence():
         source_id="github",
         url="https://api.github.com/repos/o/r",
         claim_builder=lambda payload: payload["ok"],
-        headers={"Authorization": f"Bearer {token}"},
     )
     assert token not in repr(finding)
+
+
+def test_caller_cannot_supply_headers():
+    with pytest.raises(TypeError):
+        broker().fetch_json(
+            source_id="github",
+            url="https://api.github.com/repos/o/r",
+            headers={"Authorization": "Bearer forbidden"},
+        )
+
+
+def test_empty_github_repository_allowlist_denied():
+    with pytest.raises(ValueError, match="At least one GitHub repository"):
+        github_policy(())
 
 
 def test_shadow_service_has_no_write_proxy_surface():

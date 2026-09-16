@@ -32,9 +32,8 @@ class ShadowReadService:
     def __init__(self, broker: ReadBroker) -> None:
         self.broker = broker
 
-    def inspect_json(self, *, reader_id: str, source_id: str, url: str, claim_builder,
-                     headers=None) -> ShadowFinding:
-        obs = self.broker.fetch_json(source_id=source_id, url=url, headers=headers)
+    def inspect_json(self, *, reader_id: str, source_id: str, url: str, claim_builder) -> ShadowFinding:
+        obs = self.broker.fetch_json(source_id=source_id, url=url)
         claim = claim_builder(obs.parsed_payload)
         return ShadowFinding(
             reader_id=reader_id,

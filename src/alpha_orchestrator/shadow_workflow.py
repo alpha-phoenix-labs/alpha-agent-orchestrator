@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
-import json
 import uuid
 
+from .actions import CODE_ACTIONS, INFRA_ACTIONS, writer_for_action
 from .models import EvidenceRef, RiskClass, SystemMode, WorkOrder
 from .shadow_read import ShadowFinding
 from .state import StateStore
@@ -60,8 +60,8 @@ class ShadowWorkflow:
     produces an execution capability.
     """
 
-    CODE_ACTIONS = frozenset({"git_commit", "git_branch", "git_pr", "git_merge"})
-    INFRA_ACTIONS = frozenset({"render_deploy", "render_config_change", "db_migration"})
+    CODE_ACTIONS = CODE_ACTIONS
+    INFRA_ACTIONS = INFRA_ACTIONS
     ALLOWED_READERS = frozenset({
         "github_branch_reader", "render_service_reader", "ci_pipeline_reader",
         "security_reader", "database_reader", "runtime_reader", "api_contract_reader",
@@ -83,13 +83,12 @@ class ShadowWorkflow:
             "payload": dict(payload),
         })
 
-    @classmethod
-    def _writer_for(cls, action: str) -> str:
-        if action in cls.CODE_ACTIONS:
-            return "code_writer"
-        if action in cls.INFRA_ACTIONS:
-            return "infra_writer"
-        raise ShadowWorkflowError("ACTION_NOT_ALLOWLISTED")
+    @staticmethod
+    def _writer_for(action: str) -> str:
+        writer = writer_for_action(action)
+        if writer is None:
+            raise ShadowWorkflowError("ACTION_NOT_ALLOWLISTED")
+        return writer
 
     @staticmethod
     def _verify_findings(findings: list[ShadowFinding]) -> tuple[EvidenceRef, ...]:
@@ -111,8 +110,8 @@ class ShadowWorkflow:
         return tuple(evidence)
 
     def propose(self, *, findings: list[ShadowFinding], action: str, target: str,
-                expected_effect: str, risk: RiskClass = RiskClass.HIGH,
-                independent_review_confirmed: bool = True) -> ShadowPlan:
+                expected_effect: str, independent_review_confirmed: bool,
+                risk: RiskClass = RiskClass.HIGH) -> ShadowPlan:
         if self.mode != SystemMode.SHADOW or self.writes_enabled:
             raise ShadowWorkflowError("SHADOW_INVARIANT_BROKEN")
         evidence = self._verify_findings(findings)

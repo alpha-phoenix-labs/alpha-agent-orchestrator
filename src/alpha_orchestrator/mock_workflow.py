@@ -136,8 +136,9 @@ class MockPipeline:
         return approval.approval_id
 
     def execute(self, *, order_id: str, approval_id: str, writer_role: str,
-                lock_resource: str, post_verify_pass: bool = True) -> ExecutionResult:
+                post_verify_pass: bool = True) -> ExecutionResult:
         order = self.orders[order_id]
+        lock_resource = order.target
         lock = self.core.locks.acquire(lock_resource, writer_role, order.order_id)
         if lock is None:
             order.status = OrderStatus.BLOCKED
@@ -150,7 +151,6 @@ class MockPipeline:
             gate = self.core.guards.pre_execute(
                 order,
                 current_state_version=current_state_version,
-                lock_resource=lock_resource,
                 lock_owner=writer_role,
             )
             if not gate.allowed:

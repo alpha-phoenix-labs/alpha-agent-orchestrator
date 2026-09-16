@@ -13,7 +13,7 @@ from alpha_orchestrator.read_plane import ReadBroker, TransportResponse
 from alpha_orchestrator.shadow_read import ShadowReadService
 
 
-def fake_transport(*, url, headers, timeout):
+def fake_transport(*, url, timeout):
     if "api.github.com" in url:
         body = json.dumps({"default_branch": "main", "archived": False}).encode()
     else:
@@ -22,7 +22,7 @@ def fake_transport(*, url, headers, timeout):
 
 
 broker = ReadBroker(
-    policies={"github": github_policy(), "render": render_policy()},
+    policies={"github": github_policy(("example/example",)), "render": render_policy()},
     transport=fake_transport,
 )
 shadow = ShadowReadService(broker)
@@ -32,7 +32,6 @@ finding = shadow.inspect_json(
     source_id="github",
     url="https://api.github.com/repos/example/example",
     claim_builder=lambda p: f"default_branch={p.get('default_branch')}",
-    headers={"Authorization": "Bearer DEMO-NEVER-LOGGED"},
 )
 
 print("MODE=READ_ONLY")

@@ -1,25 +1,28 @@
-version: 1
+version: 2
 mode: READ_ONLY
 writes_enabled: false
 sources:
   github:
-    transport: https_get_only
+    transport: backend_https_get_only
     host_allowlist:
       - api.github.com
+    repository_allowlist:
+      - alpha-phoenix-labs/alpha-agent-orchestrator
     path_prefix_allowlist:
-      - /repos/
-    credential_visibility: backend_only
+      - /repos/alpha-phoenix-labs/alpha-agent-orchestrator
+    credential_visibility: backend_transport_only
   render:
-    transport: https_get_only
+    transport: backend_https_get_only
     host_allowlist:
       - api.render.com
     path_prefix_allowlist:
       - /v1/services
       - /v1/deploys
       - /v1/postgres
-    credential_visibility: backend_only
+    credential_visibility: backend_transport_only
 security:
   agents_receive_credentials: false
+  callers_can_supply_credentials: false
   agents_can_select_http_method: false
   fail_closed_on_unknown_source: true
   fail_closed_on_non_json: true

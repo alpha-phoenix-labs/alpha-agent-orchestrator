@@ -4,6 +4,7 @@ import pytest
 from alpha_orchestrator.models import EvidenceRef, RiskClass, SystemMode
 from alpha_orchestrator.shadow_read import ShadowFinding
 from alpha_orchestrator.shadow_workflow import ShadowWorkflow, ShadowWorkflowError
+from alpha_orchestrator.write_proxy import WriteProxy
 
 
 def finding(reader="github_branch_reader", digest="a" * 64, ref="https://api.github.com/repos/o/r"):
@@ -27,6 +28,7 @@ def make_plan(wf=None, action="git_commit"):
         action=action,
         target="mock://target",
         expected_effect="planned change",
+        independent_review_confirmed=True,
         risk=RiskClass.HIGH,
     )
     return wf, plan
@@ -55,20 +57,23 @@ def test_infra_action_routes_to_infra_writer():
 def test_unknown_action_fails_closed():
     wf = ShadowWorkflow()
     with pytest.raises(ShadowWorkflowError, match="ACTION_NOT_ALLOWLISTED"):
-        wf.propose(findings=[finding()], action="shell", target="x", expected_effect="x")
+        wf.propose(findings=[finding()], action="shell", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
 
 
 def test_unknown_reader_fails_closed():
     wf = ShadowWorkflow()
     with pytest.raises(ShadowWorkflowError, match="UNKNOWN_READER"):
-        wf.propose(findings=[finding(reader="rogue_reader")], action="git_commit", target="x", expected_effect="x")
+        wf.propose(findings=[finding(reader="rogue_reader")], action="git_commit", target="x",
+                   expected_effect="x", independent_review_confirmed=True)
 
 
 def test_duplicate_evidence_is_rejected():
     wf = ShadowWorkflow()
     f = finding()
     with pytest.raises(ShadowWorkflowError, match="DUPLICATE_EVIDENCE"):
-        wf.propose(findings=[f, f], action="git_commit", target="x", expected_effect="x")
+        wf.propose(findings=[f, f], action="git_commit", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
 
 
 def test_disputed_independent_review_blocks_plan():
@@ -76,6 +81,21 @@ def test_disputed_independent_review_blocks_plan():
     with pytest.raises(ShadowWorkflowError, match="INDEPENDENT_REVIEW_DISPUTED"):
         wf.propose(findings=[finding()], action="git_commit", target="x", expected_effect="x",
                    independent_review_confirmed=False)
+
+
+def test_independent_review_must_be_explicit():
+    wf = ShadowWorkflow()
+    with pytest.raises(TypeError):
+        wf.propose(findings=[finding()], action="git_commit", target="x", expected_effect="x")
+
+
+def test_shadow_and_write_proxy_share_canonical_actions():
+    assert ShadowWorkflow.CODE_ACTIONS == WriteProxy.CODE_ACTIONS
+    assert ShadowWorkflow.INFRA_ACTIONS == WriteProxy.INFRA_ACTIONS
+    assert "db_migration" not in ShadowWorkflow.INFRA_ACTIONS
+    assert "pull_request" in ShadowWorkflow.CODE_ACTIONS
+    assert "merge" in ShadowWorkflow.CODE_ACTIONS
+    assert "approved_runtime_config" in ShadowWorkflow.INFRA_ACTIONS
 
 
 def test_only_user_can_acknowledge_shadow_plan():

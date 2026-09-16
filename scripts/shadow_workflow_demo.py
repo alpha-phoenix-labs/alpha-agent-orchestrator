@@ -28,6 +28,7 @@ plan = wf.propose(
     action="git_commit",
     target="mock://repo/main",
     expected_effect="would create a controlled commit",
+    independent_review_confirmed=True,
 )
 ack = wf.acknowledge(order_id=plan.order_id, plan_hash=plan.plan_hash, acknowledged_by="USER_ONLY")
 result = wf.simulate(order_id=plan.order_id, acknowledgement_id=ack.acknowledgement_id)
