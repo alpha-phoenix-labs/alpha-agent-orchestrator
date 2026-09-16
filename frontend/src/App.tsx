@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import { AppShell, RoutePlaceholder } from './app-shell'
+import { EvidenceAudit } from './evidence-audit'
 import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
 import { WorkOrders } from './work-orders'
@@ -20,12 +21,7 @@ export const routes = [
       },
       {
         path: 'evidence-audit',
-        element: (
-          <RoutePlaceholder
-            title="Evidence & Audit"
-            description="The shell route is reserved for the Phase 4.7 read-only evidence and audit surfaces."
-          />
-        ),
+        element: <EvidenceAudit />,
       },
       {
         path: 'system-swarm',
