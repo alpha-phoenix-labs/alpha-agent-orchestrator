@@ -93,7 +93,7 @@ def test_github_transport_missing_backend_credential_fails_closed():
         GitHubReadTransport.from_env(environ={})
 
 
-def test_read_observation_freshness_accepts_current_and_rejects_stale():
+def test_read_observation_freshness_accepts_current_and_rejects_invalid_state():
     now = datetime(2026, 9, 16, 12, 0, tzinfo=timezone.utc)
 
     def opener(request, *, timeout):
@@ -119,3 +119,11 @@ def test_read_observation_freshness_accepts_current_and_rejects_stale():
     future = replace(observation, observed_at=(now + timedelta(seconds=1)).isoformat())
     with pytest.raises(ReadPolicyDenied, match="OBSERVATION_FROM_FUTURE"):
         future.provenance_payload(max_age_seconds=60, now=now)
+
+    malformed = replace(observation, observed_at="not-a-timestamp")
+    with pytest.raises(ReadPolicyDenied, match="INVALID_OBSERVATION_TIME"):
+        malformed.provenance_payload(max_age_seconds=60, now=now)
+
+    timezone_less = replace(observation, observed_at=now.replace(tzinfo=None).isoformat())
+    with pytest.raises(ReadPolicyDenied, match="OBSERVATION_TIMEZONE_REQUIRED"):
+        timezone_less.provenance_payload(max_age_seconds=60, now=now)
