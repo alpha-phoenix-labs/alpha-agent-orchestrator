@@ -43,22 +43,54 @@ The script checks:
 
 The script prints provenance metadata only; it does not print the response payload or credential.
 
-## Human gate before real credential activation
+## GitHub real-read runtime evidence
 
-A real provider credential is intentionally not committed or created by this patch.
-Before the real-read smoke is executed, the user must explicitly approve provisioning/using a backend-only credential for `ALPHA_GITHUB_READ_TOKEN`.
+The user explicitly approved the GitHub real-read gate. A one-time validation workflow was executed from branch `phase3/real-read-validation` and then removed from the proposed persistent repository state.
 
-Acceptance requires evidence that the credential/account cannot mutate the target system, or that it is reachable only through a connector/proxy that technically exposes approved GET operations. The current constrained transport supplies the GET-only application boundary, but CI tests alone do not prove provider-side credential permissions.
+Evidence:
+- validation commit: `036feb0734f97c747927b5dfb43169cbf2b0a8f8`;
+- workflow run: `35093964987` (`phase3-real-read-validation`);
+- job: `104786641659` (`real-read`);
+- result: `SUCCESS`;
+- GitHub-provided token permissions in the job log: `Contents: read`, `Metadata: read`;
+- checkout used `persist-credentials: false`;
+- runtime mode: `READ_ONLY`;
+- writes enabled: `false`;
+- authenticated smoke result: `PHASE3_REAL_READ: PASS`;
+- source: `github`;
+- HTTP status: `200`;
+- observed at: `2026-09-16T12:06:55.467828+00:00`;
+- body digest: `fa1f59e4430ca5feb63f381389d6e768ed191918a10cf1112d8db832056bdb6d`;
+- body size: `7731` bytes;
+- reported application write surface: `WRITE_CAPABILITY_EXPOSED: false`.
 
-Until that gate is passed, Phase 3 is **PREPARED / NOT RUNTIME-VERIFIED**.
+No repository secret was created or changed for this validation. The credential was the ephemeral GitHub Actions token constrained by the workflow to read permissions. The token value was masked and is not recorded in repository content or evidence output.
+
+### What this evidence proves
+
+CONFIRMED:
+- the GitHub read transport successfully performed a real authenticated GET against the allowlisted private repository;
+- the broker accepted a fresh, correctly identified GitHub observation;
+- the runtime path emitted provenance metadata without exposing the credential;
+- the GitHub Actions credential used for this run was provider-reported as read-only for repository contents plus metadata;
+- no write operation was part of the validation workflow or smoke path.
+
+### What this evidence does not prove
+
+NOT YET VERIFIED:
+- Render real-read transport/runtime behavior;
+- all future GitHub credentials will have the same permissions;
+- Phase 3 as a whole is complete across every configured provider.
+
+GitHub REAL READ-ONLY is therefore **RUNTIME VERIFIED for the validated GitHub path only**. Phase 3 remains open until the remaining configured real-read provider scope is validated or explicitly removed from Phase-3 scope.
 
 ## Activation gate
 
-Real credentials are not added until the repository and CI are green. Initial activation must use tokens/accounts that cannot mutate target systems. If provider permissions cannot be made technically read-only, use a constrained proxy/connector that exposes only approved GET operations.
+Real credentials must not be committed. Provider access used for Phase 3 must be technically non-mutating. If provider permissions cannot be made technically read-only, use a constrained proxy/connector that exposes only approved GET operations.
 
 ## Prohibited in Phase 3
 
-- commits, PR mutations or workflow dispatches;
+- commits, PR mutations or workflow dispatches through the runtime read plane;
 - Render deploy/restart/env/secret changes;
 - database writes;
 - generic shell or generic HTTP mutation access;
