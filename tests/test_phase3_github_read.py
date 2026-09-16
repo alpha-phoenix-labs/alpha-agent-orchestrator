@@ -127,3 +127,7 @@ def test_read_observation_freshness_accepts_current_and_rejects_invalid_state():
     timezone_less = replace(observation, observed_at=now.replace(tzinfo=None).isoformat())
     with pytest.raises(ReadPolicyDenied, match="OBSERVATION_TIMEZONE_REQUIRED"):
         timezone_less.provenance_payload(max_age_seconds=60, now=now)
+
+    for invalid_window in (0, -1, True, float("nan"), float("inf")):
+        with pytest.raises(ValueError, match="positive finite number"):
+            current.provenance_payload(max_age_seconds=invalid_window, now=now)
