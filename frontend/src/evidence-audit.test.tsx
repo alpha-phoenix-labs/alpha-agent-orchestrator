@@ -145,6 +145,6 @@ describe('Phase 4.7 Evidence & Audit', () => {
 
   it('does not synthesize records from explicitly empty backend collections', () => {
     renderEvidenceAudit({ evidence: [], findings: [], audit: [] })
-    expect(screen.getAllByText('0 backend-reported records.')).toHaveLength(5)
+    expect(screen.getAllByText('0 backend-reported records.')).toHaveLength(6)
   })
 })
