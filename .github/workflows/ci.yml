@@ -36,3 +36,26 @@ jobs:
           grep -Fq 'NO REAL INTEGRATIONS: true' <<< "$output"
           grep -Fq 'RESULT: WAITING_FOR_APPROVAL' <<< "$output"
           grep -Fq 'No write was executed.' <<< "$output"
+
+  frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Frontend tests
+        working-directory: frontend
+        run: npm test
+      - name: Frontend build
+        working-directory: frontend
+        run: npm run build
