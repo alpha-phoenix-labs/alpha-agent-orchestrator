@@ -1,0 +1,16 @@
+risk_policy:
+  LOW:
+    human_gate: true
+  MEDIUM:
+    human_gate: true
+  HIGH:
+    human_gate: true
+  CRITICAL:
+    human_gate: true
+
+production:
+  automatic_rollback: false
+  require_post_write_verify: true
+  require_resource_lock: true
+  require_exact_plan_hash: true
+  require_fresh_state: true

@@ -1,0 +1,28 @@
+version: 2.2
+system_name: ALPHA Agent Orchestrator
+human_authority: USER_ONLY
+default_mode: OFFLINE
+writes_enabled: false
+
+communication:
+  leader_to_reader: allowed
+  reader_to_leader: allowed
+  leader_to_writer: allowed
+  writer_to_leader: allowed
+  reader_to_writer: denied
+  writer_to_reader: denied
+  reader_to_reader: denied
+  writer_to_writer: denied
+
+hard_rules:
+  - no_single_ai_agent_can_cause_real_write
+  - unknown_means_deny
+  - stale_means_deny
+  - disputed_means_deny
+  - no_evidence_means_deny
+  - no_lock_means_deny
+  - no_exact_human_approval_means_deny
+  - plan_change_invalidates_approval
+  - state_change_invalidates_approval
+  - emergency_freeze_overrides_all
+  - external_content_is_untrusted_data

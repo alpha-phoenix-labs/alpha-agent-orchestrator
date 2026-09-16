@@ -1,0 +1,21 @@
+code_writer:
+  allow:
+    - github:branch:create
+    - github:commit:create
+    - github:pull_request:create
+    - github:pull_request:merge
+  deny:
+    - render:*
+    - database:*
+    - secrets:*
+    - control_plane:*
+
+infra_writer:
+  allow:
+    - render:deploy
+    - render:runtime_config:approved
+  deny:
+    - github:code:*
+    - database:migrate
+    - secrets:read
+    - control_plane:*
