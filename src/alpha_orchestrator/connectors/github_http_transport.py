@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from collections.abc import Callable, Mapping
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from alpha_orchestrator.read_plane import ReadTransportError, TransportResponse
+from alpha_orchestrator.connectors.http_safety import fail_closed_urlopen
 
 
 class GitHubReadTransport:
@@ -13,7 +14,8 @@ class GitHubReadTransport:
 
     The credential is stored only inside the transport instance and is never returned in a
     TransportResponse. Callers can provide only URL and timeout; they cannot select an HTTP
-    method or inject headers through this surface.
+    method or inject headers through this surface. Redirects are denied before any follow-up
+    credentialed request can be dispatched.
     """
 
     __slots__ = ("_token", "_opener", "_max_response_bytes")
@@ -22,7 +24,7 @@ class GitHubReadTransport:
         self,
         *,
         token: str,
-        opener: Callable = urlopen,
+        opener: Callable = fail_closed_urlopen,
         max_response_bytes: int = 2_000_000,
     ) -> None:
         if not token:
@@ -39,7 +41,7 @@ class GitHubReadTransport:
         *,
         environ: Mapping[str, str] | None = None,
         variable: str = "ALPHA_GITHUB_READ_TOKEN",
-        opener: Callable = urlopen,
+        opener: Callable = fail_closed_urlopen,
         max_response_bytes: int = 2_000_000,
     ) -> "GitHubReadTransport":
         env = os.environ if environ is None else environ
@@ -49,7 +51,7 @@ class GitHubReadTransport:
         return cls(token=token, opener=opener, max_response_bytes=max_response_bytes)
 
     def __repr__(self) -> str:
-        return "GitHubReadTransport(token=<redacted>, method=GET)"
+        return "GitHubReadTransport(token=<redacted>, method=GET, redirects=DENY)"
 
     def __call__(self, *, url: str, timeout: float) -> TransportResponse:
         request = Request(

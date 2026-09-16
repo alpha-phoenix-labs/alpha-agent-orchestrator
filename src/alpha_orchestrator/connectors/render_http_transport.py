@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from collections.abc import Callable, Mapping
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import Request
 
 from alpha_orchestrator.read_plane import ReadTransportError, TransportResponse
+from alpha_orchestrator.connectors.http_safety import fail_closed_urlopen
 
 
 class RenderReadTransport:
@@ -13,7 +14,8 @@ class RenderReadTransport:
 
     Render API keys are privileged credentials, so the token remains encapsulated inside this
     transport and callers can supply only URL and timeout. The transport exposes no method or
-    header override and never copies the credential into a TransportResponse.
+    header override, never copies the credential into a TransportResponse, and denies redirects
+    before any follow-up credentialed request can be dispatched.
     """
 
     __slots__ = ("_token", "_opener", "_max_response_bytes")
@@ -22,7 +24,7 @@ class RenderReadTransport:
         self,
         *,
         token: str,
-        opener: Callable = urlopen,
+        opener: Callable = fail_closed_urlopen,
         max_response_bytes: int = 2_000_000,
     ) -> None:
         if not token:
@@ -39,7 +41,7 @@ class RenderReadTransport:
         *,
         environ: Mapping[str, str] | None = None,
         variable: str = "ALPHA_RENDER_READ_TOKEN",
-        opener: Callable = urlopen,
+        opener: Callable = fail_closed_urlopen,
         max_response_bytes: int = 2_000_000,
     ) -> "RenderReadTransport":
         env = os.environ if environ is None else environ
@@ -49,7 +51,7 @@ class RenderReadTransport:
         return cls(token=token, opener=opener, max_response_bytes=max_response_bytes)
 
     def __repr__(self) -> str:
-        return "RenderReadTransport(token=<redacted>, method=GET)"
+        return "RenderReadTransport(token=<redacted>, method=GET, redirects=DENY)"
 
     def __call__(self, *, url: str, timeout: float) -> TransportResponse:
         request = Request(
