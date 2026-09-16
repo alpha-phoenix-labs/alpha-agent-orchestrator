@@ -25,3 +25,14 @@ jobs:
           ALPHA_SYSTEM_MODE: OFFLINE
           ALPHA_WRITES_ENABLED: 'false'
         run: python -m pytest
+      - name: Phase 2 mock demo - no execution
+        env:
+          ALPHA_SYSTEM_MODE: OFFLINE
+          ALPHA_WRITES_ENABLED: 'false'
+        run: |
+          output="$(python scripts/mock_demo.py)"
+          printf '%s\n' "$output"
+          grep -Fq 'MODE: MOCK' <<< "$output"
+          grep -Fq 'NO REAL INTEGRATIONS: true' <<< "$output"
+          grep -Fq 'RESULT: WAITING_FOR_APPROVAL' <<< "$output"
+          grep -Fq 'No write was executed.' <<< "$output"
