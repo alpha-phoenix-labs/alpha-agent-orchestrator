@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 import json
+from typing import Mapping
 
 from .models import EvidenceRef
 from .read_plane import ReadBroker, ReadObservation
@@ -14,6 +15,7 @@ class ShadowFinding:
     claim: str
     evidence: EvidenceRef
     observation_id: str
+    provenance: Mapping[str, object]
 
 
 def observation_to_evidence(obs: ReadObservation) -> EvidenceRef:
@@ -29,15 +31,20 @@ def observation_to_evidence(obs: ReadObservation) -> EvidenceRef:
 class ShadowReadService:
     """Read-only ingestion path. It cannot create approvals or invoke WriteProxy."""
 
-    def __init__(self, broker: ReadBroker) -> None:
+    def __init__(self, broker: ReadBroker, *, max_age_seconds: float = 60.0) -> None:
+        if max_age_seconds <= 0:
+            raise ValueError("max_age_seconds must be positive")
         self.broker = broker
+        self.max_age_seconds = max_age_seconds
 
     def inspect_json(self, *, reader_id: str, source_id: str, url: str, claim_builder) -> ShadowFinding:
         obs = self.broker.fetch_json(source_id=source_id, url=url)
+        provenance = obs.provenance_payload(max_age_seconds=self.max_age_seconds)
         claim = claim_builder(obs.parsed_payload)
         return ShadowFinding(
             reader_id=reader_id,
             claim=str(claim),
             evidence=observation_to_evidence(obs),
             observation_id=obs.observation_id,
+            provenance=provenance,
         )
