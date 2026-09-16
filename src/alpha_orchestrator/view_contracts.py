@@ -174,8 +174,8 @@ class ViewContract:
                 raise ValueError(f"INVALID_SOURCE_CLASS:{self.contract.value}:{name}")
 
 
-def _known(source: SourceClass, **values: object) -> dict[str, ViewField]:
-    return {name: ViewField.known(source, value) for name, value in values.items()}
+def _known(source_class: SourceClass, **values: object) -> dict[str, ViewField]:
+    return {name: ViewField.known(source_class, value) for name, value in values.items()}
 
 
 def system_state_view(*, mode: SystemMode, writes_enabled: bool, snapshot: StateSnapshot) -> ViewContract:
