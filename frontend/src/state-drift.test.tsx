@@ -23,7 +23,7 @@ function contract(name: string, fields: Record<string, ViewField>): ViewContract
   return { contract: name, fields }
 }
 
-function snapshot(stateVersion: string | null): OperationsSnapshot {
+function snapshot(stateVersion: unknown | null): OperationsSnapshot {
   return {
     systemState: contract('SYSTEM_STATE', {
       mode: field('READ_ONLY'),
@@ -99,6 +99,19 @@ describe('Phase 4.13 state drift and historical-state separation', () => {
     )
 
     expect(screen.getByTestId('snapshot')).toHaveTextContent('NULL')
+    expect(screen.getByTestId('view-status')).toHaveTextContent('UNKNOWN')
+    expect(screen.getByTestId('view-reason')).toHaveTextContent('CURRENT_STATE_VERSION_UNAVAILABLE')
+  })
+
+  it('treats a non-string backend state-version shape as unavailable instead of throwing', () => {
+    render(
+      <OperationsDataProvider snapshot={snapshot(8)} viewedStateVersion="state-7">
+        <DataProbe />
+      </OperationsDataProvider>,
+    )
+
+    expect(screen.getByTestId('snapshot')).toHaveTextContent('NULL')
+    expect(screen.getByTestId('current-snapshot')).toHaveTextContent('PRESENT')
     expect(screen.getByTestId('view-status')).toHaveTextContent('UNKNOWN')
     expect(screen.getByTestId('view-reason')).toHaveTextContent('CURRENT_STATE_VERSION_UNAVAILABLE')
   })
