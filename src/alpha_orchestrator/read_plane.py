@@ -86,6 +86,25 @@ class ReadObservation:
             "body_size": self.body_size,
         }
 
+    def require_fresh(self, *, max_age_seconds: float, now: datetime | None = None) -> None:
+        """Fail closed when an observation is stale or has an invalid/future timestamp."""
+        if max_age_seconds <= 0:
+            raise ValueError("max_age_seconds must be positive")
+        try:
+            observed = datetime.fromisoformat(self.observed_at)
+        except ValueError as exc:
+            raise ReadPolicyDenied("INVALID_OBSERVATION_TIME") from exc
+        if observed.tzinfo is None:
+            raise ReadPolicyDenied("OBSERVATION_TIMEZONE_REQUIRED")
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            raise ValueError("now must be timezone-aware")
+        age_seconds = (current.astimezone(timezone.utc) - observed.astimezone(timezone.utc)).total_seconds()
+        if age_seconds < 0:
+            raise ReadPolicyDenied("OBSERVATION_FROM_FUTURE")
+        if age_seconds > max_age_seconds:
+            raise ReadPolicyDenied("STALE_OBSERVATION")
+
 
 class ReadBroker:
     """Deterministic read-only broker.
