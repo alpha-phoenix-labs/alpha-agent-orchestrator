@@ -12,7 +12,8 @@ from .write_proxy import WriteProxy
 class OrchestratorCore:
     """Deterministic control-plane core. No live integrations in v0.1."""
 
-    def __init__(self, mode: SystemMode = SystemMode.OFFLINE, writes_enabled: bool = False) -> None:
+    def __init__(self, mode: SystemMode = SystemMode.OFFLINE, writes_enabled: bool = False,
+                 max_executions_per_order: int = 1) -> None:
         self.mode = mode
         self.writes_enabled = writes_enabled
         self.state = StateStore({"system_mode": mode.value, "writes_enabled": writes_enabled})
@@ -20,7 +21,13 @@ class OrchestratorCore:
         self.audit = AuditLog()
         self.approvals = ApprovalAuthority(required_approver="USER_ONLY")
         self.guards = ControlGuards(mode=mode, writes_enabled=writes_enabled, locks=self.locks)
-        self.proxy = WriteProxy()
+        self.proxy = WriteProxy(
+            mode_provider=lambda: self.mode,
+            writes_enabled_provider=lambda: self.writes_enabled,
+            state=self.state,
+            locks=self.locks,
+            max_executions_per_order=max_executions_per_order,
+        )
 
     def _refresh_guards(self) -> None:
         self.guards = ControlGuards(mode=self.mode, writes_enabled=self.writes_enabled, locks=self.locks)
