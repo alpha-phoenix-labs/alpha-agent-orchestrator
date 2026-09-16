@@ -49,6 +49,18 @@ describe('Phase 4.4 app shell', () => {
     expect(screen.getByText(/Backend-owned Work Order state is displayed/i)).toBeInTheDocument()
   })
 
+  it('routes to the Phase 4.10 Trace / Waterfall inside Evidence & Audit', async () => {
+    const user = userEvent.setup()
+    renderShell()
+
+    await user.click(screen.getByRole('link', { name: 'Evidence & Audit' }))
+    expect(await screen.findByRole('heading', { name: 'Evidence & Audit' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Trace / Waterfall' })).toBeInTheDocument()
+    expect(screen.getByText('Phase 4.10 · Read-only observability')).toBeInTheDocument()
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
   it('routes to the Phase 4.8 System / Swarm read-only surface', async () => {
     const user = userEvent.setup()
     renderShell()
