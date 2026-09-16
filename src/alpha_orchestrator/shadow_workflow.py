@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
+import math
 import uuid
 
 from .actions import CODE_ACTIONS, INFRA_ACTIONS, writer_for_action
@@ -150,6 +151,7 @@ class ShadowWorkflow:
             if (
                 not isinstance(freshness_window, (int, float))
                 or isinstance(freshness_window, bool)
+                or not math.isfinite(float(freshness_window))
                 or freshness_window <= 0
             ):
                 raise ShadowWorkflowError("INVALID_PROVENANCE")
