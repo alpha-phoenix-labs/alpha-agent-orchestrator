@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import { AppShell } from './app-shell'
 import { EvidenceAudit } from './evidence-audit'
+import { I18nProvider } from './i18n'
 import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
 import { SystemSwarm } from './system-swarm'
@@ -42,8 +43,10 @@ const router = createBrowserRouter(routes)
 
 export function App() {
   return (
-    <OperationsDataProvider>
-      <RouterProvider router={router} />
-    </OperationsDataProvider>
+    <I18nProvider>
+      <OperationsDataProvider>
+        <RouterProvider router={router} />
+      </OperationsDataProvider>
+    </I18nProvider>
   )
 }
