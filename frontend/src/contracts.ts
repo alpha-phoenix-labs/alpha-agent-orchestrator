@@ -21,6 +21,14 @@ export type ViewContract = {
 export type OperationsSnapshot = {
   systemState?: ViewContract
   canonicalState?: ViewContract
+  activeWorkOrder?: ViewContract
+  lifecycle?: ViewContract
+  findings?: readonly ViewContract[]
+  evidence?: readonly ViewContract[]
+  gates?: readonly ViewContract[]
+  locks?: readonly ViewContract[]
+  writer?: ViewContract
+  leader?: ViewContract
 }
 
 export function readAvailableField<T>(
@@ -32,4 +40,15 @@ export function readAvailableField<T>(
     return null
   }
   return field.value as T | null
+}
+
+export function readUnavailableReason(
+  contract: ViewContract | undefined,
+  fieldName: string,
+): string | null {
+  const field = contract?.fields[fieldName]
+  if (!field || field.available) {
+    return null
+  }
+  return field.reason
 }
