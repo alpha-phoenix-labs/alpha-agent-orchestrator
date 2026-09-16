@@ -67,6 +67,20 @@ class ShadowWorkflow:
         "security_reader", "database_reader", "runtime_reader", "api_contract_reader",
         "visual_pipeline_reader", "observability_reader", "dependency_supply_chain_reader",
     })
+    REQUIRED_PROVENANCE_FIELDS = frozenset({
+        "observation_id",
+        "source",
+        "target_id",
+        "observed_url",
+        "status",
+        "observed_at",
+        "body_digest",
+        "body_size",
+        "freshness_result",
+        "collector_id",
+        "transport_id",
+        "verification_state",
+    })
 
     def __init__(self, *, state: StateStore | None = None) -> None:
         self.mode = SystemMode.SHADOW
@@ -102,6 +116,30 @@ class ShadowWorkflow:
             ref = finding.evidence
             if not (ref.source and ref.reference and ref.observed_at and ref.digest):
                 raise ShadowWorkflowError("INVALID_EVIDENCE")
+
+            provenance = finding.provenance
+            if not ShadowWorkflow.REQUIRED_PROVENANCE_FIELDS.issubset(provenance):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            if (
+                provenance["source"] != ref.source
+                or provenance["observed_url"] != ref.reference
+                or provenance["observed_at"] != ref.observed_at
+                or provenance["observation_id"] != finding.observation_id
+            ):
+                raise ShadowWorkflowError("PROVENANCE_EVIDENCE_MISMATCH")
+            if provenance["freshness_result"] != "FRESH":
+                raise ShadowWorkflowError("PROVENANCE_NOT_FRESH")
+            if not (
+                provenance["target_id"]
+                and provenance["collector_id"]
+                and provenance["transport_id"]
+                and provenance["verification_state"]
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            body_size = provenance["body_size"]
+            if not isinstance(body_size, int) or isinstance(body_size, bool) or body_size < 0:
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+
             key = (ref.source, ref.reference, ref.digest)
             if key in seen:
                 raise ShadowWorkflowError("DUPLICATE_EVIDENCE")
