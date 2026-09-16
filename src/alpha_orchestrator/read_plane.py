@@ -80,6 +80,31 @@ def _canonical_target_id(*, source_id: str, url: str) -> str:
     return f"{source_id}:{target}"
 
 
+def require_fresh_timestamp(
+    *,
+    observed_at: str,
+    max_age_seconds: float,
+    now: datetime | None = None,
+) -> None:
+    """Fail closed when a provenance timestamp is stale, invalid, ambiguous or future-dated."""
+    if max_age_seconds <= 0:
+        raise ValueError("max_age_seconds must be positive")
+    try:
+        observed = datetime.fromisoformat(observed_at)
+    except (TypeError, ValueError) as exc:
+        raise ReadPolicyDenied("INVALID_OBSERVATION_TIME") from exc
+    if observed.tzinfo is None:
+        raise ReadPolicyDenied("OBSERVATION_TIMEZONE_REQUIRED")
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    age_seconds = (current.astimezone(timezone.utc) - observed.astimezone(timezone.utc)).total_seconds()
+    if age_seconds < 0:
+        raise ReadPolicyDenied("OBSERVATION_FROM_FUTURE")
+    if age_seconds > max_age_seconds:
+        raise ReadPolicyDenied("STALE_OBSERVATION")
+
+
 @dataclass(frozen=True)
 class ReadObservation:
     observation_id: str
@@ -115,22 +140,11 @@ class ReadObservation:
 
     def require_fresh(self, *, max_age_seconds: float, now: datetime | None = None) -> None:
         """Fail closed when an observation is stale or has an invalid/future timestamp."""
-        if max_age_seconds <= 0:
-            raise ValueError("max_age_seconds must be positive")
-        try:
-            observed = datetime.fromisoformat(self.observed_at)
-        except ValueError as exc:
-            raise ReadPolicyDenied("INVALID_OBSERVATION_TIME") from exc
-        if observed.tzinfo is None:
-            raise ReadPolicyDenied("OBSERVATION_TIMEZONE_REQUIRED")
-        current = now or datetime.now(timezone.utc)
-        if current.tzinfo is None:
-            raise ValueError("now must be timezone-aware")
-        age_seconds = (current.astimezone(timezone.utc) - observed.astimezone(timezone.utc)).total_seconds()
-        if age_seconds < 0:
-            raise ReadPolicyDenied("OBSERVATION_FROM_FUTURE")
-        if age_seconds > max_age_seconds:
-            raise ReadPolicyDenied("STALE_OBSERVATION")
+        require_fresh_timestamp(
+            observed_at=self.observed_at,
+            max_age_seconds=max_age_seconds,
+            now=now,
+        )
 
     def provenance_payload(
         self,
