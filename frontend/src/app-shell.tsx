@@ -2,17 +2,20 @@ import { Component, type ErrorInfo, type PropsWithChildren, type ReactNode } fro
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { readAvailableField } from './contracts'
+import { useI18n, type SupportedLocale } from './i18n'
+import type { MessageKey } from './i18n/messages'
 import { useOperationsData } from './operations-data'
 
-const navItems = [
-  { to: '/', label: 'Mission Control', end: true },
-  { to: '/work-orders', label: 'Work Orders' },
-  { to: '/evidence-audit', label: 'Evidence & Audit' },
-  { to: '/system-swarm', label: 'System / Swarm' },
-] as const
+const navItems: readonly { to: string; labelKey: MessageKey; end?: boolean }[] = [
+  { to: '/', labelKey: 'nav.missionControl', end: true },
+  { to: '/work-orders', labelKey: 'nav.workOrders' },
+  { to: '/evidence-audit', labelKey: 'nav.evidenceAudit' },
+  { to: '/system-swarm', labelKey: 'nav.systemSwarm' },
+]
 
 function ActiveContextBar() {
   const { snapshot, authorityAvailable } = useOperationsData()
+  const { t } = useI18n()
   const mode = readAvailableField<string>(snapshot?.systemState, 'mode')
   const repository = readAvailableField<string>(snapshot?.canonicalState, 'repository')
   const branch = readAvailableField<string>(snapshot?.canonicalState, 'branch')
@@ -20,15 +23,18 @@ function ActiveContextBar() {
 
   return (
     <section
-      aria-label="Active context"
+      aria-label={t('app.activeContext')}
       className="grid gap-3 border-y border-white/10 bg-slate-950/70 px-4 py-3 text-xs text-slate-300 md:grid-cols-4 md:px-6"
     >
-      <ContextItem label="Authority" value={authorityAvailable ? 'AVAILABLE' : 'UNAVAILABLE'} />
-      <ContextItem label="System mode" value={mode ?? 'UNKNOWN'} />
-      <ContextItem label="Repository" value={repository ?? 'UNKNOWN'} />
       <ContextItem
-        label="Canonical state"
-        value={branch && headSha ? `${branch} · ${headSha.slice(0, 12)}` : 'UNKNOWN'}
+        label={t('common.authority')}
+        value={authorityAvailable ? t('common.available') : t('common.unavailable')}
+      />
+      <ContextItem label={t('app.systemMode')} value={mode ?? t('common.unknown')} />
+      <ContextItem label={t('app.repository')} value={repository ?? t('common.unknown')} />
+      <ContextItem
+        label={t('app.canonicalState')}
+        value={branch && headSha ? `${branch} · ${headSha.slice(0, 12)}` : t('common.unknown')}
       />
     </section>
   )
@@ -43,41 +49,78 @@ function ContextItem({ label, value }: { label: string; value: string }) {
   )
 }
 
+function LocaleSwitcher() {
+  const { locale, setLocale, t } = useI18n()
+  const locales: readonly { value: SupportedLocale; labelKey: MessageKey }[] = [
+    { value: 'en-US', labelKey: 'locale.enUS' },
+    { value: 'de-DE', labelKey: 'locale.deDE' },
+  ]
+
+  return (
+    <div className="flex items-center gap-1" role="group" aria-label={t('locale.label')}>
+      {locales.map((item) => (
+        <button
+          key={item.value}
+          type="button"
+          aria-pressed={locale === item.value}
+          onClick={() => setLocale(item.value)}
+          className={[
+            'rounded-md border px-2 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+            locale === item.value
+              ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100'
+              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white',
+          ].join(' ')}
+        >
+          {t(item.labelKey)}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function AppShell() {
+  const { t } = useI18n()
+
   return (
     <div className="min-h-screen bg-[#05070A] text-slate-100">
       <header className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur-xl md:px-6">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">ALPHA</p>
-            <h1 className="text-lg font-semibold tracking-tight">Operations Console</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">{t('common.alpha')}</p>
+            <h1 className="text-lg font-semibold tracking-tight">{t('common.operationsConsole')}</h1>
           </div>
-          <nav aria-label="Primary navigation" className="flex flex-wrap gap-2">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={'end' in item ? item.end : undefined}
-                className={({ isActive }) =>
-                  [
-                    'rounded-md border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
-                    isActive
-                      ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100'
-                      : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:text-white',
-                  ].join(' ')
-                }
-              >
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <LocaleSwitcher />
+            <nav aria-label={t('nav.primary')} className="flex flex-wrap gap-2">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    [
+                      'rounded-md border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+                      isActive
+                        ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100'
+                        : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:text-white',
+                    ].join(' ')
+                  }
+                >
+                  {t(item.labelKey)}
+                </NavLink>
+              ))}
+            </nav>
+          </div>
         </div>
       </header>
 
       <ActiveContextBar />
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
-        <ShellErrorBoundary>
+        <ShellErrorBoundary
+          errorTitle={t('app.viewUnavailable')}
+          errorDetail={t('app.viewUnavailableDetail')}
+        >
           <Outlet />
         </ShellErrorBoundary>
       </main>
@@ -86,21 +129,24 @@ export function AppShell() {
 }
 
 export function RoutePlaceholder({ title, description }: { title: string; description: string }) {
+  const { t } = useI18n()
   return (
     <section className="rounded-xl border border-white/10 bg-slate-900/60 p-6 shadow-2xl shadow-black/20 backdrop-blur-xl">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Phase 4.4 shell route</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">{t('common.phase44ShellRoute')}</p>
       <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
       <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">{description}</p>
-      <p className="mt-6 text-xs text-slate-500">
-        Domain data is intentionally not implemented in the app-shell phase.
-      </p>
+      <p className="mt-6 text-xs text-slate-500">{t('app.shellDomainDeferred')}</p>
     </section>
   )
 }
 
+type ShellErrorBoundaryProps = PropsWithChildren<{
+  errorTitle: string
+  errorDetail: string
+}>
 type ShellErrorBoundaryState = { hasError: boolean }
 
-export class ShellErrorBoundary extends Component<PropsWithChildren, ShellErrorBoundaryState> {
+export class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, ShellErrorBoundaryState> {
   state: ShellErrorBoundaryState = { hasError: false }
 
   static getDerivedStateFromError(): ShellErrorBoundaryState {
@@ -115,10 +161,8 @@ export class ShellErrorBoundary extends Component<PropsWithChildren, ShellErrorB
     if (this.state.hasError) {
       return (
         <section role="alert" className="rounded-xl border border-amber-300/30 bg-amber-300/5 p-6">
-          <h2 className="text-lg font-semibold text-amber-100">View unavailable</h2>
-          <p className="mt-2 text-sm text-amber-50/70">
-            This view failed in isolation. No system authority or write eligibility is inferred from the failure.
-          </p>
+          <h2 className="text-lg font-semibold text-amber-100">{this.props.errorTitle}</h2>
+          <p className="mt-2 text-sm text-amber-50/70">{this.props.errorDetail}</p>
         </section>
       )
     }
