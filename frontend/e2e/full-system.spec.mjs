@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
 
 const routes = ['/', '/work-orders', '/evidence-audit', '/system-swarm']
+const operationalControlName = /approve|execute|deploy|unlock|enable writer|force/i
 
 for (const route of routes) {
-  test(`${route} renders without client errors or write controls`, async ({ page }) => {
+  test(`${route} renders without client errors or operational write controls`, async ({ page }) => {
     const pageErrors = []
     page.on('pageerror', (error) => pageErrors.push(error.message))
 
@@ -12,7 +13,12 @@ for (const route of routes) {
     await expect(page.getByRole('heading', { name: 'Operations Console' })).toBeVisible()
     await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible()
     await expect(page.getByLabel('Active context')).toContainText('UNAVAILABLE')
-    expect(await page.locator('button, input, textarea, select').count()).toBe(0)
+
+    const localeControls = page.getByRole('group', { name: 'Interface language' })
+    await expect(localeControls).toBeVisible()
+    expect(await page.getByRole('button', { name: operationalControlName }).count()).toBe(0)
+    expect(await page.locator('button').count()).toBe(await localeControls.getByRole('button').count())
+    expect(await page.locator('input, textarea, select').count()).toBe(0)
     expect(pageErrors).toEqual([])
   })
 }
