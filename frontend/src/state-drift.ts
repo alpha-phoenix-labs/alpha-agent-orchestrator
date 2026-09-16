@@ -16,8 +16,8 @@ export type ViewStateContext = {
   approvalInvalidationReason: 'NO_APPROVAL_VIEW_CONTRACT'
 }
 
-function normalizeStateVersion(value: string | null | undefined): string | null {
-  if (value === null || value === undefined) {
+function normalizeStateVersion(value: unknown): string | null {
+  if (typeof value !== 'string') {
     return null
   }
   const normalized = value.trim()
@@ -26,7 +26,7 @@ function normalizeStateVersion(value: string | null | undefined): string | null 
 
 export function snapshotStateVersion(snapshot: OperationsSnapshot | null): string | null {
   return normalizeStateVersion(
-    readAvailableField<string>(snapshot?.systemState, 'state_version'),
+    readAvailableField<unknown>(snapshot?.systemState, 'state_version'),
   )
 }
 
