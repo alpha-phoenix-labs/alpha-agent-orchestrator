@@ -46,6 +46,7 @@ def test_github_backend_transport_forces_get_and_redacts_credential():
         source_id="github",
         url="https://api.github.com/repos/alpha-phoenix-labs/alpha-agent-orchestrator",
     )
+    provenance = observation.provenance_payload(max_age_seconds=60)
 
     assert captured["method"] == "GET"
     assert captured["authorization"] == f"Bearer {token}"
@@ -53,7 +54,22 @@ def test_github_backend_transport_forces_get_and_redacts_credential():
     assert token not in repr(transport)
     assert token not in repr(observation)
     assert "authorization" not in json.dumps(observation.evidence_payload()).lower()
+    assert token not in json.dumps(provenance)
     assert observation.parsed_payload["full_name"] == "alpha-phoenix-labs/alpha-agent-orchestrator"
+
+    assert provenance["source"] == "github"
+    assert provenance["target_id"] == (
+        "github:api.github.com/repos/alpha-phoenix-labs/alpha-agent-orchestrator"
+    )
+    assert provenance["observed_url"] == observation.url
+    assert provenance["status"] == 200
+    assert provenance["body_digest"] == observation.body_digest
+    assert provenance["body_size"] == observation.body_size
+    assert provenance["freshness_result"] == "FRESH"
+    assert provenance["freshness_max_age_seconds"] == 60
+    assert provenance["collector_id"] == "alpha_orchestrator.read_plane.ReadBroker"
+    assert provenance["transport_id"].endswith(".GitHubReadTransport")
+    assert provenance["verification_state"] == "READ_VALIDATED"
 
 
 def test_github_transport_surface_does_not_accept_http_method_or_headers():
@@ -93,12 +109,13 @@ def test_read_observation_freshness_accepts_current_and_rejects_stale():
     )
 
     current = replace(observation, observed_at=now.isoformat())
-    current.require_fresh(max_age_seconds=60, now=now)
+    provenance = current.provenance_payload(max_age_seconds=60, now=now)
+    assert provenance["freshness_result"] == "FRESH"
 
     stale = replace(observation, observed_at=(now - timedelta(seconds=61)).isoformat())
     with pytest.raises(ReadPolicyDenied, match="STALE_OBSERVATION"):
-        stale.require_fresh(max_age_seconds=60, now=now)
+        stale.provenance_payload(max_age_seconds=60, now=now)
 
     future = replace(observation, observed_at=(now + timedelta(seconds=1)).isoformat())
     with pytest.raises(ReadPolicyDenied, match="OBSERVATION_FROM_FUTURE"):
-        future.require_fresh(max_age_seconds=60, now=now)
+        future.provenance_payload(max_age_seconds=60, now=now)
