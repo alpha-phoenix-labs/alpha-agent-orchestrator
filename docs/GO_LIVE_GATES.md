@@ -7,6 +7,17 @@ No production write integration before all gates pass.
 - no credentials
 - no network writes
 
+## User-directed pre-Phase 2 hardening gate
+Before Phase 2 begins, the following controls must be enforced and regression-tested:
+- WriteProxy revalidates mode, writes-enabled state, current state and target lock immediately before dispatch
+- execution capability is bound to the approved base-state version
+- one approval and at most one execution are permitted per work order
+- resource locks are derived from the exact work-order target
+- Shadow plans require an explicit independent-review result
+- Shadow, WriteProxy and resource scopes use one canonical action schema
+- read credentials are owned only by the backend transport, never caller-supplied
+- GitHub reads are limited to an explicit repository allowlist
+
 ## Phase 2 — MOCK
 - mock GitHub/Render targets
 - collision, stale-state, replay and scope tests pass
