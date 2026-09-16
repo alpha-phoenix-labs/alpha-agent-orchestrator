@@ -8,7 +8,7 @@ from typing import Mapping
 from urllib.parse import quote
 
 from alpha_orchestrator.connectors import RenderReadTransport, render_policy
-from alpha_orchestrator.read_plane import ReadBroker, ReadTransport, ReadTransportError
+from alpha_orchestrator.read_plane import ReadBroker, ReadPlaneError, ReadTransport
 
 
 class RenderReadProxyError(RuntimeError):
@@ -90,8 +90,8 @@ def collect_services_snapshot(
     broker = ReadBroker(policies={"render": render_policy()}, transport=upstream_transport)
     try:
         observation = broker.fetch_json(source_id="render", url=upstream_url)
-        observation.require_fresh(max_age_seconds=max_age_seconds)
-    except (ReadTransportError, ValueError) as exc:
+        provenance = observation.provenance_payload(max_age_seconds=max_age_seconds)
+    except (ReadPlaneError, ValueError) as exc:
         raise RenderReadProxyError("RENDER_PROXY_UPSTREAM_READ_FAILED") from exc
 
     payload = observation.parsed_payload
@@ -99,11 +99,7 @@ def collect_services_snapshot(
         raise RenderReadProxyError("RENDER_PROXY_PAYLOAD_SHAPE_MISMATCH")
 
     return {
-        "source": observation.source_id,
-        "status": observation.status,
-        "observed_at": observation.observed_at,
-        "body_digest": observation.body_digest,
-        "body_size": observation.body_size,
+        **provenance,
         "service_count": len(payload),
         "write_capability_exposed": False,
     }
