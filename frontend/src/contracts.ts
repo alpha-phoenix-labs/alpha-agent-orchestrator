@@ -22,9 +22,12 @@ export type OperationsSnapshot = {
   systemState?: ViewContract
   canonicalState?: ViewContract
   activeWorkOrder?: ViewContract
+  workOrders?: readonly ViewContract[]
   lifecycle?: ViewContract
   findings?: readonly ViewContract[]
   evidence?: readonly ViewContract[]
+  plan?: ViewContract
+  audit?: readonly ViewContract[]
   gates?: readonly ViewContract[]
   locks?: readonly ViewContract[]
   writer?: ViewContract

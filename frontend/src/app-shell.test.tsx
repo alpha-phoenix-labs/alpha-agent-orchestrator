@@ -46,6 +46,6 @@ describe('Phase 4.4 app shell', () => {
     await user.click(screen.getByRole('link', { name: 'Work Orders' }))
     expect(await screen.findByRole('heading', { name: 'Work Orders' })).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
-    expect(screen.getByText(/Domain data is intentionally not implemented/i)).toBeInTheDocument()
+    expect(screen.getByText(/Backend-owned Work Order state is displayed/i)).toBeInTheDocument()
   })
 })

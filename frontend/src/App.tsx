@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { AppShell, RoutePlaceholder } from './app-shell'
 import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
+import { WorkOrders } from './work-orders'
 
 export const routes = [
   {
@@ -15,12 +16,7 @@ export const routes = [
       },
       {
         path: 'work-orders',
-        element: (
-          <RoutePlaceholder
-            title="Work Orders"
-            description="The shell route is reserved for the Phase 4.6 read-only Work Orders views."
-          />
-        ),
+        element: <WorkOrders />,
       },
       {
         path: 'evidence-audit',
