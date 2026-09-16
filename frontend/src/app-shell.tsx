@@ -15,22 +15,24 @@ const navItems: readonly { to: string; labelKey: MessageKey; end?: boolean }[] =
 
 function ActiveContextBar() {
   const {
-    snapshot,
+    currentSnapshot,
     authorityAvailable,
     connectionManaged,
     connectionStatus,
     snapshotStatus,
+    viewContextManaged,
+    viewContextStatus,
   } = useOperationsData()
   const { t } = useI18n()
-  const mode = readAvailableField<string>(snapshot?.systemState, 'mode')
-  const repository = readAvailableField<string>(snapshot?.canonicalState, 'repository')
-  const branch = readAvailableField<string>(snapshot?.canonicalState, 'branch')
-  const headSha = readAvailableField<string>(snapshot?.canonicalState, 'head_sha')
-  const authorityValue = connectionManaged
-    ? `${authorityAvailable ? t('common.available') : t('common.unavailable')} · ${connectionStatus} · ${snapshotStatus}`
-    : authorityAvailable
-      ? t('common.available')
-      : t('common.unavailable')
+  const mode = readAvailableField<string>(currentSnapshot?.systemState, 'mode')
+  const repository = readAvailableField<string>(currentSnapshot?.canonicalState, 'repository')
+  const branch = readAvailableField<string>(currentSnapshot?.canonicalState, 'branch')
+  const headSha = readAvailableField<string>(currentSnapshot?.canonicalState, 'head_sha')
+  const connectionValue = connectionManaged
+    ? ` · ${connectionStatus} · ${snapshotStatus}`
+    : ''
+  const viewValue = viewContextManaged ? ` · ${viewContextStatus}` : ''
+  const authorityValue = `${authorityAvailable ? t('common.available') : t('common.unavailable')}${connectionValue}${viewValue}`
 
   return (
     <section
@@ -41,9 +43,61 @@ function ActiveContextBar() {
       <ContextItem label={t('app.systemMode')} value={mode ?? t('common.unknown')} />
       <ContextItem label={t('app.repository')} value={repository ?? t('common.unknown')} />
       <ContextItem
-        label={t('app.canonicalState')}
+        label={`${t('app.canonicalState')} · CURRENT`}
         value={branch && headSha ? `${branch} · ${headSha.slice(0, 12)}` : t('common.unknown')}
       />
+    </section>
+  )
+}
+
+function StateContextBar() {
+  const {
+    viewContextManaged,
+    viewMode,
+    viewedStateVersion,
+    currentStateVersion,
+    viewContextStatus,
+    staleContext,
+    viewContextReason,
+    approvalInvalidationAvailable,
+    approvalInvalidationReason,
+  } = useOperationsData()
+  const { t } = useI18n()
+
+  if (!viewContextManaged) {
+    return null
+  }
+
+  const warning = staleContext || viewMode === 'HISTORICAL'
+  const approvalValue = approvalInvalidationAvailable
+    ? t('common.available')
+    : `${t('common.unavailable')} · ${approvalInvalidationReason}`
+
+  return (
+    <section
+      aria-label="STATE CONTEXT"
+      role={warning ? 'status' : undefined}
+      className={[
+        'grid gap-3 border-b px-4 py-3 text-xs md:grid-cols-5 md:px-6',
+        warning
+          ? 'border-amber-300/20 bg-amber-300/5 text-amber-50/80'
+          : 'border-white/10 bg-slate-950/50 text-slate-300',
+      ].join(' ')}
+    >
+      <ContextItem label="VIEW MODE" value={viewMode} />
+      <ContextItem
+        label={`${t('field.stateVersion')} · VIEWED`}
+        value={viewedStateVersion ?? t('common.unknown')}
+      />
+      <ContextItem
+        label={`${t('field.stateVersion')} · CURRENT`}
+        value={currentStateVersion ?? t('common.unknown')}
+      />
+      <ContextItem
+        label="STATE CONTEXT"
+        value={`${viewContextStatus} · ${viewContextReason}`}
+      />
+      <ContextItem label="APPROVAL INVALIDATION" value={approvalValue} />
     </section>
   )
 }
@@ -123,6 +177,7 @@ export function AppShell() {
       </header>
 
       <ActiveContextBar />
+      <StateContextBar />
 
       <main className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
         <ShellErrorBoundary
