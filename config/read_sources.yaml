@@ -17,8 +17,18 @@ sources:
       - api.render.com
     path_prefix_allowlist:
       - /v1/services
-      - /v1/deploys
       - /v1/postgres
+    path_template_allowlist:
+      - /v1/services
+      - /v1/services/{serviceId}
+      - /v1/services/{serviceId}/deploys
+      - /v1/services/{serviceId}/deploys/{deployId}
+      - /v1/postgres
+    forbidden_sensitive_descendants:
+      - /env-vars
+      - /secret-files
+      - /credentials
+      - /export
     credential_visibility: backend_transport_only
 security:
   agents_receive_credentials: false
