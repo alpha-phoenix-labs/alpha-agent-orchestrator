@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
+import math
 from typing import Mapping, Protocol
 from urllib.parse import urlparse
 import uuid
@@ -62,48 +63,118 @@ class ReadTransport(Protocol):
     def __call__(self, *, url: str, timeout: float) -> TransportResponse: ...
 
 
+def _transport_provenance_id(transport: ReadTransport) -> str:
+    module = getattr(transport, "__module__", None)
+    qualname = getattr(transport, "__qualname__", None)
+    if module and qualname:
+        return f"{module}.{qualname}"
+    transport_type = type(transport)
+    return f"{transport_type.__module__}.{transport_type.__qualname__}"
+
+
+def _canonical_target_id(*, source_id: str, url: str) -> str:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    target = f"{host}{parsed.path}"
+    if parsed.query:
+        target = f"{target}?{parsed.query}"
+    return f"{source_id}:{target}"
+
+
+def require_fresh_timestamp(
+    *,
+    observed_at: str,
+    max_age_seconds: float,
+    now: datetime | None = None,
+) -> None:
+    """Fail closed when a provenance timestamp is stale, invalid, ambiguous or future-dated."""
+    if (
+        not isinstance(max_age_seconds, (int, float))
+        or isinstance(max_age_seconds, bool)
+        or not math.isfinite(float(max_age_seconds))
+        or max_age_seconds <= 0
+    ):
+        raise ValueError("max_age_seconds must be a positive finite number")
+    try:
+        observed = datetime.fromisoformat(observed_at)
+    except (TypeError, ValueError) as exc:
+        raise ReadPolicyDenied("INVALID_OBSERVATION_TIME") from exc
+    if observed.tzinfo is None:
+        raise ReadPolicyDenied("OBSERVATION_TIMEZONE_REQUIRED")
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        raise ValueError("now must be timezone-aware")
+    age_seconds = (current.astimezone(timezone.utc) - observed.astimezone(timezone.utc)).total_seconds()
+    if age_seconds < 0:
+        raise ReadPolicyDenied("OBSERVATION_FROM_FUTURE")
+    if age_seconds > max_age_seconds:
+        raise ReadPolicyDenied("STALE_OBSERVATION")
+
+
 @dataclass(frozen=True)
 class ReadObservation:
     observation_id: str
     source_id: str
+    target_id: str
     url: str
     status: int
     observed_at: str
     content_type: str
     body_digest: str
     body_size: int
+    collector_id: str
+    transport_id: str
+    verification_state: str
     parsed_payload: object
 
     def evidence_payload(self) -> dict:
+        """Return immutable observation metadata that is safe to hash/store as Evidence."""
         return {
             "observation_id": self.observation_id,
             "source_id": self.source_id,
+            "target_id": self.target_id,
             "url": self.url,
             "status": self.status,
             "observed_at": self.observed_at,
             "content_type": self.content_type,
             "body_digest": self.body_digest,
             "body_size": self.body_size,
+            "collector_id": self.collector_id,
+            "transport_id": self.transport_id,
+            "verification_state": self.verification_state,
         }
 
     def require_fresh(self, *, max_age_seconds: float, now: datetime | None = None) -> None:
         """Fail closed when an observation is stale or has an invalid/future timestamp."""
-        if max_age_seconds <= 0:
-            raise ValueError("max_age_seconds must be positive")
-        try:
-            observed = datetime.fromisoformat(self.observed_at)
-        except ValueError as exc:
-            raise ReadPolicyDenied("INVALID_OBSERVATION_TIME") from exc
-        if observed.tzinfo is None:
-            raise ReadPolicyDenied("OBSERVATION_TIMEZONE_REQUIRED")
-        current = now or datetime.now(timezone.utc)
-        if current.tzinfo is None:
-            raise ValueError("now must be timezone-aware")
-        age_seconds = (current.astimezone(timezone.utc) - observed.astimezone(timezone.utc)).total_seconds()
-        if age_seconds < 0:
-            raise ReadPolicyDenied("OBSERVATION_FROM_FUTURE")
-        if age_seconds > max_age_seconds:
-            raise ReadPolicyDenied("STALE_OBSERVATION")
+        require_fresh_timestamp(
+            observed_at=self.observed_at,
+            max_age_seconds=max_age_seconds,
+            now=now,
+        )
+
+    def provenance_payload(
+        self,
+        *,
+        max_age_seconds: float,
+        now: datetime | None = None,
+    ) -> dict[str, object]:
+        """Return the stable Phase-3 provenance contract only after freshness passes."""
+        self.require_fresh(max_age_seconds=max_age_seconds, now=now)
+        return {
+            "observation_id": self.observation_id,
+            "source": self.source_id,
+            "target_id": self.target_id,
+            "observed_url": self.url,
+            "status": self.status,
+            "observed_at": self.observed_at,
+            "body_digest": self.body_digest,
+            "body_size": self.body_size,
+            "freshness_result": "FRESH",
+            "freshness_max_age_seconds": max_age_seconds,
+            "collector_id": self.collector_id,
+            "transport_id": self.transport_id,
+            "verification_state": self.verification_state,
+        }
 
 
 class ReadBroker:
@@ -146,11 +217,15 @@ class ReadBroker:
         return ReadObservation(
             observation_id="OBS-" + uuid.uuid4().hex[:16].upper(),
             source_id=source_id,
+            target_id=_canonical_target_id(source_id=source_id, url=url),
             url=url,
             status=response.status,
             observed_at=observed_at,
             content_type=content_type,
             body_digest=sha256(response.body).hexdigest(),
             body_size=len(response.body),
+            collector_id="alpha_orchestrator.read_plane.ReadBroker",
+            transport_id=_transport_provenance_id(self._transport),
+            verification_state="READ_VALIDATED",
             parsed_payload=payload,
         )

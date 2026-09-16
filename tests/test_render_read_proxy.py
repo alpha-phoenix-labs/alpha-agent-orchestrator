@@ -4,11 +4,12 @@ import json
 
 import pytest
 
-from alpha_orchestrator.read_plane import TransportResponse
+from alpha_orchestrator.read_plane import ReadObservation, ReadPolicyDenied, TransportResponse
 from alpha_orchestrator.render_read_proxy import (
     RenderReadProxy,
     RenderReadProxyConfig,
     RenderReadProxyConfigError,
+    RenderReadProxyError,
     RenderReadProxyUnauthorized,
     authorize_bearer,
     collect_services_snapshot,
@@ -64,11 +65,37 @@ def test_services_snapshot_uses_fixed_allowlisted_upstream_and_returns_metadata_
     assert url == "https://api.render.com/v1/services?ownerId=tea-work%20space&limit=20"
     assert timeout == 8.0
     assert snapshot["source"] == "render"
+    assert snapshot["target_id"] == (
+        "render:api.render.com/v1/services?ownerId=tea-work%20space&limit=20"
+    )
+    assert snapshot["observed_url"] == url
     assert snapshot["status"] == 200
+    assert snapshot["freshness_result"] == "FRESH"
+    assert snapshot["freshness_max_age_seconds"] == 60.0
+    assert snapshot["collector_id"] == "alpha_orchestrator.read_plane.ReadBroker"
+    assert snapshot["transport_id"].endswith(".RecordingTransport")
+    assert snapshot["verification_state"] == "READ_VALIDATED"
     assert snapshot["service_count"] == 1
     assert snapshot["write_capability_exposed"] is False
     assert "PROVIDER-SECRET" not in json.dumps(snapshot)
     assert "srv-1" not in json.dumps(snapshot)
+
+
+def test_services_snapshot_sanitizes_freshness_policy_failure(monkeypatch):
+    def reject_freshness(self, *, max_age_seconds, now=None):
+        raise ReadPolicyDenied("STALE_OBSERVATION")
+
+    monkeypatch.setattr(ReadObservation, "require_fresh", reject_freshness)
+
+    with pytest.raises(RenderReadProxyError, match="RENDER_PROXY_UPSTREAM_READ_FAILED") as exc_info:
+        collect_services_snapshot(
+            provider_token="PROVIDER-SECRET",
+            workspace_id="tea-workspace",
+            transport=RecordingTransport(),
+        )
+
+    assert "STALE_OBSERVATION" not in str(exc_info.value)
+    assert "PROVIDER-SECRET" not in str(exc_info.value)
 
 
 def test_proxy_client_receives_no_provider_credential_or_raw_payload():
@@ -84,5 +111,7 @@ def test_proxy_client_receives_no_provider_credential_or_raw_payload():
     assert "PROVIDER-SECRET" not in decoded
     assert "CLIENT-SECRET" not in decoded
     assert "srv-1" not in decoded
+    assert '"freshness_result":"FRESH"' in decoded
+    assert '"verification_state":"READ_VALIDATED"' in decoded
     assert '"write_capability_exposed":false' in decoded
     assert "token=<redacted>" in repr(proxy)

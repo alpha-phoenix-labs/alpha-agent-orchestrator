@@ -3,10 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
+import math
 import uuid
 
 from .actions import CODE_ACTIONS, INFRA_ACTIONS, writer_for_action
 from .models import EvidenceRef, RiskClass, SystemMode, WorkOrder
+from .read_plane import ReadPolicyDenied, require_fresh_timestamp
 from .shadow_read import ShadowFinding
 from .state import StateStore
 
@@ -62,10 +64,26 @@ class ShadowWorkflow:
 
     CODE_ACTIONS = CODE_ACTIONS
     INFRA_ACTIONS = INFRA_ACTIONS
+    MAX_EVIDENCE_AGE_SECONDS = 60.0
     ALLOWED_READERS = frozenset({
         "github_branch_reader", "render_service_reader", "ci_pipeline_reader",
         "security_reader", "database_reader", "runtime_reader", "api_contract_reader",
         "visual_pipeline_reader", "observability_reader", "dependency_supply_chain_reader",
+    })
+    REQUIRED_PROVENANCE_FIELDS = frozenset({
+        "observation_id",
+        "source",
+        "target_id",
+        "observed_url",
+        "status",
+        "observed_at",
+        "body_digest",
+        "body_size",
+        "freshness_result",
+        "freshness_max_age_seconds",
+        "collector_id",
+        "transport_id",
+        "verification_state",
     })
 
     def __init__(self, *, state: StateStore | None = None) -> None:
@@ -102,6 +120,57 @@ class ShadowWorkflow:
             ref = finding.evidence
             if not (ref.source and ref.reference and ref.observed_at and ref.digest):
                 raise ShadowWorkflowError("INVALID_EVIDENCE")
+
+            provenance = finding.provenance
+            if not ShadowWorkflow.REQUIRED_PROVENANCE_FIELDS.issubset(provenance):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            if (
+                provenance["source"] != ref.source
+                or provenance["observed_url"] != ref.reference
+                or provenance["observed_at"] != ref.observed_at
+                or provenance["observation_id"] != finding.observation_id
+            ):
+                raise ShadowWorkflowError("PROVENANCE_EVIDENCE_MISMATCH")
+            if provenance["freshness_result"] != "FRESH":
+                raise ShadowWorkflowError("PROVENANCE_NOT_FRESH")
+
+            status = provenance["status"]
+            if not isinstance(status, int) or isinstance(status, bool) or not 200 <= status < 300:
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            body_size = provenance["body_size"]
+            if not isinstance(body_size, int) or isinstance(body_size, bool) or body_size < 0:
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            body_digest = provenance["body_digest"]
+            if (
+                not isinstance(body_digest, str)
+                or len(body_digest) != 64
+                or any(char not in "0123456789abcdef" for char in body_digest.lower())
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            freshness_window = provenance["freshness_max_age_seconds"]
+            if (
+                not isinstance(freshness_window, (int, float))
+                or isinstance(freshness_window, bool)
+                or not math.isfinite(float(freshness_window))
+                or freshness_window <= 0
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+            if not (
+                provenance["target_id"]
+                and provenance["collector_id"]
+                and provenance["transport_id"]
+                and provenance["verification_state"] == "READ_VALIDATED"
+            ):
+                raise ShadowWorkflowError("INVALID_PROVENANCE")
+
+            try:
+                require_fresh_timestamp(
+                    observed_at=provenance["observed_at"],
+                    max_age_seconds=min(float(freshness_window), ShadowWorkflow.MAX_EVIDENCE_AGE_SECONDS),
+                )
+            except (ReadPolicyDenied, ValueError) as exc:
+                raise ShadowWorkflowError("PROVENANCE_NOT_FRESH") from exc
+
             key = (ref.source, ref.reference, ref.digest)
             if key in seen:
                 raise ShadowWorkflowError("DUPLICATE_EVIDENCE")

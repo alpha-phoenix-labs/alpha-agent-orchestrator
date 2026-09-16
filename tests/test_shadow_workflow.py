@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import pytest
 
 from alpha_orchestrator.models import EvidenceRef, RiskClass, SystemMode
@@ -8,16 +9,32 @@ from alpha_orchestrator.write_proxy import WriteProxy
 
 
 def finding(reader="github_branch_reader", digest="a" * 64, ref="https://api.github.com/repos/o/r"):
+    observed_at = datetime.now(timezone.utc).isoformat()
     return ShadowFinding(
         reader_id=reader,
         claim="observed branch state",
         evidence=EvidenceRef(
             source="github",
             reference=ref,
-            observed_at=datetime.now(timezone.utc).isoformat(),
+            observed_at=observed_at,
             digest=digest,
         ),
         observation_id="OBS-123",
+        provenance={
+            "observation_id": "OBS-123",
+            "source": "github",
+            "target_id": "github:api.github.com/repos/o/r",
+            "observed_url": ref,
+            "status": 200,
+            "observed_at": observed_at,
+            "body_digest": "b" * 64,
+            "body_size": 128,
+            "freshness_result": "FRESH",
+            "freshness_max_age_seconds": 60,
+            "collector_id": "alpha_orchestrator.read_plane.ReadBroker",
+            "transport_id": "alpha_orchestrator.connectors.github_http_transport.GitHubReadTransport",
+            "verification_state": "READ_VALIDATED",
+        },
     )
 
 
@@ -73,6 +90,52 @@ def test_duplicate_evidence_is_rejected():
     f = finding()
     with pytest.raises(ShadowWorkflowError, match="DUPLICATE_EVIDENCE"):
         wf.propose(findings=[f, f], action="git_commit", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
+
+
+def test_missing_provenance_is_rejected():
+    wf = ShadowWorkflow()
+    missing = replace(finding(), provenance={})
+    with pytest.raises(ShadowWorkflowError, match="INVALID_PROVENANCE"):
+        wf.propose(findings=[missing], action="git_commit", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
+
+
+def test_non_fresh_provenance_is_rejected():
+    wf = ShadowWorkflow()
+    fresh = finding()
+    stale_provenance = dict(fresh.provenance)
+    stale_provenance["freshness_result"] = "STALE"
+    stale = replace(fresh, provenance=stale_provenance)
+    with pytest.raises(ShadowWorkflowError, match="PROVENANCE_NOT_FRESH"):
+        wf.propose(findings=[stale], action="git_commit", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
+
+
+def test_fresh_label_cannot_hide_stale_timestamp_at_planning_time():
+    wf = ShadowWorkflow()
+    current = finding()
+    stale_at = (datetime.now(timezone.utc) - timedelta(seconds=61)).isoformat()
+    stale_provenance = dict(current.provenance)
+    stale_provenance["observed_at"] = stale_at
+    stale = replace(
+        current,
+        evidence=replace(current.evidence, observed_at=stale_at),
+        provenance=stale_provenance,
+    )
+    with pytest.raises(ShadowWorkflowError, match="PROVENANCE_NOT_FRESH"):
+        wf.propose(findings=[stale], action="git_commit", target="x", expected_effect="x",
+                   independent_review_confirmed=True)
+
+
+def test_invalid_http_status_is_rejected_as_provenance():
+    wf = ShadowWorkflow()
+    current = finding()
+    invalid_provenance = dict(current.provenance)
+    invalid_provenance["status"] = 500
+    invalid = replace(current, provenance=invalid_provenance)
+    with pytest.raises(ShadowWorkflowError, match="INVALID_PROVENANCE"):
+        wf.propose(findings=[invalid], action="git_commit", target="x", expected_effect="x",
                    independent_review_confirmed=True)
 
 
