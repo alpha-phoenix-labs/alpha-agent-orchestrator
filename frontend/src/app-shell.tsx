@@ -33,6 +33,9 @@ function ActiveContextBar() {
     : ''
   const viewValue = viewContextManaged ? ` · ${viewContextStatus}` : ''
   const authorityValue = `${authorityAvailable ? t('common.available') : t('common.unavailable')}${connectionValue}${viewValue}`
+  const canonicalStateLabel = viewContextManaged
+    ? `${t('app.canonicalState')} · CURRENT`
+    : t('app.canonicalState')
 
   return (
     <section
@@ -43,7 +46,7 @@ function ActiveContextBar() {
       <ContextItem label={t('app.systemMode')} value={mode ?? t('common.unknown')} />
       <ContextItem label={t('app.repository')} value={repository ?? t('common.unknown')} />
       <ContextItem
-        label={`${t('app.canonicalState')} · CURRENT`}
+        label={canonicalStateLabel}
         value={branch && headSha ? `${branch} · ${headSha.slice(0, 12)}` : t('common.unknown')}
       />
     </section>
