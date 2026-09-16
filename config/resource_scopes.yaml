@@ -1,4 +1,9 @@
 code_writer:
+  actions:
+    - git_commit
+    - git_branch
+    - pull_request
+    - merge
   allow:
     - github:branch:create
     - github:commit:create
@@ -11,6 +16,9 @@ code_writer:
     - control_plane:*
 
 infra_writer:
+  actions:
+    - render_deploy
+    - approved_runtime_config
   allow:
     - render:deploy
     - render:runtime_config:approved
