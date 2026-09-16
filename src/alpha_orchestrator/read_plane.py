@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
-from typing import Callable, Mapping, Protocol
+from typing import Mapping, Protocol
 from urllib.parse import urlparse
 import uuid
 
@@ -29,6 +29,13 @@ class ReadSourcePolicy:
     max_response_bytes: int = 1_000_000
     timeout_seconds: float = 8.0
 
+    @staticmethod
+    def _matches_prefix(path: str, prefix: str) -> bool:
+        normalized = prefix.rstrip("/") or "/"
+        if normalized == "/":
+            return path.startswith("/")
+        return path == normalized or path.startswith(normalized + "/")
+
     def validate_url(self, url: str) -> None:
         parsed = urlparse(url)
         if parsed.scheme != "https":
@@ -36,7 +43,7 @@ class ReadSourcePolicy:
         host = (parsed.hostname or "").lower()
         if host not in {h.lower() for h in self.allowed_hosts}:
             raise ReadPolicyDenied("HOST_NOT_ALLOWLISTED")
-        if not any(parsed.path.startswith(prefix) for prefix in self.allowed_path_prefixes):
+        if not any(self._matches_prefix(parsed.path, prefix) for prefix in self.allowed_path_prefixes):
             raise ReadPolicyDenied("PATH_NOT_ALLOWLISTED")
         if parsed.username or parsed.password:
             raise ReadPolicyDenied("CREDENTIALS_IN_URL_FORBIDDEN")
@@ -50,7 +57,9 @@ class TransportResponse:
 
 
 class ReadTransport(Protocol):
-    def __call__(self, *, url: str, headers: Mapping[str, str], timeout: float) -> TransportResponse: ...
+    """Backend-only GET transport. Authentication is owned here, never by the agent caller."""
+
+    def __call__(self, *, url: str, timeout: float) -> TransportResponse: ...
 
 
 @dataclass(frozen=True)
@@ -81,28 +90,21 @@ class ReadObservation:
 class ReadBroker:
     """Deterministic read-only broker.
 
-    The broker intentionally has no generic HTTP method parameter. Every request is a GET
-    implemented by the injected transport. Agents receive observations, never credentials.
+    The broker exposes only GET-style JSON reads. Credentials cannot be supplied by callers;
+    an injected backend transport owns authentication and agents receive only observations.
     """
-
-    SENSITIVE_HEADERS = {"authorization", "proxy-authorization", "cookie", "set-cookie", "x-api-key"}
 
     def __init__(self, *, policies: Mapping[str, ReadSourcePolicy], transport: ReadTransport) -> None:
         self._policies = dict(policies)
         self._transport = transport
 
-    @staticmethod
-    def _safe_headers(headers: Mapping[str, str] | None) -> dict[str, str]:
-        return dict(headers or {})
-
-    def fetch_json(self, *, source_id: str, url: str, headers: Mapping[str, str] | None = None) -> ReadObservation:
+    def fetch_json(self, *, source_id: str, url: str) -> ReadObservation:
         policy = self._policies.get(source_id)
         if not policy:
             raise ReadPolicyDenied("UNKNOWN_SOURCE")
         policy.validate_url(url)
-        request_headers = self._safe_headers(headers)
         try:
-            response = self._transport(url=url, headers=request_headers, timeout=policy.timeout_seconds)
+            response = self._transport(url=url, timeout=policy.timeout_seconds)
         except ReadPlaneError:
             raise
         except Exception as exc:
