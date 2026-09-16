@@ -1,0 +1,200 @@
+name: full-system-validation
+
+on:
+  pull_request:
+  push:
+    branches: ['qa/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-system-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-validation:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Create isolated QA environment
+        run: |
+          python -m venv .qa-venv
+          . .qa-venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]' coverage pip-audit
+      - name: Static Python import/compile check
+        run: |
+          . .qa-venv/bin/activate
+          python -m compileall -q src scripts
+          python -m pip check
+      - name: Backend tests with branch coverage
+        env:
+          ALPHA_SYSTEM_MODE: OFFLINE
+          ALPHA_WRITES_ENABLED: 'false'
+        run: |
+          . .qa-venv/bin/activate
+          python -m coverage run --branch -m pytest
+          python -m coverage report --show-missing --fail-under=70
+          python -m coverage xml -o backend-coverage.xml
+      - name: Python dependency audit
+        run: |
+          . .qa-venv/bin/activate
+          python -m pip_audit --local --skip-editable
+      - name: Fail-closed mock workflow
+        env:
+          ALPHA_SYSTEM_MODE: OFFLINE
+          ALPHA_WRITES_ENABLED: 'false'
+        run: |
+          . .qa-venv/bin/activate
+          output="$(python scripts/mock_demo.py)"
+          printf '%s\n' "$output"
+          grep -Fq 'MODE: MOCK' <<< "$output"
+          grep -Fq 'NO REAL INTEGRATIONS: true' <<< "$output"
+          grep -Fq 'RESULT: WAITING_FOR_APPROVAL' <<< "$output"
+          grep -Fq 'No write was executed.' <<< "$output"
+      - name: Upload backend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend-coverage.xml
+
+  frontend-validation:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Frontend dependency audit
+        run: npm audit --audit-level=high
+      - name: Install ephemeral coverage provider
+        run: npm install --no-save --package-lock=false @vitest/coverage-v8@4.1.11
+      - name: Frontend tests with coverage
+        run: npm test -- --coverage --coverage.reporter=text --coverage.reporter=json-summary
+      - name: Production build and typecheck
+        run: npm run build
+      - name: Upload frontend coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/coverage-summary.json
+
+  browser-e2e:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        run: npm ci
+      - name: Install ephemeral Playwright runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Build frontend
+        run: npm run build
+      - name: Start isolated preview
+        run: |
+          nohup npm exec vite preview -- --host 127.0.0.1 --port 4173 >/tmp/alpha-vite-preview.log 2>&1 &
+          echo $! >/tmp/alpha-vite-preview.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/alpha-vite-preview.log
+          exit 1
+      - name: Browser and viewport E2E
+        run: npx playwright test --config=playwright.config.mjs
+      - name: Upload browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-e2e-failure-evidence
+          path: |
+            frontend/test-results
+            /tmp/alpha-vite-preview.log
+          if-no-files-found: ignore
+
+  read-only-runtime-smoke:
+    runs-on: ubuntu-24.04
+    env:
+      RENDER_READ_PROXY_URL: https://alpha-agent-orchestrator-render-read.onrender.com
+    steps:
+      - name: Health endpoint contract
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            "$RENDER_READ_PROXY_URL/healthz" -o /tmp/health.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/health.json').read_text())
+          assert payload == {'ok': True, 'mode': 'READ_ONLY_PROXY'}, payload
+          PY
+      - name: Safe GET failure contract
+        run: |
+          status="$(curl --silent --show-error -o /tmp/not-found.json -w '%{http_code}' \
+            "$RENDER_READ_PROXY_URL/__qa_read_only_probe")"
+          test "$status" = "404"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path('/tmp/not-found.json').read_text())
+          assert payload == {'error': 'NOT_FOUND'}, payload
+          PY
+      - name: Bounded read-only concurrency probe
+        run: |
+          python - <<'PY'
+          import concurrent.futures
+          import json
+          import os
+          import time
+          import urllib.request
+
+          url = os.environ['RENDER_READ_PROXY_URL'] + '/healthz'
+
+          def probe(_):
+              started = time.perf_counter()
+              with urllib.request.urlopen(url, timeout=15) as response:
+                  payload = json.loads(response.read())
+                  if response.status != 200 or payload != {'ok': True, 'mode': 'READ_ONLY_PROXY'}:
+                      raise RuntimeError((response.status, payload))
+              return time.perf_counter() - started
+
+          with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+              durations = list(pool.map(probe, range(8)))
+
+          ordered = sorted(durations)
+          p95 = ordered[max(0, int(len(ordered) * 0.95) - 1)]
+          print(f'health_probe_count={len(durations)} p95_seconds={p95:.3f} max_seconds={max(durations):.3f}')
+          PY
