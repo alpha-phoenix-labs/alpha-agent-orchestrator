@@ -1,4 +1,7 @@
+from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 import json
+
 import pytest
 
 from alpha_orchestrator.connectors import github_policy, render_policy
@@ -25,10 +28,18 @@ def broker(transport=ok_transport):
 
 def test_github_allowlisted_get_succeeds_and_has_provenance():
     obs = broker().fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
+    provenance = obs.provenance_payload(max_age_seconds=60)
+
     assert obs.status == 200
     assert obs.source_id == "github"
     assert len(obs.body_digest) == 64
     assert obs.body_size > 0
+    assert provenance["source"] == "github"
+    assert provenance["target_id"] == "github:api.github.com/repos/o/r"
+    assert provenance["observed_url"] == "https://api.github.com/repos/o/r"
+    assert provenance["freshness_result"] == "FRESH"
+    assert provenance["collector_id"] == "alpha_orchestrator.read_plane.ReadBroker"
+    assert provenance["verification_state"] == "READ_VALIDATED"
 
 
 def test_unknown_source_denied():
@@ -69,6 +80,7 @@ def test_url_embedded_credentials_denied():
 def test_non_2xx_fails_closed():
     def transport(**kwargs):
         return TransportResponse(403, {"Content-Type": "application/json"}, b'{"error":"no"}')
+
     with pytest.raises(ReadTransportError, match="NON_SUCCESS_STATUS:403"):
         broker(transport).fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
 
@@ -76,6 +88,7 @@ def test_non_2xx_fails_closed():
 def test_non_json_fails_closed():
     def transport(**kwargs):
         return TransportResponse(200, {"Content-Type": "text/html"}, b"<html></html>")
+
     with pytest.raises(ReadTransportError, match="JSON_CONTENT_TYPE_REQUIRED"):
         broker(transport).fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
 
@@ -83,13 +96,20 @@ def test_non_json_fails_closed():
 def test_invalid_json_fails_closed():
     def transport(**kwargs):
         return TransportResponse(200, {"Content-Type": "application/json"}, b"not-json")
+
     with pytest.raises(ReadTransportError, match="INVALID_JSON_RESPONSE"):
         broker(transport).fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
 
 
 def test_response_size_limit_enforced():
     pol = github_policy(("o/r",))
-    tiny = type(pol)(pol.source_id, pol.allowed_hosts, pol.allowed_path_prefixes, max_response_bytes=3, timeout_seconds=pol.timeout_seconds)
+    tiny = type(pol)(
+        pol.source_id,
+        pol.allowed_hosts,
+        pol.allowed_path_prefixes,
+        max_response_bytes=3,
+        timeout_seconds=pol.timeout_seconds,
+    )
     b = ReadBroker(policies={"github": tiny}, transport=ok_transport)
     with pytest.raises(ReadTransportError, match="RESPONSE_TOO_LARGE"):
         b.fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
@@ -98,6 +118,7 @@ def test_response_size_limit_enforced():
 def test_transport_exception_is_sanitized():
     def transport(**kwargs):
         raise RuntimeError("Authorization: Bearer SUPERSECRET")
+
     with pytest.raises(ReadTransportError) as exc:
         broker(transport).fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
     assert "SUPERSECRET" not in str(exc.value)
@@ -123,6 +144,36 @@ def test_credentials_are_backend_transport_only():
         claim_builder=lambda payload: payload["ok"],
     )
     assert token not in repr(finding)
+    assert finding.provenance["freshness_result"] == "FRESH"
+    assert finding.provenance["verification_state"] == "READ_VALIDATED"
+
+
+def test_shadow_service_rejects_stale_observation_before_claim_builder():
+    now = datetime.now(timezone.utc)
+    fresh = broker().fetch_json(source_id="github", url="https://api.github.com/repos/o/r")
+    stale = replace(fresh, observed_at=(now - timedelta(seconds=61)).isoformat())
+
+    class StaleBroker:
+        def fetch_json(self, *, source_id, url):
+            return stale
+
+    claim_called = False
+
+    def claim_builder(payload):
+        nonlocal claim_called
+        claim_called = True
+        return payload["ok"]
+
+    service = ShadowReadService(StaleBroker(), max_age_seconds=60)
+    with pytest.raises(ReadPolicyDenied, match="STALE_OBSERVATION"):
+        service.inspect_json(
+            reader_id="github_branch_reader",
+            source_id="github",
+            url="https://api.github.com/repos/o/r",
+            claim_builder=claim_builder,
+        )
+
+    assert claim_called is False
 
 
 def test_caller_cannot_supply_headers():
