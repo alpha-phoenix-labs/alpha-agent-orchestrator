@@ -21,7 +21,7 @@ def test_full_code_mock_flow_passes():
     assert req is not None
     approval_id = p.human_approve(req, approved_by="USER_ONLY")
     result = p.execute(order_id=req.order_id, approval_id=approval_id,
-                       writer_role="code_writer", lock_resource="repo:main")
+                       writer_role="code_writer")
     assert result.success
     assert p.orders[req.order_id].status == OrderStatus.DONE
     assert p.core.audit.verify_chain()
@@ -33,7 +33,7 @@ def test_full_infra_mock_flow_passes():
                           expected_effect="simulated deploy")
     approval_id = p.human_approve(req, approved_by="USER_ONLY")
     result = p.execute(order_id=req.order_id, approval_id=approval_id,
-                       writer_role="infra_writer", lock_resource="render:service-x")
+                       writer_role="infra_writer")
     assert result.success
 
 
@@ -70,7 +70,7 @@ def test_state_change_after_approval_blocks_execution():
     approval_id = p.human_approve(req, approved_by="USER_ONLY")
     p.core.state.update({"external_state_changed": True})
     result = p.execute(order_id=req.order_id, approval_id=approval_id,
-                       writer_role="code_writer", lock_resource="repo:main")
+                       writer_role="code_writer")
     assert not result.success
     assert result.detail == "STALE_STATE"
 
@@ -83,7 +83,7 @@ def test_plan_change_after_approval_is_rejected():
     p.orders[req.order_id].expected_effect = "different effect"
     with pytest.raises(PermissionError):
         p.execute(order_id=req.order_id, approval_id=approval_id,
-                  writer_role="code_writer", lock_resource="repo:main")
+                  writer_role="code_writer")
 
 
 def test_post_write_failure_forces_emergency_freeze():
@@ -92,8 +92,20 @@ def test_post_write_failure_forces_emergency_freeze():
                           expected_effect="simulated commit")
     approval_id = p.human_approve(req, approved_by="USER_ONLY")
     result = p.execute(order_id=req.order_id, approval_id=approval_id,
-                       writer_role="code_writer", lock_resource="repo:main", post_verify_pass=False)
+                       writer_role="code_writer", post_verify_pass=False)
     assert not result.success
     assert result.detail == "POST_WRITE_VERIFY_FAILED"
     assert p.core.mode == SystemMode.EMERGENCY_FREEZE
     assert not p.core.writes_enabled
+
+
+def test_execution_lock_is_derived_from_exact_target():
+    p = MockPipeline()
+    req = p.prepare_order(reports=[report()], action="git_commit", target="mock://repo/main",
+                          expected_effect="simulated commit")
+    approval_id = p.human_approve(req, approved_by="USER_ONLY")
+    result = p.execute(order_id=req.order_id, approval_id=approval_id,
+                       writer_role="code_writer")
+    assert result.success
+    lock_events = [e for e in p.core.audit.events if e.event_type == "LOCK_ACQUIRED"]
+    assert lock_events[-1].payload["resource"] == req.target
