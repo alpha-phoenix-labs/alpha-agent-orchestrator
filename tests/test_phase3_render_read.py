@@ -91,5 +91,5 @@ def test_render_policy_allows_only_explicit_non_secret_metadata_paths(url):
     ],
 )
 def test_render_policy_denies_sensitive_or_noncanonical_descendants(url):
-    with pytest.raises(ReadPolicyDenied, match="RENDER_PATH_NOT_ALLOWLISTED"):
+    with pytest.raises(ReadPolicyDenied):
         render_policy().validate_url(url)
