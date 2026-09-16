@@ -36,9 +36,9 @@ The transport has these enforced properties:
 
 The script checks repository identity, 2xx JSON, observation freshness <= 60 seconds and provenance fields while exposing no credential or write surface.
 
-## GitHub real-read runtime evidence
+## Historical GitHub real-read runtime evidence
 
-The user explicitly approved the GitHub real-read gate. A one-time validation workflow was executed from branch `phase3/real-read-validation` and then removed from the persistent repository state.
+The first approved GitHub real-read gate used a one-time validation workflow from branch `phase3/real-read-validation` and then removed that workflow from the persistent repository state.
 
 Evidence:
 - validation commit: `036feb0734f97c747927b5dfb43169cbf2b0a8f8`;
@@ -59,7 +59,34 @@ Evidence:
 
 No repository secret was created or changed for this validation. The credential was the ephemeral GitHub Actions token constrained by the workflow to read permissions. The token value was masked and is not recorded in repository content or evidence output.
 
-GitHub REAL READ-ONLY is **RUNTIME VERIFIED for the validated GitHub path only**.
+## Current-main GitHub runtime refresh
+
+After the Phase 3.5 provenance contract was merged, the GitHub read path was revalidated from exact repository baseline `main@e4c033cf16e0a1ab50d5b294bef4cd93ffaecb05`.
+
+Evidence:
+- validation commit: `7724fd39294745291390caf5a3cbb3451b3c358f`;
+- workflow run: `35131954979`;
+- job: `104914852984`;
+- result: `SUCCESS`;
+- GitHub token permissions: `Contents: read`, `Metadata: read`;
+- checkout used `persist-credentials: false`;
+- runtime mode: `READ_ONLY`;
+- writes enabled: `false`;
+- `PHASE3_REAL_READ: PASS`;
+- source: `github`;
+- target id: `github:api.github.com/repos/alpha-phoenix-labs/alpha-agent-orchestrator`;
+- observed URL: `https://api.github.com/repos/alpha-phoenix-labs/alpha-agent-orchestrator`;
+- HTTP status: `200`;
+- observed at: `2026-09-16T18:03:11.753750+00:00`;
+- body digest: `0469357508c52932a64836bd286112e5354e3d0d07580e24b0a1d84fa9f7c173`;
+- body size: `7731`;
+- freshness result: `FRESH`;
+- collector: `alpha_orchestrator.read_plane.ReadBroker`;
+- transport: `alpha_orchestrator.connectors.github_http_transport.GitHubReadTransport`;
+- verification state: `READ_VALIDATED`;
+- `WRITE_CAPABILITY_EXPOSED: false`.
+
+The temporary validation workflow was removed after the run. No credential value was emitted and no runtime write operation was performed.
 
 ## Render Phase-3 root-cause finding
 
@@ -92,45 +119,76 @@ After explicit user approval of workspace `ventomlabs` (`tea-da5lqvuk1f9s73918ul
 
 CONFIRMED observations:
 - workspace list resolved the approved workspace;
-- service listing returned 11 Render services;
-- Postgres listing returned 3 instances;
-- a representative deploy-history read for service `alpha-creator-sandbox` (`srv-daf7u6v40ujc73a22lg0`) returned recent deploy metadata;
-- the newest returned deploy was `dep-dal541lg1s2s73e9e1h0`, status `live`, commit `3a7c51c3ed316874ed8ad5cf1db705846151e3b3`, finished at `2026-09-16T08:24:24.85783Z`;
-- no deploy, restart, environment-variable change, secret change, database write or other Render mutation was invoked;
+- service listing returned Render service metadata;
+- Postgres listing returned provider metadata;
+- no deploy, restart, environment-variable change, secret change, database write or other Render mutation was invoked by those read checks;
 - no provider credential value was exposed in the returned metadata.
 
-This live connector evidence proves current provider connectivity and readable metadata for the approved workspace. It does **not** prove that the underlying Render account/API credential is intrinsically non-mutating, and it is not the same execution path as `RenderReadTransport` inside this repository.
+This connector evidence proves provider connectivity, but it remains separate from repository-runtime evidence.
 
-## Render real-read smoke
+## Render constrained proxy boundary
 
-`scripts/phase3_render_real_read.py` is the repository-runtime acceptance smoke. It performs one authenticated GET to the Render services list scoped by `ALPHA_RENDER_WORKSPACE_ID`, checks 2xx JSON plus freshness <= 60 seconds, and prints provenance metadata only.
+Because a raw Render provider API key is privileged, the approved Phase 3 runtime boundary is the repository-owned constrained proxy implemented by `RenderReadProxy` and `RenderReadTransport`.
 
-The smoke must not be executed until a backend-only credential or equivalent constrained proxy is explicitly approved for this runtime path.
+The external client can invoke only the semantic protected GET route `/v1/render/services`. It cannot select the upstream URL, HTTP method or provider authorization header. The upstream provider credential remains backend-only and the client response contains provenance metadata rather than the raw provider payload.
+
+## Current-main Render runtime evidence
+
+Before the current-main refresh, the approved proxy service was explicitly deployed from exact repository commit:
+
+`e4c033cf16e0a1ab50d5b294bef4cd93ffaecb05`
+
+Deployment evidence:
+- service: `alpha-agent-orchestrator-render-read-proxy`;
+- deploy id: `dep-daldfff40ujc73dkogd0`;
+- status: `live`;
+- finished at: `2026-09-16T17:54:46.980208Z`.
+
+An authenticated GET was then executed against:
+
+`https://alpha-agent-orchestrator-render-read.onrender.com/v1/render/services`
+
+Evidence:
+- source: `render`;
+- target id: `render:api.render.com/v1/services?ownerId=tea-da5lqvuk1f9s73918ul0&limit=20`;
+- observed URL: `https://api.render.com/v1/services?ownerId=tea-da5lqvuk1f9s73918ul0&limit=20`;
+- HTTP status: `200`;
+- observed at: `2026-09-16T18:06:46.267724+00:00`;
+- body digest: `dcdb4fde9b33745985f3123d410dd7c30eeb65ab20d2075d87735d549b1cc96e`;
+- body size: `14251`;
+- freshness result: `FRESH`;
+- collector: `alpha_orchestrator.read_plane.ReadBroker`;
+- transport: `alpha_orchestrator.connectors.render_http_transport.RenderReadTransport`;
+- verification state: `READ_VALIDATED`;
+- service count: `12`;
+- `write_capability_exposed: false`.
+
+No provider credential was returned. The validation read itself performed no deploy, restart, environment-variable mutation, secret mutation, database write or other provider mutation.
 
 ## Phase-3 status
 
 CONFIRMED:
-- GitHub repository runtime read path is live and runtime-verified;
-- Render provider connectivity is live-read verified through the approved connected Render reader;
-- Render runtime policy is constrained to explicit non-secret metadata URL templates;
-- Render backend transport is GET-only by construction and has no caller method/header injection surface once tests pass.
+- GitHub repository runtime read path has current-main real runtime evidence;
+- Render repository runtime read path has current-main real runtime evidence through the approved constrained proxy boundary;
+- both current-main evidence records include source/target identity, observed URL, observation time, digest/size, freshness result, collector/transport provenance and verification state;
+- credentialed redirect handling is fail-closed and regression covered;
+- read credentials remain backend-owned;
+- the approved read surfaces expose no caller-reachable mutation capability;
+- `docs/UI_CONTRACT_BASELINE.md` maps the authoritative backend concepts required before Phase 4.
 
-NOT YET VERIFIED:
-- `RenderReadTransport` performing a real authenticated Render API request with a backend credential/proxy;
-- provider-side non-mutation of a raw Render API key independent of the constrained transport boundary;
-- Phase 3 completion across the repository runtime path for Render.
+Phase 3 is therefore **COMPLETE** for the validated real-read scope.
 
-Phase 3 therefore remains **OPEN** until the repository `RenderReadTransport` real-read smoke is executed successfully through an approved backend-only credential/proxy and its provenance/freshness evidence is captured.
+This completion does not enable writer credentials, production approval capabilities, provider mutation or any Phase 5 write behavior.
 
-## Activation gate
+## Activation boundary carried forward
 
-Real credentials must not be committed. Provider access used for Phase 3 must be technically non-mutating at the exposed runtime surface. If provider permissions cannot be made technically read-only, use a constrained proxy/connector that exposes only approved GET operations.
+Real credentials must not be committed. Provider access remains constrained to the approved read-only surface unless a later roadmap phase explicitly passes its own write gates.
 
-## Prohibited in Phase 3
+## Prohibited by the completed Phase-3 boundary
 
 - commits, PR mutations or workflow dispatches through the runtime read plane;
-- Render deploy/restart/env/secret changes;
+- Render deploy/restart/env/secret changes through the runtime read plane;
 - database writes;
 - generic shell or generic HTTP mutation access;
-- writer credentials;
-- production approval capabilities.
+- writer credentials in read-only paths;
+- production approval capabilities in read-only paths.
