@@ -29,7 +29,7 @@ class ControlGuards:
         return GuardDecision(True, "ELIGIBLE_FOR_HUMAN_GATE")
 
     def pre_execute(self, order: WorkOrder, *, current_state_version: str,
-                    lock_resource: str, lock_owner: str) -> GuardDecision:
+                    lock_owner: str) -> GuardDecision:
         if self.mode in {SystemMode.OFFLINE, SystemMode.READ_ONLY, SystemMode.SHADOW,
                          SystemMode.EMERGENCY_FREEZE}:
             return GuardDecision(False, f"MODE_BLOCKS_WRITE:{self.mode.value}")
@@ -37,7 +37,7 @@ class ControlGuards:
             return GuardDecision(False, "WRITES_DISABLED")
         if order.base_state_version != current_state_version:
             return GuardDecision(False, "STALE_STATE")
-        lock = self.locks.get(lock_resource)
+        lock = self.locks.get(order.target)
         if not lock:
             return GuardDecision(False, "LOCK_MISSING")
         if lock.owner != lock_owner or lock.order_id != order.order_id:
