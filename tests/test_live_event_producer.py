@@ -7,7 +7,13 @@ from alpha_orchestrator.live_event_producer import LiveEventProducer
 from alpha_orchestrator.live_events import LiveEventValidationError
 from alpha_orchestrator.models import SystemMode
 from alpha_orchestrator.state import StateSnapshot
-from alpha_orchestrator.view_contracts import system_state_view
+from alpha_orchestrator.view_contracts import (
+    ContractName,
+    SourceClass,
+    ViewContract,
+    ViewField,
+    system_state_view,
+)
 
 
 def test_producer_emits_monotonic_envelopes_from_authoritative_baseline() -> None:
@@ -133,3 +139,30 @@ def test_typed_system_state_event_mirrors_authoritative_view_contract() -> None:
         "state_version": "canonical-hash",
     }
     assert producer.cursor.current_state_version == "canonical-hash"
+
+
+def test_typed_system_state_event_fails_closed_when_authoritative_field_is_unavailable() -> None:
+    producer = LiveEventProducer(
+        last_sequence=4,
+        current_state_version="prior-hash",
+        event_id_factory=lambda: "evt-system-state",
+        clock=lambda: datetime(2026, 9, 17, 18, 0, tzinfo=timezone.utc),
+    )
+    contract = ViewContract(
+        ContractName.SYSTEM_STATE,
+        {
+            "mode": ViewField.known(SourceClass.AUTHORITATIVE, "SHADOW"),
+            "writes_enabled": ViewField.known(SourceClass.AUTHORITATIVE, False),
+            "state_version": ViewField.unknown(
+                SourceClass.AUTHORITATIVE,
+                "AUTHORITATIVE_STATE_VERSION_UNAVAILABLE",
+            ),
+        },
+    )
+
+    with pytest.raises(LiveEventValidationError, match="SYSTEM_STATE_FIELD_UNAVAILABLE:state_version"):
+        producer.emit_system_state(contract)
+
+    assert producer.cursor.last_sequence == 4
+    assert producer.cursor.current_state_version == "prior-hash"
+    assert producer.cursor.seen_event_ids == frozenset()
