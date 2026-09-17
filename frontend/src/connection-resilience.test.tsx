@@ -125,12 +125,12 @@ describe('Phase 4.12 connection resilience', () => {
   })
 
   it('turns a Phase 4.11 sequence gap into an explicit snapshot resync requirement', () => {
-    const eventEvaluation = evaluateLiveEvent(createLiveEventCursor(10, 7), {
+    const eventEvaluation = evaluateLiveEvent(createLiveEventCursor(10, 'state-v7'), {
       schema_version: 1,
       event_id: 'evt-gap',
       sequence: 12,
-      base_state_version: 7,
-      state_version: 8,
+      base_state_version: 'state-v7',
+      state_version: 'state-v8',
       emitted_at: '2026-09-17T00:30:00+00:00',
       event_type: 'WORK_ORDER_UPDATED',
       payload: { contract: 'WORK_ORDER' },
