@@ -1,0 +1,200 @@
+/*
+ * ALPHAN premium cyberpunk glassmorphism convergence layer.
+ * Presentation only: this file must not create, infer, or override authority semantics.
+ */
+
+:root {
+  --alphan-cyan: #00f0ff;
+  --alphan-purple: #a855f7;
+  --alphan-emerald: #10b981;
+  --alphan-bg: #020617;
+  --alphan-glass: rgba(2, 6, 23, 0.70);
+  --alphan-glass-strong: rgba(2, 6, 23, 0.84);
+  --alphan-border-cyan: rgba(6, 182, 212, 0.30);
+  --alphan-border-cyan-active: rgba(34, 211, 238, 0.60);
+  --alphan-glow: 0 0 25px rgba(6, 182, 212, 0.15);
+  --alphan-glow-active: 0 0 35px rgba(6, 182, 212, 0.35);
+}
+
+.operations-shell {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.06), transparent 26rem),
+    radial-gradient(circle at 82% 18%, rgba(168, 85, 247, 0.08), transparent 30rem),
+    var(--alphan-bg);
+}
+
+.alphan-panel,
+.alphan-runtime-card,
+.alphan-control-rail,
+.alphan-topology-hero {
+  border-color: var(--alphan-border-cyan);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 28%),
+    var(--alphan-glass);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.035),
+    var(--alphan-glow),
+    0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.alphan-topology-hero,
+.alphan-leader-chat {
+  border-color: var(--alphan-border-cyan-active);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.04),
+    var(--alphan-glow-active),
+    0 24px 58px rgba(0, 0, 0, 0.38);
+}
+
+.alphan-topology-stage {
+  border-color: rgba(0, 240, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.34), rgba(2, 6, 23, 0.82) 74%, rgba(2, 6, 23, 0.94)),
+    radial-gradient(circle at 50% 48%, rgba(0, 240, 255, 0.18), transparent 21%),
+    radial-gradient(circle at 70% 38%, rgba(168, 85, 247, 0.12), transparent 23%),
+    url('/alphan-city-grid.svg') center 58% / cover no-repeat,
+    url('/alphan-ambient.svg') center 54% / cover no-repeat;
+  box-shadow:
+    inset 0 0 110px rgba(14, 116, 144, 0.16),
+    inset 0 -52px 88px rgba(2, 6, 23, 0.82),
+    0 0 34px rgba(0, 240, 255, 0.08);
+}
+
+.alphan-topology-center::before {
+  width: 10.6rem;
+  height: 10.6rem;
+  border: 1px solid rgba(0, 240, 255, 0.28);
+  box-shadow:
+    0 0 26px rgba(0, 240, 255, 0.20),
+    0 0 70px rgba(168, 85, 247, 0.16),
+    inset 0 0 34px rgba(0, 240, 255, 0.10);
+  animation: alphan-core-breathe 4.8s ease-in-out infinite;
+}
+
+.alphan-node-orbit {
+  border-color: rgba(0, 240, 255, 0.34);
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.12);
+  animation: alphan-orbit-spin 9s linear infinite;
+}
+
+.alphan-topology-node--leader .alphan-node-orbit {
+  border-color: rgba(168, 85, 247, 0.48);
+  animation-duration: 6s;
+}
+
+.alphan-topology-node--leader .alphan-node-core {
+  background:
+    radial-gradient(circle at 34% 28%, #bafcff 0%, var(--alphan-cyan) 24%, #3977ff 50%, var(--alphan-purple) 100%);
+  box-shadow:
+    0 0 0 6px rgba(0, 240, 255, 0.06),
+    0 0 26px rgba(0, 240, 255, 0.54),
+    0 0 70px rgba(168, 85, 247, 0.26);
+}
+
+.alphan-topology-node--green .alphan-node-core {
+  background: radial-gradient(circle at 34% 30%, #8fffd8, var(--alphan-emerald) 52%, #087a5c 100%);
+}
+
+.alphan-edge-flow {
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 10 14;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.35));
+  animation: alphan-flow-travel 2.8s linear infinite;
+}
+
+.alphan-edge-flow--violet {
+  filter: drop-shadow(0 0 7px rgba(168, 85, 247, 0.34));
+  animation-duration: 3.4s;
+}
+
+.alphan-orbit-particles circle {
+  fill: var(--alphan-cyan);
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.72));
+  animation: alphan-particle-pulse 2.6s ease-in-out infinite alternate;
+}
+
+.alphan-orbit-particles circle:nth-child(2n) {
+  fill: var(--alphan-purple);
+  animation-delay: -1.1s;
+}
+
+.alphan-agent-row,
+.alphan-event-row,
+.alphan-evidence-row,
+.alphan-rail-record,
+.alphan-metric-row {
+  border-color: rgba(0, 240, 255, 0.10);
+}
+
+.alphan-agent-row:hover,
+.alphan-event-row:hover,
+.alphan-evidence-row:hover {
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.045), rgba(168, 85, 247, 0.035));
+  box-shadow: inset 2px 0 rgba(0, 240, 255, 0.34);
+}
+
+.alphan-metric-track > span {
+  background: linear-gradient(90deg, var(--alphan-cyan), #3b82f6 52%, var(--alphan-purple));
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.22);
+}
+
+.alphan-lifecycle-dot,
+.alphan-status-dot:not(.alphan-status-dot--warning) {
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.34);
+}
+
+.alphan-readonly-lock,
+.alphan-runtime-chip,
+.alphan-live-chip {
+  border-color: rgba(16, 185, 129, 0.34);
+  background: rgba(16, 185, 129, 0.075);
+  color: #77f7c4;
+  box-shadow: inset 0 0 18px rgba(16, 185, 129, 0.07);
+}
+
+@keyframes alphan-orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes alphan-flow-travel {
+  to { stroke-dashoffset: -48; }
+}
+
+@keyframes alphan-core-breathe {
+  0%, 100% { transform: translate(-50%, -50%) scale(0.96); opacity: 0.72; }
+  50% { transform: translate(-50%, -50%) scale(1.04); opacity: 1; }
+}
+
+@keyframes alphan-particle-pulse {
+  from { opacity: 0.38; transform: scale(0.85); transform-origin: center; }
+  to { opacity: 1; transform: scale(1.22); transform-origin: center; }
+}
+
+@media (max-width: 560px) {
+  .alphan-panel,
+  .alphan-runtime-card,
+  .alphan-control-rail,
+  .alphan-topology-hero {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .alphan-topology-stage {
+    background:
+      linear-gradient(180deg, rgba(2, 6, 23, 0.48), rgba(2, 6, 23, 0.94)),
+      radial-gradient(circle at 50% 48%, rgba(0, 240, 255, 0.13), transparent 30%),
+      url('/alphan-city-grid.svg') center / cover no-repeat;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alphan-topology-center::before,
+  .alphan-node-orbit,
+  .alphan-edge-flow,
+  .alphan-orbit-particles circle {
+    animation: none !important;
+  }
+}
