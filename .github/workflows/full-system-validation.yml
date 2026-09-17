@@ -136,6 +136,13 @@ jobs:
           exit 1
       - name: Browser and viewport E2E
         run: npx playwright test --config=playwright.config.mjs
+      - name: Upload premium visual gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-mission-control-visual-evidence
+          path: frontend/test-results/**/mission-control-*.png
+          if-no-files-found: warn
       - name: Upload browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
