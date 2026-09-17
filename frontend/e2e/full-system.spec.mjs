@@ -27,6 +27,7 @@ for (const route of routes) {
     expect(await page.getByRole('button', { name: operationalControlName }).count()).toBe(0)
     expect(await page.locator('button').count()).toBe(await localeControls.getByRole('button').count())
     expect(await page.locator('input, textarea, select').count()).toBe(0)
+    expect(await page.locator('[data-qa-only="true"]').count()).toBe(0)
     expect(pageErrors).toEqual([])
   })
 }
@@ -105,13 +106,21 @@ test('premium Mission Control desktop composition produces populated 1440x1000 v
   await page.goto('/?visualQa=premium', { waitUntil: 'networkidle' })
 
   await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Leader interaction' })).toBeVisible()
+  const leader = page.getByRole('region', { name: 'Leader interaction' })
+  await expect(leader).toBeVisible()
+  await expect(leader.getByTestId('visual-qa-conversation')).toBeVisible()
+  await expect(leader).toContainText('Agenten zugewiesen')
+
   const topology = page.getByRole('region', { name: 'Live Topology' })
   await expect(topology).toBeVisible()
+  await expect(topology.getByTestId('swarm-topology-svg')).toBeVisible()
   await expect(topology).toContainText('Leader')
   await expect(topology).toContainText('Researcher')
+  expect(await topology.locator('[data-qa-only="true"]').count()).toBeGreaterThan(0)
+
   await expect(page.getByLabel('Mission Control rail')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Agent Grid' })).toContainText('Synthesizer')
+  expect(await page.locator('input, textarea, select').count()).toBe(0)
   await expectNoHorizontalOverflow(page)
 
   const firstFold = await page.evaluate(() => {
@@ -140,7 +149,9 @@ test('premium Mission Control narrow composition produces populated 320x800 visu
   await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
   await expect(page.getByLabel('Active context')).toBeVisible()
   await expect(page.getByLabel('Mission Control rail')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Live Topology' })).toBeVisible()
+  const topology = page.getByRole('region', { name: 'Live Topology' })
+  await expect(topology).toBeVisible()
+  await expect(topology.getByTestId('swarm-topology-svg')).toBeVisible()
   await expectNoHorizontalOverflow(page)
 
   await page.screenshot({
