@@ -6,8 +6,8 @@ export type LiveEventEnvelope = {
   schema_version: typeof LIVE_EVENT_SCHEMA_VERSION
   event_id: string
   sequence: number
-  base_state_version: number
-  state_version: number
+  base_state_version: string
+  state_version: string
   emitted_at: string
   event_type: string
   payload: Record<string, unknown>
@@ -15,7 +15,7 @@ export type LiveEventEnvelope = {
 
 export type LiveEventCursor = {
   lastSequence: number
-  currentStateVersion: number
+  currentStateVersion: string
   seenEventIds: ReadonlySet<string>
 }
 
@@ -67,13 +67,13 @@ function isOffsetTimestamp(value: unknown): value is string {
 
 export function createLiveEventCursor(
   lastSequence: number,
-  currentStateVersion: number,
+  currentStateVersion: string,
   seenEventIds: ReadonlySet<string> = new Set(),
 ): LiveEventCursor {
   if (!isIntegerAtLeast(lastSequence, 0)) {
     throw new Error('INVALID_CURSOR_SEQUENCE')
   }
-  if (!isIntegerAtLeast(currentStateVersion, 0)) {
+  if (!isNonEmptyString(currentStateVersion)) {
     throw new Error('INVALID_CURSOR_STATE_VERSION')
   }
 
@@ -106,14 +106,11 @@ export function parseLiveEvent(value: unknown): LiveEventParseResult {
   if (!isIntegerAtLeast(value.sequence, 1)) {
     return { ok: false, reason: 'INVALID_SEQUENCE' }
   }
-  if (!isIntegerAtLeast(value.base_state_version, 0)) {
+  if (!isNonEmptyString(value.base_state_version)) {
     return { ok: false, reason: 'INVALID_BASE_STATE_VERSION' }
   }
-  if (!isIntegerAtLeast(value.state_version, 0)) {
+  if (!isNonEmptyString(value.state_version)) {
     return { ok: false, reason: 'INVALID_STATE_VERSION' }
-  }
-  if (value.state_version < value.base_state_version) {
-    return { ok: false, reason: 'STATE_VERSION_BEFORE_BASE' }
   }
   if (!isOffsetTimestamp(value.emitted_at)) {
     return { ok: false, reason: 'INVALID_EMITTED_AT' }
