@@ -8,7 +8,7 @@ export type ContractFieldRead = Readonly<{
 export function readContractField(contract: ViewContract | undefined, field: string): ContractFieldRead {
   return {
     value: readAvailableField<unknown>(contract, field),
-    reason: readUnavailableReason(contract, field),
+    reason: readUnavailableReason(contract, field) ?? undefined,
   }
 }
 
