@@ -2,7 +2,10 @@
 
 Status: **READ-ONLY UI REDACTION BOUNDARY**
 
-Baseline: `main@57b891d857d4f78dea1f2fc2ae6ade5e6e97a2c3`
+Original implementation baseline: `main@57b891d857d4f78dea1f2fc2ae6ade5e6e97a2c3`  
+Revalidated against current main: `main@8f0ca06f8cb917fa36e32eb7e7a6b1b755b09caa`
+
+The current-main delta is the approved Premium Frontend Acceptance roadmap amendment only. It does not change Phase 4.14 secret-redaction behavior, authority boundaries or runtime scope.
 
 ## Roadmap scope
 
@@ -19,7 +22,7 @@ The roadmap-wide Secret Boundary additionally prohibits these values from UI, Au
 
 ## Verified pre-change state
 
-At the baseline above:
+At the original implementation baseline above:
 
 - credentialed GitHub and Render read transports already keep provider credentials inside backend transport boundaries and sanitize transport failures;
 - Render read policy positively excludes secret-bearing descendants;
@@ -62,6 +65,8 @@ This patch does not replace or weaken upstream controls:
 - `TELEMETRY != AUTHORITY` remains unchanged;
 - redaction does not create verification, approval, policy, lock, capability validity, Writer or write-eligibility authority;
 - no live transport, reconnect behavior, historical data contract or Phase 4.15 accessibility work is introduced.
+
+The approved Premium Frontend Acceptance amendment remains additive governance only: premium visual treatment, Recent Events and later live-path evidence must still preserve this redaction boundary and may not expose secret-bearing metadata or payloads.
 
 ## Validation target
 
