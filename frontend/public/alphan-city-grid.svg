@@ -2,34 +2,35 @@
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#020816"/>
-      <stop offset="0.62" stop-color="#050a19"/>
+      <stop offset="0.55" stop-color="#061225"/>
       <stop offset="1" stop-color="#01050d"/>
     </linearGradient>
     <radialGradient id="cyanGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#44e8ff" stop-opacity="0.34"/>
-      <stop offset="0.42" stop-color="#318bff" stop-opacity="0.12"/>
+      <stop offset="0" stop-color="#64f3ff" stop-opacity="0.56"/>
+      <stop offset="0.42" stop-color="#318bff" stop-opacity="0.19"/>
       <stop offset="1" stop-color="#318bff" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="violetGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#b35cff" stop-opacity="0.27"/>
-      <stop offset="0.5" stop-color="#663cff" stop-opacity="0.09"/>
+      <stop offset="0" stop-color="#cb78ff" stop-opacity="0.42"/>
+      <stop offset="0.5" stop-color="#663cff" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#663cff" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="warmGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#ffb05d" stop-opacity="0.17"/>
-      <stop offset="0.55" stop-color="#ff8a4b" stop-opacity="0.04"/>
+      <stop offset="0" stop-color="#ffb05d" stop-opacity="0.25"/>
+      <stop offset="0.55" stop-color="#ff8a4b" stop-opacity="0.07"/>
       <stop offset="1" stop-color="#ff8a4b" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="tower" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#07162a"/>
-      <stop offset="0.45" stop-color="#0b2038"/>
-      <stop offset="0.55" stop-color="#0e2542"/>
+      <stop offset="0.38" stop-color="#0b2946"/>
+      <stop offset="0.52" stop-color="#123c62"/>
+      <stop offset="0.62" stop-color="#0b2946"/>
       <stop offset="1" stop-color="#050f1e"/>
     </linearGradient>
     <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#38dcff" stop-opacity="0"/>
-      <stop offset="0.34" stop-color="#38dcff" stop-opacity="0.52"/>
-      <stop offset="0.62" stop-color="#8b65ff" stop-opacity="0.48"/>
+      <stop offset="0.34" stop-color="#38dcff" stop-opacity="0.72"/>
+      <stop offset="0.62" stop-color="#9b72ff" stop-opacity="0.64"/>
       <stop offset="1" stop-color="#bb4fff" stop-opacity="0"/>
     </linearGradient>
     <filter id="blur18" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="18"/></filter>
@@ -37,62 +38,73 @@
   </defs>
 
   <rect width="1600" height="900" fill="url(#sky)"/>
-  <ellipse cx="815" cy="430" rx="540" ry="250" fill="url(#cyanGlow)" opacity="0.55"/>
-  <ellipse cx="1110" cy="385" rx="360" ry="210" fill="url(#violetGlow)" opacity="0.44"/>
-  <ellipse cx="800" cy="760" rx="520" ry="150" fill="url(#warmGlow)" opacity="0.5"/>
+  <ellipse cx="815" cy="430" rx="560" ry="270" fill="url(#cyanGlow)" opacity="0.72"/>
+  <ellipse cx="1110" cy="385" rx="380" ry="230" fill="url(#violetGlow)" opacity="0.58"/>
+  <ellipse cx="800" cy="760" rx="560" ry="170" fill="url(#warmGlow)" opacity="0.58"/>
 
   <!-- distant planetary horizon -->
-  <path d="M-90 250 C260 40 625 14 1010 120 C1260 188 1450 286 1690 470" fill="none" stroke="#77cfff" stroke-opacity="0.18" stroke-width="3"/>
-  <path d="M-110 267 C250 61 615 36 1002 140 C1268 211 1475 315 1700 490" fill="none" stroke="#8c6dff" stroke-opacity="0.08" stroke-width="10" filter="url(#blur6)"/>
+  <path d="M-90 250 C260 40 625 14 1010 120 C1260 188 1450 286 1690 470" fill="none" stroke="#8ed9ff" stroke-opacity="0.32" stroke-width="3"/>
+  <path d="M-110 267 C250 61 615 36 1002 140 C1268 211 1475 315 1700 490" fill="none" stroke="#9a7bff" stroke-opacity="0.13" stroke-width="12" filter="url(#blur6)"/>
 
   <!-- orbital intelligence arcs -->
-  <ellipse cx="800" cy="430" rx="610" ry="255" fill="none" stroke="url(#line)" stroke-width="2" stroke-opacity="0.55"/>
-  <ellipse cx="800" cy="430" rx="470" ry="192" fill="none" stroke="url(#line)" stroke-width="1.4" stroke-opacity="0.38"/>
-  <ellipse cx="800" cy="430" rx="335" ry="137" fill="none" stroke="url(#line)" stroke-width="1" stroke-opacity="0.28"/>
-  <path d="M250 523 C540 320 1030 320 1362 536" fill="none" stroke="#4ae8ff" stroke-opacity="0.11" stroke-width="1" stroke-dasharray="8 10"/>
-  <path d="M275 348 C565 558 1050 558 1335 348" fill="none" stroke="#9d63ff" stroke-opacity="0.10" stroke-width="1" stroke-dasharray="7 12"/>
+  <ellipse cx="800" cy="430" rx="610" ry="255" fill="none" stroke="url(#line)" stroke-width="2.2" stroke-opacity="0.72"/>
+  <ellipse cx="800" cy="430" rx="470" ry="192" fill="none" stroke="url(#line)" stroke-width="1.7" stroke-opacity="0.50"/>
+  <ellipse cx="800" cy="430" rx="335" ry="137" fill="none" stroke="url(#line)" stroke-width="1.2" stroke-opacity="0.38"/>
+  <path d="M250 523 C540 320 1030 320 1362 536" fill="none" stroke="#4ae8ff" stroke-opacity="0.22" stroke-width="1.2" stroke-dasharray="8 10"/>
+  <path d="M275 348 C565 558 1050 558 1335 348" fill="none" stroke="#a56bff" stroke-opacity="0.19" stroke-width="1.1" stroke-dasharray="7 12"/>
 
   <!-- distant city -->
-  <g opacity="0.86">
-    <path d="M0 760 H82 V655 H112 V714 H156 V612 H190 V690 H232 V575 H258 V660 H292 V705 H326 V592 H356 V670 H402 V548 H432 V650 H470 V702 H512 V570 H545 V677 H590 V632 H622 V710 H666 V565 H701 V645 H742 V518 H776 V692 H820 V555 H855 V650 H894 V615 H930 V700 H978 V548 H1012 V665 H1054 V585 H1088 V704 H1134 V630 H1162 V552 H1196 V681 H1238 V590 H1272 V703 H1315 V621 H1347 V542 H1384 V674 H1428 V603 H1463 V700 H1505 V574 H1540 V650 H1600 V900 H0 Z" fill="#030b17"/>
-    <path d="M0 792 H1600" stroke="#38dfff" stroke-opacity="0.13"/>
+  <g opacity="0.94">
+    <path d="M0 760 H82 V655 H112 V714 H156 V612 H190 V690 H232 V575 H258 V660 H292 V705 H326 V592 H356 V670 H402 V548 H432 V650 H470 V702 H512 V570 H545 V677 H590 V632 H622 V710 H666 V565 H701 V645 H742 V518 H776 V692 H820 V555 H855 V650 H894 V615 H930 V700 H978 V548 H1012 V665 H1054 V585 H1088 V704 H1134 V630 H1162 V552 H1196 V681 H1238 V590 H1272 V703 H1315 V621 H1347 V542 H1384 V674 H1428 V603 H1463 V700 H1505 V574 H1540 V650 H1600 V900 H0 Z" fill="#061326" stroke="#39dfff" stroke-opacity="0.11"/>
+    <path d="M0 792 H1600" stroke="#55e7ff" stroke-opacity="0.26"/>
   </g>
 
   <!-- central spire cluster -->
-  <g opacity="0.92">
-    <path d="M716 900 L728 610 L751 610 L758 466 L777 466 L784 318 L800 236 L816 318 L823 466 L842 466 L849 610 L872 610 L884 900 Z" fill="url(#tower)" stroke="#3fdcff" stroke-opacity="0.20"/>
-    <path d="M800 245 V900" stroke="#43e2ff" stroke-opacity="0.22" stroke-width="2"/>
-    <path d="M789 326 H811 M782 475 H818 M770 618 H830" stroke="#8b63ff" stroke-opacity="0.19"/>
-    <path d="M705 900 L716 676 L738 676 L742 900 Z M858 900 L862 676 L884 676 L895 900 Z" fill="#061426" stroke="#3fdcff" stroke-opacity="0.12"/>
+  <g opacity="0.98">
+    <path d="M716 900 L728 610 L751 610 L758 466 L777 466 L784 318 L800 236 L816 318 L823 466 L842 466 L849 610 L872 610 L884 900 Z" fill="url(#tower)" stroke="#4fe8ff" stroke-opacity="0.48"/>
+    <path d="M800 245 V900" stroke="#5de9ff" stroke-opacity="0.52" stroke-width="2.2"/>
+    <path d="M789 326 H811 M782 475 H818 M770 618 H830" stroke="#a174ff" stroke-opacity="0.38"/>
+    <path d="M705 900 L716 676 L738 676 L742 900 Z M858 900 L862 676 L884 676 L895 900 Z" fill="#07182b" stroke="#4fe8ff" stroke-opacity="0.24"/>
+    <ellipse cx="800" cy="510" rx="102" ry="24" fill="none" stroke="#59ecff" stroke-opacity="0.26"/>
+    <ellipse cx="800" cy="510" rx="142" ry="34" fill="none" stroke="#9a70ff" stroke-opacity="0.18"/>
   </g>
 
   <!-- side towers -->
-  <g fill="#061324" stroke="#56ddff" stroke-opacity="0.10">
+  <g fill="#07182b" stroke="#62e6ff" stroke-opacity="0.21">
     <path d="M130 900 L140 610 L158 556 L176 610 L186 900 Z"/>
     <path d="M316 900 L326 676 L344 634 L362 676 L372 900 Z"/>
     <path d="M1230 900 L1240 652 L1258 600 L1276 652 L1286 900 Z"/>
     <path d="M1430 900 L1442 584 L1462 528 L1482 584 L1494 900 Z"/>
   </g>
 
+  <!-- architectural guide lines -->
+  <g stroke="#4be4ff" stroke-opacity="0.08" fill="none">
+    <path d="M0 824 C300 760 560 744 800 750 C1040 744 1300 760 1600 824"/>
+    <path d="M0 850 C300 786 560 770 800 776 C1040 770 1300 786 1600 850"/>
+  </g>
+
   <!-- sparse city lights -->
-  <g fill="#4ee7ff" opacity="0.52">
+  <g fill="#61ecff" opacity="0.72">
     <circle cx="101" cy="707" r="2"/><circle cx="168" cy="660" r="2"/><circle cx="247" cy="628" r="2"/><circle cx="338" cy="641" r="2"/>
     <circle cx="419" cy="610" r="2"/><circle cx="534" cy="625" r="2"/><circle cx="682" cy="620" r="2"/><circle cx="753" cy="568" r="2"/>
     <circle cx="847" cy="570" r="2"/><circle cx="986" cy="614" r="2"/><circle cx="1084" cy="649" r="2"/><circle cx="1178" cy="609" r="2"/>
     <circle cx="1260" cy="628" r="2"/><circle cx="1359" cy="593" r="2"/><circle cx="1465" cy="590" r="2"/><circle cx="1530" cy="625" r="2"/>
   </g>
-  <g fill="#b564ff" opacity="0.44">
+  <g fill="#c274ff" opacity="0.62">
     <circle cx="208" cy="706" r="2"/><circle cx="458" cy="668" r="2"/><circle cx="618" cy="680" r="2"/><circle cx="909" cy="664" r="2"/>
     <circle cx="1125" cy="688" r="2"/><circle cx="1322" cy="671" r="2"/><circle cx="1510" cy="686" r="2"/>
+  </g>
+  <g fill="#ffbd73" opacity="0.46">
+    <circle cx="383" cy="722" r="2"/><circle cx="801" cy="704" r="2.2"/><circle cx="1215" cy="716" r="2"/>
   </g>
 
   <!-- non-semantic ambient beacons -->
   <g fill="#72ecff">
-    <circle cx="318" cy="360" r="3" opacity="0.48"/><circle cx="533" cy="292" r="3" opacity="0.38"/><circle cx="1058" cy="286" r="3" opacity="0.40"/><circle cx="1290" cy="368" r="3" opacity="0.44"/>
+    <circle cx="318" cy="360" r="3" opacity="0.58"/><circle cx="533" cy="292" r="3" opacity="0.48"/><circle cx="1058" cy="286" r="3" opacity="0.50"/><circle cx="1290" cy="368" r="3" opacity="0.54"/>
   </g>
-  <g fill="#a965ff">
-    <circle cx="414" cy="438" r="3" opacity="0.36"/><circle cx="1188" cy="438" r="3" opacity="0.36"/>
+  <g fill="#bd79ff">
+    <circle cx="414" cy="438" r="3" opacity="0.46"/><circle cx="1188" cy="438" r="3" opacity="0.46"/>
   </g>
 
-  <rect x="760" y="205" width="80" height="520" fill="url(#cyanGlow)" opacity="0.20" filter="url(#blur18)"/>
+  <rect x="750" y="190" width="100" height="560" fill="url(#cyanGlow)" opacity="0.28" filter="url(#blur18)"/>
 </svg>
