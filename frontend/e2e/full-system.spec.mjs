@@ -3,6 +3,14 @@ import { expect, test } from '@playwright/test'
 const routes = ['/', '/work-orders', '/evidence-audit', '/system-swarm']
 const operationalControlName = /approve|execute|deploy|unlock|enable writer|force/i
 
+async function expectNoHorizontalOverflow(page) {
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
+}
+
 for (const route of routes) {
   test(`${route} renders without client errors or operational write controls`, async ({ page }) => {
     const pageErrors = []
@@ -86,5 +94,53 @@ test('safety-critical authority state remains visible on narrow and desktop layo
     await expect(activeContext).toContainText('UNAVAILABLE')
     await expect(activeContext).toContainText('UNKNOWN')
     await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+    await expectNoHorizontalOverflow(page)
   }
+})
+
+test('premium Mission Control desktop composition produces 1440x1000 gate evidence', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
+
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto('/', { waitUntil: 'networkidle' })
+
+  await expect(page.getByRole('region', { name: 'Leader interaction' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Live Topology' })).toBeVisible()
+  await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Agent Grid' })).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+
+  const firstFold = await page.evaluate(() => {
+    const regions = [
+      document.querySelector('[aria-label="Leader interaction"]'),
+      document.querySelector('[aria-label="Live Topology"]'),
+      document.querySelector('[aria-label="Mission Control rail"]'),
+    ]
+    return regions.map((region) => region?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY)
+  })
+  for (const top of firstFold) expect(top).toBeLessThan(1000)
+
+  await page.screenshot({
+    path: testInfo.outputPath('mission-control-1440x1000.png'),
+    fullPage: false,
+    animations: 'disabled',
+  })
+})
+
+test('premium Mission Control narrow composition produces 320x800 gate evidence', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
+
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto('/', { waitUntil: 'networkidle' })
+
+  await expect(page.getByLabel('Active context')).toBeVisible()
+  await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Live Topology' })).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+
+  await page.screenshot({
+    path: testInfo.outputPath('mission-control-320x800.png'),
+    fullPage: false,
+    animations: 'disabled',
+  })
 })
