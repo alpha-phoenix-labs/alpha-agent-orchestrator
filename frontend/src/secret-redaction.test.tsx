@@ -72,6 +72,11 @@ describe('Phase 4.14 secret redaction', () => {
     expect(isSensitiveDisplayField('private_key')).toBe(true)
     expect(isSensitiveDisplayField('capability_token')).toBe(true)
     expect(isSensitiveDisplayField('token')).toBe(true)
+    expect(isSensitiveDisplayField('api_token')).toBe(true)
+    expect(isSensitiveDisplayField('session_cookie')).toBe(true)
+    expect(isSensitiveDisplayField('db_password')).toBe(true)
+    expect(isSensitiveDisplayField('provider_credentials')).toBe(true)
+    expect(isSensitiveDisplayField('runtime_secret')).toBe(true)
 
     expect(isSensitiveDisplayField('tokens_per_second')).toBe(false)
     expect(isSensitiveDisplayField('capability_id')).toBe(false)
@@ -82,6 +87,10 @@ describe('Phase 4.14 secret redaction', () => {
     expect(containsSensitiveDisplayString('Bearer phase4_fake_token_12345678')).toBe(true)
     expect(containsSensitiveDisplayString('Cookie: session=phase4_fake_cookie')).toBe(true)
     expect(containsSensitiveDisplayString('api_key=phase4_fake_api_key')).toBe(true)
+    expect(containsSensitiveDisplayString('token=phase4_fake_token')).toBe(true)
+    expect(containsSensitiveDisplayString('session_cookie=phase4_fake_cookie')).toBe(true)
+    expect(containsSensitiveDisplayString('credentials=phase4_fake_credentials')).toBe(true)
+    expect(containsSensitiveDisplayString('secret=phase4_fake_secret')).toBe(true)
     expect(
       containsSensitiveDisplayString('-----BEGIN PRIVATE KEY-----\nphase4-fake\n-----END PRIVATE KEY-----'),
     ).toBe(true)
@@ -90,12 +99,15 @@ describe('Phase 4.14 secret redaction', () => {
     ).toBe(true)
 
     expect(containsSensitiveDisplayString('0123456789abcdef0123456789abcdef01234567')).toBe(false)
+    expect(containsSensitiveDisplayString('tokens_per_second=42')).toBe(false)
   })
 
   it('redacts nested sensitive values while preserving non-sensitive telemetry', () => {
     const sanitized = sanitizeDisplayValue({
       tokens_per_second: 42,
       api_key: 'phase4_fake_api_key_12345678',
+      session_cookie: 'phase4_fake_cookie_12345678',
+      db_password: 'phase4_fake_password_12345678',
       headers: {
         authorization: 'Bearer phase4_fake_nested_token_12345678',
       },
@@ -104,6 +116,8 @@ describe('Phase 4.14 secret redaction', () => {
 
     expect(sanitized.tokens_per_second).toBe(42)
     expect(sanitized.api_key).toBe(REDACTED_DISPLAY_VALUE)
+    expect(sanitized.session_cookie).toBe(REDACTED_DISPLAY_VALUE)
+    expect(sanitized.db_password).toBe(REDACTED_DISPLAY_VALUE)
     expect(sanitized.latency_ms).toBe(18)
     expect((sanitized.headers as Record<string, unknown>).authorization).toBe(
       REDACTED_DISPLAY_VALUE,
