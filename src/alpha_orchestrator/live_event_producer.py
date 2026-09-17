@@ -26,20 +26,19 @@ class LiveEventProducer:
     """Create canonical live-event envelopes without selecting a network transport.
 
     The producer owns only envelope identity, sequence continuity and the transition
-    from the current state version to the caller-supplied next state version. It
-    does not interpret payloads, grant authority, expose a network endpoint or
-    apply events to UI state.
+    from the current canonical state version to the caller-supplied next state
+    version. It does not interpret payloads, grant authority, expose a network
+    endpoint or apply events to UI state.
     """
 
     def __init__(
         self,
         *,
         last_sequence: int,
-        current_state_version: int,
+        current_state_version: str,
         event_id_factory: Callable[[], str] | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
-        # Reuse the canonical cursor validation for the authoritative baseline.
         LiveEventCursor(
             last_sequence=last_sequence,
             current_state_version=current_state_version,
@@ -63,12 +62,12 @@ class LiveEventProducer:
         *,
         event_type: str,
         payload: Mapping[str, Any],
-        state_version: int,
+        state_version: str,
     ) -> LiveEventEnvelope:
         """Build one validated envelope and advance only after validation succeeds."""
 
-        if type(state_version) is not int or state_version < self._current_state_version:
-            raise LiveEventValidationError("STATE_VERSION_REGRESSION")
+        if not isinstance(state_version, str) or not state_version.strip():
+            raise LiveEventValidationError("INVALID_STATE_VERSION")
 
         event_id = self._event_id_factory()
         if event_id in self._seen_event_ids:
