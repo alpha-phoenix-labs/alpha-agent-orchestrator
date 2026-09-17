@@ -15,8 +15,8 @@ def event_payload(**overrides):
         "schema_version": LIVE_EVENT_SCHEMA_VERSION,
         "event_id": "evt-1",
         "sequence": 11,
-        "base_state_version": 7,
-        "state_version": 8,
+        "base_state_version": "state-v7",
+        "state_version": "state-v8",
         "emitted_at": "2026-09-17T00:30:00+00:00",
         "event_type": "WORK_ORDER_UPDATED",
         "payload": {"contract": "WORK_ORDER"},
@@ -26,7 +26,7 @@ def event_payload(**overrides):
 
 
 def cursor() -> LiveEventCursor:
-    return LiveEventCursor(last_sequence=10, current_state_version=7)
+    return LiveEventCursor(last_sequence=10, current_state_version="state-v7")
 
 
 def test_parse_live_event_accepts_transport_neutral_envelope():
@@ -34,8 +34,8 @@ def test_parse_live_event_accepts_transport_neutral_envelope():
 
     assert parsed.event_id == "evt-1"
     assert parsed.sequence == 11
-    assert parsed.base_state_version == 7
-    assert parsed.state_version == 8
+    assert parsed.base_state_version == "state-v7"
+    assert parsed.state_version == "state-v8"
     assert parsed.event_type == "WORK_ORDER_UPDATED"
     assert parsed.payload == {"contract": "WORK_ORDER"}
 
@@ -47,9 +47,10 @@ def test_parse_live_event_accepts_transport_neutral_envelope():
         ({"event_id": ""}, "INVALID_EVENT_ID"),
         ({"sequence": True}, "INVALID_SEQUENCE"),
         ({"sequence": 0}, "INVALID_SEQUENCE"),
-        ({"base_state_version": -1}, "INVALID_BASE_STATE_VERSION"),
-        ({"state_version": -1}, "INVALID_STATE_VERSION"),
-        ({"base_state_version": 9, "state_version": 8}, "STATE_VERSION_BEFORE_BASE"),
+        ({"base_state_version": ""}, "INVALID_BASE_STATE_VERSION"),
+        ({"base_state_version": 7}, "INVALID_BASE_STATE_VERSION"),
+        ({"state_version": ""}, "INVALID_STATE_VERSION"),
+        ({"state_version": 8}, "INVALID_STATE_VERSION"),
         ({"emitted_at": "2026-09-17T00:30:00"}, "INVALID_EMITTED_AT"),
         ({"event_type": "  "}, "INVALID_EVENT_TYPE"),
         ({"payload": []}, "INVALID_PAYLOAD"),
@@ -77,19 +78,19 @@ def test_evaluate_live_event_accepts_only_contiguous_matching_state():
     assert result.decision is LiveEventDecision.ACCEPTED
     assert result.reason == "ACCEPTED"
     assert result.cursor.last_sequence == 11
-    assert result.cursor.current_state_version == 8
+    assert result.cursor.current_state_version == "state-v8"
     assert result.cursor.seen_event_ids == frozenset({"evt-1"})
 
 
 def test_duplicate_event_id_is_ignored_without_cursor_mutation():
     baseline = LiveEventCursor(
         last_sequence=11,
-        current_state_version=8,
+        current_state_version="state-v8",
         seen_event_ids=frozenset({"evt-1"}),
     )
     result = evaluate_live_event(
         baseline,
-        event_payload(sequence=12, base_state_version=8, state_version=9),
+        event_payload(sequence=12, base_state_version="state-v8", state_version="state-v9"),
     )
 
     assert result.decision is LiveEventDecision.DUPLICATE
@@ -104,7 +105,12 @@ def test_duplicate_event_id_is_ignored_without_cursor_mutation():
         ({"event_id": "evt-old", "sequence": 9}, "STALE_OR_OUT_OF_ORDER_SEQUENCE"),
         ({"event_id": "evt-gap", "sequence": 12}, "MISSING_SEQUENCE"),
         (
-            {"event_id": "evt-drift", "sequence": 11, "base_state_version": 6, "state_version": 8},
+            {
+                "event_id": "evt-drift",
+                "sequence": 11,
+                "base_state_version": "state-v6",
+                "state_version": "state-v8",
+            },
             "STATE_VERSION_DRIFT",
         ),
     ],
@@ -131,11 +137,12 @@ def test_malformed_event_is_invalid_and_cannot_advance_cursor():
 @pytest.mark.parametrize(
     "kwargs",
     [
-        {"last_sequence": -1, "current_state_version": 0},
-        {"last_sequence": 0, "current_state_version": -1},
-        {"last_sequence": True, "current_state_version": 0},
+        {"last_sequence": -1, "current_state_version": "state-v0"},
+        {"last_sequence": 0, "current_state_version": ""},
+        {"last_sequence": True, "current_state_version": "state-v0"},
+        {"last_sequence": 0, "current_state_version": 0},
     ],
 )
-def test_cursor_requires_authoritative_non_negative_integer_baseline(kwargs):
+def test_cursor_requires_authoritative_baseline(kwargs):
     with pytest.raises(ValueError):
         LiveEventCursor(**kwargs)
