@@ -1,6 +1,6 @@
 # Phase 4.11 - Live event ingestion and schema safety
 
-Status: **FOUNDATIONAL PATCH - TRANSPORT NOT SELECTED**
+Status: **FOUNDATIONAL PATCH + BACKEND ENVELOPE PRODUCER - TRANSPORT NOT SELECTED**
 
 Baseline: `main@a65ffbbb1be5557b1810ca140d715b911e26b286`
 
@@ -12,14 +12,18 @@ The frozen roadmap requires live event design to provide enough identity/version
 
 ## Verified current state
 
-At the baseline above:
+At the original baseline above:
 
-- the frontend has no `WebSocket`, `EventSource` or SSE integration;
-- `OperationsDataProvider` receives a snapshot as an injected value and does not own a live transport;
-- the backend `AuditEvent` in `src/alpha_orchestrator/events.py` is append-only Audit state and is not a live UI event contract;
-- no backend live-event endpoint or payload mutation contract exists in the repository.
+- the frontend had no `WebSocket`, `EventSource` or SSE integration;
+- `OperationsDataProvider` received a snapshot as an injected value and did not own a live transport;
+- the backend `AuditEvent` in `src/alpha_orchestrator/events.py` was append-only Audit state and was not a live UI event contract;
+- no backend live-event endpoint or payload mutation contract existed in the repository.
 
-Therefore this patch does **not** select WebSocket, SSE or another transport. Selecting a transport without a real producer/endpoint and verified delivery requirements would invent runtime behavior.
+The current Phase 4 development branch additionally contains `src/alpha_orchestrator/live_event_producer.py`. It creates canonical envelopes from an explicit authoritative sequence/state-version baseline, assigns event identity and timezone-aware emission time, and advances its baseline only after canonical schema validation succeeds.
+
+This is an **envelope producer only**. It does not invent domain event types or payload semantics, does not expose a network endpoint, does not apply payloads to Operations Console state, and does not select WebSocket, SSE or another transport.
+
+Transport selection therefore remains blocked until a real endpoint plus typed domain-event source/delivery requirements can be verified.
 
 ## Canonical transport-neutral envelope
 
@@ -37,6 +41,21 @@ The backend-owned schema in `src/alpha_orchestrator/live_events.py` defines thes
 Schema version `1` is the only accepted version in this patch.
 
 The frontend mirrors this envelope in `frontend/src/live-events.ts` for client-side validation. The frontend mirror does not redefine authority; it validates input before any future typed payload handler can act on it.
+
+## Backend envelope producer
+
+`LiveEventProducer` is transport-neutral and intentionally narrow:
+
+- construction requires an explicit `last_sequence` and `current_state_version` baseline;
+- emitted sequence numbers are monotonic from that baseline;
+- `base_state_version` always equals the producer's current baseline;
+- caller-supplied `state_version` may stay equal or advance, but may never regress;
+- event identities must be unique for the lifetime of the producer instance;
+- emission timestamps must be timezone-aware;
+- the generated envelope is passed through the canonical `parse_live_event` validator before producer state advances;
+- any validation failure leaves sequence/state cursor unchanged.
+
+The producer does not create a replay buffer, persistence layer, socket connection, SSE response, heartbeat, reconnect policy or snapshot endpoint.
 
 ## Safety decisions
 
@@ -83,8 +102,10 @@ Audit and live-event concepts remain separate. `AuditEvent` is not reused as the
 
 Not included in this patch:
 
+- typed domain-event source and payload contract;
 - WebSocket/SSE/other transport selection;
 - backend streaming endpoint;
+- replay/persistence semantics;
 - typed payload application into `OperationsSnapshot`;
 - automatic snapshot/resync fetch;
 - connection-status UI;
@@ -93,11 +114,13 @@ Not included in this patch:
 - stale-duration policy;
 - authority-unavailable presentation.
 
-Those connection-resilience behaviors are ordered Phase 4.12 work. Transport selection remains blocked until a real backend producer/endpoint and delivery constraints can be verified.
+Those connection-resilience behaviors are ordered Phase 4.12 work. Transport selection remains blocked until a real endpoint and typed domain-event source/delivery constraints can be verified.
 
 ## Validation target
 
 Backend tests verify canonical envelope parsing and fail-closed continuity decisions.
+
+Backend producer tests additionally verify monotonic sequence generation, state-version continuity, duplicate identity rejection, timezone-aware timestamps, canonical schema validation and no cursor advancement on failure.
 
 Frontend tests independently verify the mirrored schema gate and confirm that duplicate, missing, stale/out-of-order, drifted and malformed events cannot advance the client cursor.
 
