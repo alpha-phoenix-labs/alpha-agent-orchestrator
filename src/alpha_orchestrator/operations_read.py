@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from typing import Protocol
 
-from .live_events import LiveEventEnvelope
+from .live_events import LiveEventCursor, LiveEventEnvelope
 from .live_sse import encode_sse_event
 from .view_contracts import ContractName, SourceClass, ViewContract, view_payload
 
@@ -34,13 +34,19 @@ class OperationsReadAuthorizer(Protocol):
 
 @dataclass(frozen=True)
 class OperationsReadSnapshot:
-    """Backend-owned transport aggregate built only from ViewContract values."""
+    """Backend-owned transport aggregate anchored to the live-event cursor."""
 
     contracts: tuple[ViewContract, ...]
+    live_cursor: LiveEventCursor
 
     @classmethod
-    def from_contracts(cls, contracts: Iterable[ViewContract]) -> "OperationsReadSnapshot":
-        return cls(tuple(contracts))
+    def from_contracts(
+        cls,
+        contracts: Iterable[ViewContract],
+        *,
+        live_cursor: LiveEventCursor,
+    ) -> "OperationsReadSnapshot":
+        return cls(tuple(contracts), live_cursor)
 
     def __post_init__(self) -> None:
         system_contracts = [
@@ -58,6 +64,8 @@ class OperationsReadSnapshot:
             raise OperationsReadSnapshotError("OPERATIONS_SNAPSHOT_STATE_VERSION_UNAVAILABLE")
         if not isinstance(state_field.value, str) or not state_field.value.strip():
             raise OperationsReadSnapshotError("OPERATIONS_SNAPSHOT_INVALID_STATE_VERSION")
+        if self.live_cursor.current_state_version != state_field.value:
+            raise OperationsReadSnapshotError("OPERATIONS_SNAPSHOT_LIVE_CURSOR_STATE_MISMATCH")
 
     @property
     def state_version(self) -> str:
@@ -74,6 +82,7 @@ class OperationsReadSnapshot:
         return {
             "schema_version": OPERATIONS_READ_SNAPSHOT_SCHEMA_VERSION,
             "state_version": self.state_version,
+            "event_sequence": self.live_cursor.last_sequence,
             "contracts": [view_payload(contract) for contract in self.contracts],
         }
 
@@ -107,14 +116,23 @@ class OperationsReadBoundary:
         except Exception as exc:
             raise OperationsReadUnauthorized("OPERATIONS_READ_AUTHORIZATION_FAILED") from exc
 
+    def authorize(self, *, auth_context: object | None) -> None:
+        """Fail closed before a network adapter emits response payload or stream headers."""
+
+        self._authorize(auth_context)
+
     def snapshot(
         self,
         *,
         auth_context: object | None,
         contracts: Iterable[ViewContract],
+        live_cursor: LiveEventCursor,
     ) -> bytes:
         self._authorize(auth_context)
-        return OperationsReadSnapshot.from_contracts(contracts).encode_json()
+        return OperationsReadSnapshot.from_contracts(
+            contracts,
+            live_cursor=live_cursor,
+        ).encode_json()
 
     def sse_event(
         self,
@@ -124,3 +142,14 @@ class OperationsReadBoundary:
     ) -> bytes:
         self._authorize(auth_context)
         return encode_sse_event(event)
+
+    def sse_stream(
+        self,
+        *,
+        auth_context: object | None,
+        events: Iterable[LiveEventEnvelope],
+    ) -> Iterator[bytes]:
+        """Authorize once before returning a canonical SSE stream iterator."""
+
+        self._authorize(auth_context)
+        return (encode_sse_event(event) for event in events)
