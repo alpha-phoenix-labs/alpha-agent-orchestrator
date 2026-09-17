@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
@@ -27,7 +28,7 @@ function expectNoOperationalWriteControls() {
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
 }
 
-function ThrowingView() {
+function ThrowingView(): ReactNode {
   throw new Error('synthetic render failure')
 }
 
