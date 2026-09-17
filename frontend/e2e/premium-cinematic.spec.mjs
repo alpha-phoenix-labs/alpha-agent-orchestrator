@@ -2,6 +2,16 @@ import { expect, test } from '@playwright/test'
 
 const operationalControlName = /approve|execute|deploy|unlock|enable writer|force/i
 
+function overlaps(a, b) {
+  if (!a || !b) return false
+  return !(
+    a.x + a.width <= b.x ||
+    b.x + b.width <= a.x ||
+    a.y + a.height <= b.y ||
+    b.y + b.height <= a.y
+  )
+}
+
 test('rebuilt swarm scene is structurally distinct while preserving authority boundaries', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual verification runs in Chromium.')
 
@@ -36,4 +46,21 @@ test('rebuilt swarm scene is structurally distinct while preserving authority bo
 
   expect(await page.getByRole('button', { name: operationalControlName }).count()).toBe(0)
   expect(await page.locator('input, textarea, select').count()).toBe(0)
+
+  const toolsBox = await topology.locator('.swarm-scene__tools').boundingBox()
+  const agentBoxes = await topology.locator('.swarm-scene__agent').evaluateAll((elements) =>
+    elements.map((element) => {
+      const rect = element.getBoundingClientRect()
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+    }),
+  )
+  expect(agentBoxes.some((box) => overlaps(box, toolsBox))).toBe(false)
+
+  const topologyBox = await topology.boundingBox()
+  const secondaryBox = await page.locator('.alpha-command-secondary').boundingBox()
+  expect(overlaps(topologyBox, secondaryBox)).toBe(false)
+
+  const qaBannerBox = await page.locator('.visual-qa-fixture-banner').boundingBox()
+  const commandDeckBox = await page.locator('.alpha-command-deck').boundingBox()
+  expect(overlaps(qaBannerBox, commandDeckBox)).toBe(false)
 })
