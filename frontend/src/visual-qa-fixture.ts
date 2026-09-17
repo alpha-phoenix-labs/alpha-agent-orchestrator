@@ -4,10 +4,6 @@ function known(source_class: SourceClass, value: unknown): ViewField {
   return { source_class, available: true, value, reason: null }
 }
 
-function unknown(source_class: SourceClass, reason: string): ViewField {
-  return { source_class, available: false, value: null, reason }
-}
-
 function view(contract: string, fields: Record<string, ViewField>): ViewContract {
   return { contract, fields }
 }
@@ -20,15 +16,15 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
   canonicalState: view('CANONICAL_STATE', {
     repository: known('AUTHORITATIVE', 'alpha-phoenix-labs/alpha-agent-orchestrator'),
     branch: known('AUTHORITATIVE', 'phase4/premium-mission-control-remediation'),
-    head_sha: known('AUTHORITATIVE', 'visual-qa-fixture'),
+    head_sha: known('AUTHORITATIVE', 'VISUAL-QA-FIXTURE'),
     freshness_result: known('AUTHORITATIVE', 'FRESH'),
   }),
   activeWorkOrder: view('WORK_ORDER', {
     order_id: known('WORK_ORDER', 'WO-PREMIUM-QA-004'),
     status: known('WORK_ORDER', 'RUNNING'),
     risk: known('WORK_ORDER', 'LOW'),
-    action: known('WORK_ORDER', 'read_only_analysis'),
-    target: known('WORK_ORDER', 'mission-control'),
+    action: known('WORK_ORDER', 'Marktanalyse erneuerbare Energien'),
+    target: known('WORK_ORDER', 'mission-control / visual-qa'),
   }),
   lifecycle: view('LIFECYCLE', {
     order_status: known('WORK_ORDER', 'RUNNING'),
@@ -36,12 +32,12 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
   }),
   findings: [
     view('FINDING', {
-      claim: known('EVIDENCE', 'Mission Control composition is under premium visual QA.'),
+      claim: known('EVIDENCE', 'Premium Mission Control wird gegen den visuellen Quality Gate geprüft.'),
       reader_id: known('EVIDENCE', 'reviewer-01'),
       classification: known('EVIDENCE', 'VISUAL_QA_FIXTURE'),
     }),
     view('FINDING', {
-      claim: known('EVIDENCE', 'Authority presentation remains read-only and fail-closed.'),
+      claim: known('EVIDENCE', 'Authority-Darstellung bleibt strikt read-only und fail-closed.'),
       reader_id: known('EVIDENCE', 'security-reviewer'),
       classification: known('EVIDENCE', 'VISUAL_QA_FIXTURE'),
     }),
@@ -66,22 +62,22 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
   audit: [
     view('AUDIT_EVENT', {
       seq: known('AUTHORITATIVE', 41),
-      event_type: known('AUTHORITATIVE', 'WORK_ORDER_OBSERVED'),
+      event_type: known('AUTHORITATIVE', 'Work Order beobachtet'),
       created_at: known('AUTHORITATIVE', '14:28:04'),
     }),
     view('AUDIT_EVENT', {
       seq: known('AUTHORITATIVE', 42),
-      event_type: known('AUTHORITATIVE', 'PLAN_OBSERVED'),
+      event_type: known('AUTHORITATIVE', 'Analyseplan erstellt'),
       created_at: known('AUTHORITATIVE', '14:28:18'),
     }),
     view('AUDIT_EVENT', {
       seq: known('AUTHORITATIVE', 43),
-      event_type: known('AUTHORITATIVE', 'AGENT_ACTIVITY_OBSERVED'),
+      event_type: known('AUTHORITATIVE', 'Agenten parallel gestartet'),
       created_at: known('AUTHORITATIVE', '14:29:02'),
     }),
     view('AUDIT_EVENT', {
       seq: known('AUTHORITATIVE', 44),
-      event_type: known('AUTHORITATIVE', 'EVIDENCE_OBSERVED'),
+      event_type: known('AUTHORITATIVE', 'Quellenqualität verifiziert'),
       created_at: known('AUTHORITATIVE', '14:29:23'),
     }),
   ],
@@ -107,13 +103,13 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
   writer: view('WRITER', {
     writer_id: known('WORK_ORDER', 'code_writer'),
     proposal_only: known('WORK_ORDER', true),
-    runtime_state: unknown('RUNTIME', 'PHASE4_WRITER_RUNTIME_NOT_ACTIVE'),
+    runtime_state: known('RUNTIME', 'INACTIVE · PHASE 4'),
   }),
   leader: view('AGENT', {
     agent_id: known('AUTHORITATIVE', 'Leader'),
     role: known('AUTHORITATIVE', 'ORCHESTRATOR'),
     runtime_state: known('RUNTIME', 'RUNNING'),
-    activity: known('RUNTIME', 'COORDINATING'),
+    activity: known('RUNTIME', 'KOORDINIERT SWARM'),
   }),
   agents: [
     view('AGENT', {
@@ -121,42 +117,42 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
       role: known('AUTHORITATIVE', 'RESEARCH'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'MARKET_DATA'),
+      activity: known('RUNTIME', 'MARKTDATEN'),
     }),
     view('AGENT', {
       agent_id: known('AUTHORITATIVE', 'Planner'),
       role: known('AUTHORITATIVE', 'PLANNING'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'STRUCTURING'),
+      activity: known('RUNTIME', 'STRUKTURIERT PLAN'),
     }),
     view('AGENT', {
       agent_id: known('AUTHORITATIVE', 'Analyst'),
       role: known('AUTHORITATIVE', 'ANALYSIS'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'RISK_SCAN'),
+      activity: known('RUNTIME', 'RISIKO-SCAN'),
     }),
     view('AGENT', {
       agent_id: known('AUTHORITATIVE', 'Critic'),
       role: known('AUTHORITATIVE', 'REVIEW'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'QUALITY_REVIEW'),
+      activity: known('RUNTIME', 'QUELLENPRÜFUNG'),
     }),
     view('AGENT', {
       agent_id: known('AUTHORITATIVE', 'Synthesizer'),
       role: known('AUTHORITATIVE', 'SYNTHESIS'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'MERGING'),
+      activity: known('RUNTIME', 'VERDICHTET ERGEBNISSE'),
     }),
     view('AGENT', {
       agent_id: known('AUTHORITATIVE', 'Reporter'),
       role: known('AUTHORITATIVE', 'REPORTING'),
       health: known('AUTHORITATIVE', 'HEALTHY'),
       runtime_state: known('RUNTIME', 'RUNNING'),
-      activity: known('RUNTIME', 'DRAFTING'),
+      activity: known('RUNTIME', 'ENTWIRFT BERICHT'),
     }),
   ],
   connectors: [
