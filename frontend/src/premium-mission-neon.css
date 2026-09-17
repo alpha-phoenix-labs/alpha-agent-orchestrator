@@ -92,12 +92,11 @@
   min-height: 22.5rem;
   border-color: rgba(0, 240, 255, 0.22);
   background:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.10), rgba(2, 6, 23, 0.36) 58%, rgba(2, 6, 23, 0.76) 100%),
-    radial-gradient(circle at 50% 48%, rgba(0, 240, 255, 0.24), transparent 24%),
-    radial-gradient(circle at 71% 38%, rgba(168, 85, 247, 0.17), transparent 28%),
-    url('/alphan-city-grid.svg') center 58% / cover no-repeat,
-    url('/alphan-ambient.svg') center 52% / cover no-repeat;
-  background-blend-mode: normal, screen, screen, screen, normal;
+    linear-gradient(180deg, rgba(2, 6, 23, 0.14), rgba(2, 6, 23, 0.42) 58%, rgba(2, 6, 23, 0.78) 100%),
+    radial-gradient(circle at 50% 48%, rgba(0, 240, 255, 0.22), transparent 24%),
+    radial-gradient(circle at 71% 38%, rgba(168, 85, 247, 0.15), transparent 28%),
+    url('/alphan-city-grid.svg') center 58% / cover no-repeat;
+  background-blend-mode: normal, screen, screen, screen;
   box-shadow:
     inset 0 0 120px rgba(14, 116, 144, 0.11),
     inset 0 -60px 100px rgba(2, 6, 23, 0.68),
