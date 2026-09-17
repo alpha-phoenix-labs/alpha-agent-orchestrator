@@ -28,6 +28,10 @@ function renderMissionControl(snapshot?: OperationsSnapshot | null) {
 }
 
 const snapshot: OperationsSnapshot = {
+  systemState: view('SYSTEM_STATE', {
+    mode: known('AUTHORITATIVE', 'READ_ONLY'),
+    writes_enabled: known('AUTHORITATIVE', false),
+  }),
   canonicalState: view('CANONICAL_STATE', {
     repository: known('AUTHORITATIVE', 'alpha-phoenix-labs/alpha-agent-orchestrator'),
     branch: known('AUTHORITATIVE', 'main'),
@@ -62,6 +66,13 @@ const snapshot: OperationsSnapshot = {
       verification_state: known('EVIDENCE', 'READ_VALIDATED'),
     }),
   ],
+  audit: [
+    view('AUDIT_EVENT', {
+      seq: known('AUTHORITATIVE', 17),
+      event_type: known('AUTHORITATIVE', 'WORK_ORDER_OBSERVED'),
+      created_at: known('AUTHORITATIVE', '2026-09-16T19:00:04+00:00'),
+    }),
+  ],
   gates: [
     view('GATE', {
       gate_id: known('AUTHORITATIVE', 'PRE_APPROVAL'),
@@ -87,6 +98,15 @@ const snapshot: OperationsSnapshot = {
     runtime_state: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_RUNTIME_STATE'),
     activity: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_ACTIVITY'),
   }),
+  agents: [
+    view('AGENT', {
+      agent_id: known('AUTHORITATIVE', 'reader-01'),
+      role: known('AUTHORITATIVE', 'READER'),
+      health: unknown('AUTHORITATIVE', 'NO_AUTHORITATIVE_AGENT_HEALTH'),
+      runtime_state: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_RUNTIME_STATE'),
+      activity: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_ACTIVITY'),
+    }),
+  ],
 }
 
 describe('Phase 4.5 Mission Control', () => {
@@ -98,19 +118,44 @@ describe('Phase 4.5 Mission Control', () => {
 
     for (const panelName of [
       'Leader interaction',
-      'Active Work Order',
       'Lifecycle',
       'Current Findings',
-      'Evidence Summary',
+      'System mode',
       'Canonical State',
+      'Active Work Order',
       'Gates',
       'Locks',
       'Writer status',
       'Blockers',
+      'Live Topology',
+      'Agent Grid',
+      'Evidence Summary',
+      'Audit Timeline',
     ]) {
       expect(screen.getByRole('region', { name: panelName })).toBeInTheDocument()
     }
 
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('renders the premium three-zone read-only composition from backend contracts', () => {
+    renderMissionControl(snapshot)
+
+    const topology = screen.getByRole('region', { name: 'Live Topology' })
+    expect(topology).toHaveTextContent('leader')
+    expect(topology).toHaveTextContent('reader-01')
+    expect(topology).toHaveTextContent('NO_RUNTIME_ACTIVITY_EDGE_CONTRACT')
+
+    const agentGrid = screen.getByRole('region', { name: 'Agent Grid' })
+    expect(agentGrid).toHaveTextContent('reader-01')
+    expect(agentGrid).toHaveTextContent('NO_AUTHORITATIVE_AGENT_HEALTH')
+
+    const audit = screen.getByRole('region', { name: 'Audit Timeline' })
+    expect(audit).toHaveTextContent('17')
+    expect(audit).toHaveTextContent('WORK_ORDER_OBSERVED')
+
+    expect(screen.getByLabelText('Mission Control rail')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })
