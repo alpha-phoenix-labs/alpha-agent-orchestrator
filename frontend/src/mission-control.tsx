@@ -403,28 +403,32 @@ export function MissionControl() {
         </div>
       ) : null}
 
-      <div className="alpha-dashboard-grid">
-        <div className="alpha-leader-stack">
-          <LeaderChat leader={snapshot?.leader} />
-          <FindingsPanel findings={snapshot?.findings} />
-        </div>
+      <div className="alpha-command-deck" data-layout="command-deck-v2">
+        <section className="alpha-command-stage" aria-label="Mission command stage">
+          <div className="alpha-command-left">
+            <LeaderChat leader={snapshot?.leader} />
+            <FindingsPanel findings={snapshot?.findings} />
+          </div>
 
-        <div className="alpha-topology-area">
-          <TopologyHero leader={snapshot?.leader} agents={snapshot?.agents} connectors={snapshot?.connectors} />
-        </div>
+          <div className="alpha-command-topology">
+            <TopologyHero leader={snapshot?.leader} agents={snapshot?.agents} connectors={snapshot?.connectors} />
+          </div>
 
-        <div className="alpha-middle-grid">
-          <AgentGrid agents={snapshot?.agents} />
-          <LifecyclePanel lifecycle={snapshot?.lifecycle} workOrder={snapshot?.activeWorkOrder} />
-        </div>
+          <div className="alpha-command-secondary">
+            <AgentGrid agents={snapshot?.agents} />
+            <LifecyclePanel lifecycle={snapshot?.lifecycle} workOrder={snapshot?.activeWorkOrder} />
+          </div>
 
-        <ControlRail snapshot={snapshot} />
+          <div className="alpha-command-right">
+            <ControlRail snapshot={snapshot} />
+          </div>
+        </section>
 
-        <div className="alpha-bottom-grid">
+        <section className="alpha-command-observability" aria-label="Mission observability deck">
           <RecentEvents events={snapshot?.audit} />
           <TraceScaffold />
           <EvidenceSummary evidence={snapshot?.evidence} findings={snapshot?.findings} />
-        </div>
+        </section>
       </div>
 
       <footer className="alpha-footer">
