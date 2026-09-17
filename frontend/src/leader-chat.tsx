@@ -1,6 +1,7 @@
-import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
+import { readContractField, readContractText } from './contract-read-model'
+import type { ViewContract } from './contracts'
 import { useI18n } from './i18n'
-import { MissingAuthority, Panel, displayValue } from './premium-mission-primitives'
+import { MissingAuthority, Panel } from './premium-mission-primitives'
 import { visualQaFixtureEnabled } from './visual-qa-mode'
 
 const visualQaLeaderConversation = [
@@ -35,12 +36,12 @@ const visualQaLeaderChecklist = [
 export function LeaderChat({ leader }: { leader?: ViewContract }) {
   const { t } = useI18n()
   const visualQa = visualQaFixtureEnabled()
-  const agent = displayValue(readAvailableField<unknown>(leader, 'agent_id'), t('common.unknown'))
-  const role = displayValue(readAvailableField<unknown>(leader, 'role'), t('common.unknown'))
-  const runtime = displayValue(readAvailableField<unknown>(leader, 'runtime_state'), t('common.unknown'))
-  const runtimeReason = readUnavailableReason(leader, 'runtime_state')
-  const activity = displayValue(readAvailableField<unknown>(leader, 'activity'), t('common.unknown'))
-  const activityReason = readUnavailableReason(leader, 'activity')
+  const agent = readContractText(leader, 'agent_id', t('common.unknown'))
+  const role = readContractText(leader, 'role', t('common.unknown'))
+  const runtimeField = readContractField(leader, 'runtime_state')
+  const runtime = readContractText(leader, 'runtime_state', t('common.unknown'))
+  const activityField = readContractField(leader, 'activity')
+  const activity = readContractText(leader, 'activity', t('common.unknown'))
 
   return (
     <Panel title={t('mission.leaderInteraction')} className="alpha-leader-chat" eyebrow="LEADER CHAT">
@@ -93,12 +94,12 @@ export function LeaderChat({ leader }: { leader?: ViewContract }) {
             <div>
               <span>{t('field.runtimeState')}</span>
               <strong>{runtime}</strong>
-              {runtimeReason ? <small>{runtimeReason}</small> : null}
+              {runtimeField.reason ? <small>{runtimeField.reason}</small> : null}
             </div>
             <div>
               <span>{t('field.activity')}</span>
               <strong>{activity}</strong>
-              {activityReason ? <small>{activityReason}</small> : null}
+              {activityField.reason ? <small>{activityField.reason}</small> : null}
             </div>
           </div>
         ) : null}
