@@ -1,9 +1,10 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { routes } from './App'
+import { ShellErrorBoundary } from './app-shell'
 import { I18nProvider } from './i18n'
 import { OperationsDataProvider } from './operations-data'
 
@@ -24,6 +25,10 @@ function renderShell(initialEntry = '/') {
 function expectNoOperationalWriteControls() {
   expect(screen.queryByRole('button', { name: /approve|execute|deploy|unlock|enable writer|force/i })).not.toBeInTheDocument()
   expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+}
+
+function ThrowingView() {
+  throw new Error('synthetic render failure')
 }
 
 describe('Phase 4.4 app shell', () => {
@@ -77,5 +82,26 @@ describe('Phase 4.4 app shell', () => {
     expect(await screen.findByRole('heading', { name: 'System / Swarm' })).toBeInTheDocument()
     expect(screen.getByText('Phase 4.8 · Read-only')).toBeInTheDocument()
     expectNoOperationalWriteControls()
+  })
+
+  it('isolates a rendering failure and exposes an explicit FAILED state', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      render(
+        <div>
+          <ShellErrorBoundary errorTitle="View unavailable" errorDetail="Isolated failure detail">
+            <ThrowingView />
+          </ShellErrorBoundary>
+          <p>Sibling surface remains available</p>
+        </div>,
+      )
+
+      const alert = screen.getByRole('alert')
+      expect(alert).toHaveTextContent('FAILED')
+      expect(alert).toHaveTextContent('View unavailable')
+      expect(screen.getByText('Sibling surface remains available')).toBeInTheDocument()
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 })
