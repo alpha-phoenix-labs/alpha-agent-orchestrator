@@ -15,21 +15,21 @@ test('premium cinematic layer uses repository-owned ambience without changing au
   const shellBackground = await page.locator('.operations-shell').evaluate((element) =>
     getComputedStyle(element, '::before').backgroundImage,
   )
-  expect(shellBackground).not.toContain('alphan-ambient.webp')
+  expect(shellBackground).not.toContain('alpha-ambient.webp')
   expect(shellBackground).toContain('radial-gradient')
 
   const topology = page.getByRole('region', { name: 'Live Topology' })
   await expect(topology).toBeVisible()
   await expect(topology.getByTestId('swarm-topology-svg')).toBeVisible()
 
-  const topologyBackground = await topology.locator('.alphan-topology-stage').evaluate((element) =>
+  const topologyBackground = await topology.locator('.alpha-topology-stage').evaluate((element) =>
     getComputedStyle(element).backgroundImage,
   )
-  expect(topologyBackground).toContain('alphan-city-grid.svg')
-  expect(topologyBackground).not.toContain('alphan-ambient.webp')
-  expect(topologyBackground).not.toContain('alphan-ambient.svg')
+  expect(topologyBackground).toContain('alpha-city-grid.svg')
+  expect(topologyBackground).not.toContain('alpha-ambient.webp')
+  expect(topologyBackground).not.toContain('alpha-ambient.svg')
 
-  expect(await topology.locator('.alphan-topology-node').count()).toBeGreaterThanOrEqual(7)
+  expect(await topology.locator('.alpha-topology-node').count()).toBeGreaterThanOrEqual(7)
   expect(await topology.locator('[data-qa-only="true"]').count()).toBeGreaterThan(0)
 
   expect(await page.getByRole('button', { name: operationalControlName }).count()).toBe(0)

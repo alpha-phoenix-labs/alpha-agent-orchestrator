@@ -11,7 +11,7 @@ const visualQaLeaderConversation = [
     text: 'Analysiere die Marktdaten für erneuerbare Energien und erstelle eine strukturierte Zusammenfassung mit Chancen, Risiken und konkreten Handlungsempfehlungen.',
   },
   {
-    speaker: 'Alphan · Leader',
+    speaker: 'Alpha · Leader',
     time: '14:28',
     kind: 'leader' as const,
     text: 'Verstanden. Ich übergebe die Aufgabe an das Swarm. Die folgenden Agenten arbeiten parallel an deiner Anfrage.',
@@ -43,31 +43,31 @@ export function LeaderChat({ leader }: { leader?: ViewContract }) {
   const activityReason = readUnavailableReason(leader, 'activity')
 
   return (
-    <Panel title={t('mission.leaderInteraction')} className="alphan-leader-chat" eyebrow="LEADER CHAT">
-      <div className="alphan-chat-header">
-        <div className="alphan-avatar alphan-avatar--leader" aria-hidden="true">A</div>
+    <Panel title={t('mission.leaderInteraction')} className="alpha-leader-chat" eyebrow="LEADER CHAT">
+      <div className="alpha-chat-header">
+        <div className="alpha-avatar alpha-avatar--leader" aria-hidden="true">A</div>
         <div className="min-w-0">
           <strong>{agent}</strong>
           <span>{role}</span>
         </div>
-        <span className="alphan-runtime-chip">{runtime}</span>
+        <span className="alpha-runtime-chip">{runtime}</span>
       </div>
 
-      <div className={`alphan-chat-stream ${visualQa ? 'alphan-chat-stream--qa' : ''}`}>
+      <div className={`alpha-chat-stream ${visualQa ? 'alpha-chat-stream--qa' : ''}`}>
         {visualQa ? (
-          <div className="alphan-qa-conversation" data-testid="visual-qa-conversation">
+          <div className="alpha-qa-conversation" data-testid="visual-qa-conversation">
             {visualQaLeaderConversation.map((message, index) => (
               <div
                 key={`${message.speaker}-${message.time}-${index}`}
-                className={`alphan-chat-bubble alphan-chat-bubble--${message.kind}`}
+                className={`alpha-chat-bubble alpha-chat-bubble--${message.kind}`}
               >
-                <div className="alphan-chat-meta">
+                <div className="alpha-chat-meta">
                   <span>{message.speaker}</span>
                   <span>{message.time}</span>
                 </div>
                 <p>{message.text}</p>
                 {message.kind === 'leader' ? (
-                  <ul className="alphan-chat-checklist" aria-label="Visual QA task progress">
+                  <ul className="alpha-chat-checklist" aria-label="Visual QA task progress">
                     {visualQaLeaderChecklist.map((item) => (
                       <li key={item}><span aria-hidden="true">✓</span>{item}</li>
                     ))}
@@ -77,8 +77,8 @@ export function LeaderChat({ leader }: { leader?: ViewContract }) {
             ))}
           </div>
         ) : leader ? (
-          <div className="alphan-chat-bubble alphan-chat-bubble--leader">
-            <div className="alphan-chat-meta">
+          <div className="alpha-chat-bubble alpha-chat-bubble--leader">
+            <div className="alpha-chat-meta">
               <span>{agent}</span>
               <span>READ ONLY</span>
             </div>
@@ -89,7 +89,7 @@ export function LeaderChat({ leader }: { leader?: ViewContract }) {
         )}
 
         {!visualQa ? (
-          <div className="alphan-chat-state-grid">
+          <div className="alpha-chat-state-grid">
             <div>
               <span>{t('field.runtimeState')}</span>
               <strong>{runtime}</strong>
@@ -104,9 +104,9 @@ export function LeaderChat({ leader }: { leader?: ViewContract }) {
         ) : null}
       </div>
 
-      <div className={`alphan-chat-composer ${visualQa ? 'alphan-chat-composer--qa' : ''}`} aria-label="Leader composer unavailable">
+      <div className={`alpha-chat-composer ${visualQa ? 'alpha-chat-composer--qa' : ''}`} aria-label="Leader composer unavailable">
         <span>{visualQa ? 'Nachricht an den Leader …' : 'READ ONLY · NO COMMAND COMPOSER'}</span>
-        <span className="alphan-composer-send" aria-hidden="true">➤</span>
+        <span className="alpha-composer-send" aria-hidden="true">➤</span>
       </div>
     </Panel>
   )

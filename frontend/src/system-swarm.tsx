@@ -11,10 +11,10 @@ function AgentCards({ agents }: { agents?: readonly ViewContract[] }) {
     <ContractList
       contracts={agents}
       emptyMessage={t('system.noAgents')}
-      className="alphan-swarm-list"
+      className="alpha-swarm-list"
       render={(agent, index) => (
-        <article key={index} className="alphan-swarm-record">
-          <div className="alphan-swarm-record-grid alphan-swarm-record-grid--agents">
+        <article key={index} className="alpha-swarm-record">
+          <div className="alpha-swarm-record-grid alpha-swarm-record-grid--agents">
             <ContractValue contract={agent} field="agent_id" label={t('field.agent')} compact />
             <ContractValue contract={agent} field="role" label={t('field.role')} compact />
             <ContractValue contract={agent} field="health" label={t('field.health')} compact />
@@ -32,15 +32,15 @@ function AgentGrid({ agents }: { agents?: readonly ViewContract[] }) {
   const { t } = useI18n()
 
   return (
-    <Panel title={t('system.agentGrid')} eyebrow="AGENT GRID" className="alphan-system-agent-grid">
-      <p className="alphan-panel-note alphan-panel-note--lead">{t('system.agentGridNote')}</p>
+    <Panel title={t('system.agentGrid')} eyebrow="AGENT GRID" className="alpha-system-agent-grid">
+      <p className="alpha-panel-note alpha-panel-note--lead">{t('system.agentGridNote')}</p>
       <ContractList
         contracts={agents}
         emptyMessage={t('system.noAgentsForGrid')}
-        className="alphan-swarm-list"
+        className="alpha-swarm-list"
         render={(agent, index) => (
-          <article key={index} className="alphan-swarm-record">
-            <div className="alphan-swarm-record-grid alphan-swarm-record-grid--grid">
+          <article key={index} className="alpha-swarm-record">
+            <div className="alpha-swarm-record-grid alpha-swarm-record-grid--grid">
               <ContractValue contract={agent} field="agent_id" label={t('field.agent')} compact />
               <ContractValue contract={agent} field="role" label={t('field.role')} compact />
               <ContractValue contract={agent} field="health" label={t('field.health')} compact />
@@ -54,7 +54,7 @@ function AgentGrid({ agents }: { agents?: readonly ViewContract[] }) {
           </article>
         )}
       />
-      <p className="alphan-panel-note">{t('system.globalTelemetryNote')}</p>
+      <p className="alpha-panel-note">{t('system.globalTelemetryNote')}</p>
     </Panel>
   )
 }
@@ -64,30 +64,30 @@ export function SystemSwarm() {
   const { t } = useI18n()
 
   return (
-    <div className="alphan-system-swarm">
-      <header className="alphan-system-header">
+    <div className="alpha-system-swarm">
+      <header className="alpha-system-header">
         <div>
           <p>{t('common.phase48ReadOnly')}</p>
           <h2>{t('system.title')}</h2>
           <span>{t('system.description')}</span>
         </div>
-        <span className="alphan-readonly-lock">
+        <span className="alpha-readonly-lock">
           {t('common.authority')} · {authorityAvailable ? t('common.available') : t('common.unavailable')}
         </span>
       </header>
 
       {!authorityAvailable ? (
-        <div role="status" className="alphan-authority-banner">
-          <span className="alphan-status-dot alphan-status-dot--warning" aria-hidden="true" />
+        <div role="status" className="alpha-authority-banner">
+          <span className="alpha-status-dot alpha-status-dot--warning" aria-hidden="true" />
           <span>{t('system.authorityUnavailable')}</span>
         </div>
       ) : null}
 
-      <div className="alphan-system-grid">
-        <Panel title={t('system.overview')} eyebrow="SYSTEM OVERVIEW" className="alphan-system-overview">
-          <div className="alphan-swarm-stack">
+      <div className="alpha-system-grid">
+        <Panel title={t('system.overview')} eyebrow="SYSTEM OVERVIEW" className="alpha-system-overview">
+          <div className="alpha-swarm-stack">
             {snapshot?.systemState ? (
-              <div className="alphan-system-facts alphan-system-facts--three">
+              <div className="alpha-system-facts alpha-system-facts--three">
                 <ContractValue contract={snapshot.systemState} field="mode" label={t('app.systemMode')} compact />
                 <ContractValue contract={snapshot.systemState} field="writes_enabled" label={t('field.writesEnabled')} compact />
                 <ContractValue contract={snapshot.systemState} field="state_version" label={t('field.stateVersion')} compact />
@@ -97,7 +97,7 @@ export function SystemSwarm() {
             )}
 
             {snapshot?.canonicalState ? (
-              <div className="alphan-system-facts alphan-system-facts--three">
+              <div className="alpha-system-facts alpha-system-facts--three">
                 <ContractValue contract={snapshot.canonicalState} field="repository" label={t('app.repository')} compact />
                 <ContractValue contract={snapshot.canonicalState} field="branch" label={t('field.branch')} compact />
                 <ContractValue contract={snapshot.canonicalState} field="head_sha" label={t('field.head')} compact />
@@ -110,19 +110,19 @@ export function SystemSwarm() {
           </div>
         </Panel>
 
-        <Panel title={t('system.agents')} eyebrow="AGENTS" className="alphan-system-agents">
+        <Panel title={t('system.agents')} eyebrow="AGENTS" className="alpha-system-agents">
           <AgentCards agents={snapshot?.agents} />
-          <p className="alphan-panel-note">{t('system.agentSeparationNote')}</p>
+          <p className="alpha-panel-note">{t('system.agentSeparationNote')}</p>
         </Panel>
 
-        <Panel title={t('system.connectors')} eyebrow="CONNECTORS" className="alphan-system-connectors">
+        <Panel title={t('system.connectors')} eyebrow="CONNECTORS" className="alpha-system-connectors">
           <ContractList
             contracts={snapshot?.connectors}
             emptyMessage={t('system.noConnectors')}
-            className="alphan-swarm-list"
+            className="alpha-swarm-list"
             render={(connector, index) => (
-              <article key={index} className="alphan-swarm-record">
-                <div className="alphan-swarm-record-grid alphan-swarm-record-grid--two">
+              <article key={index} className="alpha-swarm-record">
+                <div className="alpha-swarm-record-grid alpha-swarm-record-grid--two">
                   <ContractValue contract={connector} field="connector_id" label={t('field.connector')} compact />
                   <ContractValue contract={connector} field="state" label={t('field.state')} compact />
                   <ContractValue contract={connector} field="health" label={t('field.health')} compact />
@@ -133,14 +133,14 @@ export function SystemSwarm() {
           />
         </Panel>
 
-        <Panel title={t('system.locks')} eyebrow="LOCKS" className="alphan-system-locks">
+        <Panel title={t('system.locks')} eyebrow="LOCKS" className="alpha-system-locks">
           <ContractList
             contracts={snapshot?.locks}
             emptyMessage={t('system.noLocks')}
-            className="alphan-swarm-list"
+            className="alpha-swarm-list"
             render={(lock, index) => (
-              <article key={index} className="alphan-swarm-record">
-                <div className="alphan-swarm-record-grid alphan-swarm-record-grid--two">
+              <article key={index} className="alpha-swarm-record">
+                <div className="alpha-swarm-record-grid alpha-swarm-record-grid--two">
                   <ContractValue contract={lock} field="resource" label={t('field.resource')} compact />
                   <ContractValue contract={lock} field="owner" label={t('field.owner')} compact />
                   <ContractValue contract={lock} field="order_id" label={t('field.orderId')} compact />
@@ -151,7 +151,7 @@ export function SystemSwarm() {
           />
         </Panel>
 
-        <div className="alphan-system-topology">
+        <div className="alpha-system-topology">
           <LiveSwarmTopology
             leader={snapshot?.leader}
             agents={snapshot?.agents}
@@ -159,14 +159,14 @@ export function SystemSwarm() {
           />
         </div>
 
-        <Panel title={t('system.policies')} eyebrow="POLICIES" className="alphan-system-policies">
+        <Panel title={t('system.policies')} eyebrow="POLICIES" className="alpha-system-policies">
           <MissingAuthority message={t('system.noPolicyContract')} />
         </Panel>
 
-        <Panel title={t('system.controlPlane')} eyebrow="CONTROL PLANE" className="alphan-system-control-plane">
-          <div className="alphan-swarm-stack">
+        <Panel title={t('system.controlPlane')} eyebrow="CONTROL PLANE" className="alpha-system-control-plane">
+          <div className="alpha-swarm-stack">
             {snapshot?.systemState ? (
-              <div className="alphan-system-facts alphan-system-facts--two">
+              <div className="alpha-system-facts alpha-system-facts--two">
                 <ContractValue contract={snapshot.systemState} field="mode" label={t('app.systemMode')} compact />
                 <ContractValue contract={snapshot.systemState} field="writes_enabled" label={t('field.writesEnabled')} compact />
               </div>
@@ -177,10 +177,10 @@ export function SystemSwarm() {
             <ContractList
               contracts={snapshot?.gates}
               emptyMessage={t('system.noGates')}
-              className="alphan-swarm-list"
+              className="alpha-swarm-list"
               render={(gate, index) => (
-                <article key={index} className="alphan-swarm-record">
-                  <div className="alphan-swarm-record-grid alphan-swarm-record-grid--three">
+                <article key={index} className="alpha-swarm-record">
+                  <div className="alpha-swarm-record-grid alpha-swarm-record-grid--three">
                     <ContractValue contract={gate} field="gate_id" label={t('field.gate')} compact />
                     <ContractValue contract={gate} field="allowed" label={t('field.allowed')} compact />
                     <ContractValue contract={gate} field="reason" label={t('field.reason')} compact />
@@ -188,14 +188,14 @@ export function SystemSwarm() {
                 </article>
               )}
             />
-            <p className="alphan-panel-note">{t('system.controlPlaneNote')}</p>
+            <p className="alpha-panel-note">{t('system.controlPlaneNote')}</p>
           </div>
         </Panel>
 
-        <Panel title={t('system.health')} eyebrow="SYSTEM HEALTH" className="alphan-system-health">
-          <div className="alphan-swarm-stack">
+        <Panel title={t('system.health')} eyebrow="SYSTEM HEALTH" className="alpha-system-health">
+          <div className="alpha-swarm-stack">
             {snapshot?.runtime ? (
-              <div className="alphan-system-facts alphan-system-facts--two">
+              <div className="alpha-system-facts alpha-system-facts--two">
                 <ContractValue contract={snapshot.runtime} field="state" label={t('field.runtimeState')} compact />
                 <ContractValue contract={snapshot.runtime} field="observed_at" label={t('field.runtimeObservedAt')} compact />
               </div>
@@ -204,7 +204,7 @@ export function SystemSwarm() {
             )}
 
             {snapshot?.telemetry ? (
-              <div className="alphan-system-facts alphan-system-facts--two">
+              <div className="alpha-system-facts alpha-system-facts--two">
                 <ContractValue contract={snapshot.telemetry} field="metrics" label={t('field.telemetryMetrics')} compact />
                 <ContractValue contract={snapshot.telemetry} field="observed_at" label={t('field.telemetryObservedAt')} compact />
               </div>
@@ -216,7 +216,7 @@ export function SystemSwarm() {
           </div>
         </Panel>
 
-        <div className="alphan-system-agent-grid-area">
+        <div className="alpha-system-agent-grid-area">
           <AgentGrid agents={snapshot?.agents} />
         </div>
       </div>

@@ -32,10 +32,10 @@ export function ContractValue({
       : displayValue(value, t('common.unknown'))
 
   return (
-    <div className={`alphan-data-cell ${compact ? 'alphan-data-cell--compact' : ''}`}>
-      <span className="alphan-data-label">{label}</span>
-      <span className="alphan-data-value">{formattedValue}</span>
-      {reason ? <span className="alphan-data-reason">{reason}</span> : null}
+    <div className={`alpha-data-cell ${compact ? 'alpha-data-cell--compact' : ''}`}>
+      <span className="alpha-data-label">{label}</span>
+      <span className="alpha-data-value">{formattedValue}</span>
+      {reason ? <span className="alpha-data-reason">{reason}</span> : null}
     </div>
   )
 }
@@ -53,15 +53,15 @@ export function Panel({
 }) {
   const { t } = useI18n()
   return (
-    <section aria-label={title} className={`alphan-panel ${className}`}>
-      <div className="alphan-panel-heading">
+    <section aria-label={title} className={`alpha-panel ${className}`}>
+      <div className="alpha-panel-heading">
         <div className="min-w-0">
-          {eyebrow ? <p className="alphan-panel-eyebrow">{eyebrow}</p> : null}
-          <h3 className="alphan-panel-title">{title}</h3>
+          {eyebrow ? <p className="alpha-panel-eyebrow">{eyebrow}</p> : null}
+          <h3 className="alpha-panel-title">{title}</h3>
         </div>
-        <span className="alphan-panel-light" aria-hidden="true" />
+        <span className="alpha-panel-light" aria-hidden="true" />
       </div>
-      <div className="alphan-panel-body">
+      <div className="alpha-panel-body">
         <ShellErrorBoundary
           errorTitle={t('app.viewUnavailable')}
           errorDetail={t('app.viewUnavailableDetail')}
@@ -76,9 +76,9 @@ export function Panel({
 export function MissingAuthority({ message, compact = false }: { message: string; compact?: boolean }) {
   const { t } = useI18n()
   return (
-    <div className={`alphan-unavailable ${compact ? 'alphan-unavailable--compact' : ''}`}>
-      <div className="alphan-unavailable-title">
-        <span className="alphan-status-dot alphan-status-dot--warning" aria-hidden="true" />
+    <div className={`alpha-unavailable ${compact ? 'alpha-unavailable--compact' : ''}`}>
+      <div className="alpha-unavailable-title">
+        <span className="alpha-status-dot alpha-status-dot--warning" aria-hidden="true" />
         <strong>{t('common.unavailable')}</strong>
       </div>
       <p>{message}</p>
@@ -90,7 +90,7 @@ export function ContractList({
   contracts,
   emptyMessage,
   render,
-  className = 'alphan-list',
+  className = 'alpha-list',
 }: {
   contracts: readonly ViewContract[] | undefined
   emptyMessage: string
@@ -99,6 +99,6 @@ export function ContractList({
 }) {
   const { t } = useI18n()
   if (!contracts) return <MissingAuthority message={emptyMessage} compact />
-  if (contracts.length === 0) return <p className="alphan-empty">{t('common.backendRecordsZero')}</p>
+  if (contracts.length === 0) return <p className="alpha-empty">{t('common.backendRecordsZero')}</p>
   return <div className={className}>{contracts.map(render)}</div>
 }

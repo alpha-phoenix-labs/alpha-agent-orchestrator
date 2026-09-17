@@ -50,7 +50,7 @@ export const premiumVisualQaSnapshot: OperationsSnapshot = {
     }),
     view('EVIDENCE', {
       source: known('EVIDENCE', 'visual-reference'),
-      reference: known('EVIDENCE', 'ALPHAN_PREMIUM_GATE'),
+      reference: known('EVIDENCE', 'ALPHA_PREMIUM_GATE'),
       verification_state: known('EVIDENCE', 'VISUAL_QA_FIXTURE'),
     }),
     view('EVIDENCE', {

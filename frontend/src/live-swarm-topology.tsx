@@ -43,17 +43,17 @@ function TopologyNode({
   return (
     <div
       className={[
-        'alphan-topology-node',
-        leader ? 'alphan-topology-node--leader' : '',
-        `alphan-topology-node--${tone}`,
+        'alpha-topology-node',
+        leader ? 'alpha-topology-node--leader' : '',
+        `alpha-topology-node--${tone}`,
       ].filter(Boolean).join(' ')}
       style={position ? { left: `${position.x}%`, top: `${position.y}%` } : undefined}
       tabIndex={0}
       aria-label={`${t('field.agent')}: ${agent}`}
     >
-      <div className="alphan-node-orbit" aria-hidden="true" />
-      <div className="alphan-node-core" aria-hidden="true">{leader ? 'A' : glyph}</div>
-      <div className="alphan-node-copy">
+      <div className="alpha-node-orbit" aria-hidden="true" />
+      <div className="alpha-node-core" aria-hidden="true">{leader ? 'A' : glyph}</div>
+      <div className="alpha-node-copy">
         <strong>{agent}</strong>
         <span>{role}</span>
         <small><i aria-hidden="true" />{runtime} · {activity}</small>
@@ -65,30 +65,30 @@ function TopologyNode({
 function SVGConnections({ visualQa }: { visualQa: boolean }) {
   return (
     <svg
-      className="alphan-topology-canvas"
+      className="alpha-topology-canvas"
       viewBox="0 0 1000 500"
       preserveAspectRatio="none"
       aria-hidden="true"
       data-testid="swarm-topology-svg"
     >
       <defs>
-        <linearGradient id="alphan-edge-cyan" x1="0" x2="1">
+        <linearGradient id="alpha-edge-cyan" x1="0" x2="1">
           <stop offset="0%" stopColor="#00f0ff" stopOpacity="0.12" />
           <stop offset="48%" stopColor="#3b82f6" stopOpacity="0.95" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0.72" />
         </linearGradient>
-        <linearGradient id="alphan-edge-violet" x1="1" x2="0">
+        <linearGradient id="alpha-edge-violet" x1="1" x2="0">
           <stop offset="0%" stopColor="#a855f7" stopOpacity="0.18" />
           <stop offset="50%" stopColor="#7c3aed" stopOpacity="0.94" />
           <stop offset="100%" stopColor="#00f0ff" stopOpacity="0.78" />
         </linearGradient>
-        <radialGradient id="alphan-core-halo">
+        <radialGradient id="alpha-core-halo">
           <stop offset="0%" stopColor="#86f7ff" stopOpacity="0.52" />
           <stop offset="38%" stopColor="#2563eb" stopOpacity="0.22" />
           <stop offset="72%" stopColor="#a855f7" stopOpacity="0.09" />
           <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
         </radialGradient>
-        <filter id="alphan-edge-glow" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id="alpha-edge-glow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="7" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -97,23 +97,23 @@ function SVGConnections({ visualQa }: { visualQa: boolean }) {
         </filter>
       </defs>
 
-      <ellipse className="alphan-svg-orbit alphan-svg-orbit--outer" cx="500" cy="250" rx="392" ry="184" />
-      <ellipse className="alphan-svg-orbit alphan-svg-orbit--inner" cx="500" cy="250" rx="286" ry="132" />
-      <circle cx="500" cy="250" r="136" fill="url(#alphan-core-halo)" />
+      <ellipse className="alpha-svg-orbit alpha-svg-orbit--outer" cx="500" cy="250" rx="392" ry="184" />
+      <ellipse className="alpha-svg-orbit alpha-svg-orbit--inner" cx="500" cy="250" rx="286" ry="132" />
+      <circle cx="500" cy="250" r="136" fill="url(#alpha-core-halo)" />
 
       {visualQa ? qaEdgePaths.map((path, index) => (
         <g key={path} data-qa-only="true">
-          <path className="alphan-edge-shadow" d={path} filter="url(#alphan-edge-glow)" />
+          <path className="alpha-edge-shadow" d={path} filter="url(#alpha-edge-glow)" />
           <path
-            className={`alphan-edge-flow alphan-edge-flow--${index % 2 === 0 ? 'cyan' : 'violet'}`}
+            className={`alpha-edge-flow alpha-edge-flow--${index % 2 === 0 ? 'cyan' : 'violet'}`}
             d={path}
-            stroke={index % 2 === 0 ? 'url(#alphan-edge-cyan)' : 'url(#alphan-edge-violet)'}
+            stroke={index % 2 === 0 ? 'url(#alpha-edge-cyan)' : 'url(#alpha-edge-violet)'}
           />
         </g>
       )) : null}
 
       {visualQa ? (
-        <g className="alphan-orbit-particles" data-qa-only="true">
+        <g className="alpha-orbit-particles" data-qa-only="true">
           <circle cx="170" cy="182" r="5" />
           <circle cx="330" cy="78" r="4" />
           <circle cx="660" cy="94" r="4" />
@@ -129,16 +129,16 @@ function ToolsData({ connectors }: { connectors?: readonly ViewContract[] }) {
   const { t } = useI18n()
 
   return (
-    <aside className="alphan-tools" aria-label="Tools and data">
-      <div className="alphan-tools-heading">TOOLS & DATA</div>
+    <aside className="alpha-tools" aria-label="Tools and data">
+      <div className="alpha-tools-heading">TOOLS & DATA</div>
       {!connectors ? (
         <MissingAuthority message={t('system.noConnectors')} compact />
       ) : connectors.length === 0 ? (
-        <p className="alphan-empty">0 CONNECTORS</p>
+        <p className="alpha-empty">0 CONNECTORS</p>
       ) : (
         connectors.slice(0, 5).map((connector, index) => (
-          <div className="alphan-tool-row" key={index}>
-            <span className="alphan-tool-icon" aria-hidden="true">◈</span>
+          <div className="alpha-tool-row" key={index}>
+            <span className="alpha-tool-icon" aria-hidden="true">◈</span>
             <span>{displayValue(readAvailableField<unknown>(connector, 'connector_id'), t('common.unknown'))}</span>
             <small>{displayValue(readAvailableField<unknown>(connector, 'state'), t('common.unknown'))}</small>
           </div>
@@ -162,23 +162,23 @@ export function LiveSwarmTopology({
   const visibleAgents = agents?.slice(0, 6)
 
   return (
-    <section aria-label={t('system.liveTopology')} className="alphan-topology-hero" data-visual-qa={visualQa ? 'true' : undefined}>
-      <div className="alphan-topology-heading">
+    <section aria-label={t('system.liveTopology')} className="alpha-topology-hero" data-visual-qa={visualQa ? 'true' : undefined}>
+      <div className="alpha-topology-heading">
         <div>
-          <p className="alphan-panel-eyebrow">{t('common.phase49ReadOnlyTopology')}</p>
+          <p className="alpha-panel-eyebrow">{t('common.phase49ReadOnlyTopology')}</p>
           <h3>{t('system.liveTopology')}</h3>
         </div>
-        <div className="alphan-topology-meta">
+        <div className="alpha-topology-meta">
           <span>{visualQa ? 'VISUAL QA · NOT AUTHORITY' : 'STRICT READ ONLY'}</span>
           <span>{visibleAgents ? `${visibleAgents.length} AGENTS` : t('common.unknown')}</span>
         </div>
       </div>
 
-      <div className="alphan-topology-layout">
-        <div className="alphan-topology-stage">
+      <div className="alpha-topology-layout">
+        <div className="alpha-topology-stage">
           <SVGConnections visualQa={visualQa} />
 
-          <div className="alphan-topology-center">
+          <div className="alpha-topology-center">
             {leader ? (
               <TopologyNode contract={leader} leader tone="cyan" />
             ) : (
@@ -198,16 +198,16 @@ export function LiveSwarmTopology({
               />
             ) : null
           }) : (
-            <div className="alphan-topology-satellites">
+            <div className="alpha-topology-satellites">
               <MissingAuthority message={t('system.noAgentsForTopology')} compact />
             </div>
           )}
 
           {visibleAgents?.length === 0 ? (
-            <p className="alphan-empty alphan-topology-empty">{t('common.backendRecordsZero')}</p>
+            <p className="alpha-empty alpha-topology-empty">{t('common.backendRecordsZero')}</p>
           ) : null}
 
-          <div className="alphan-topology-brand-copy" aria-hidden="true">
+          <div className="alpha-topology-brand-copy" aria-hidden="true">
             <span>{visibleAgents?.length ?? 0} AGENTS</span>
             <span>1 GOAL</span>
             <span>COORDINATED INTELLIGENCE</span>
@@ -217,8 +217,8 @@ export function LiveSwarmTopology({
         <ToolsData connectors={connectors} />
       </div>
 
-      <div className={`alphan-topology-footer ${visualQa ? 'alphan-topology-footer--qa' : ''}`}>
-        <span className={`alphan-status-dot ${visualQa ? '' : 'alphan-status-dot--warning'}`} aria-hidden="true" />
+      <div className={`alpha-topology-footer ${visualQa ? 'alpha-topology-footer--qa' : ''}`}>
+        <span className={`alpha-status-dot ${visualQa ? '' : 'alpha-status-dot--warning'}`} aria-hidden="true" />
         <div>
           {visualQa ? (
             <>
