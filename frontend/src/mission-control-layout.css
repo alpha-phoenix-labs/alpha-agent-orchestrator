@@ -1,0 +1,309 @@
+/*
+ * Phase 4 Mission Control command-deck composition.
+ * Presentation only: authority, freshness, lock, writer and runtime semantics remain backend-owned.
+ */
+
+.alpha-command-deck {
+  display: grid;
+  gap: .72rem;
+  min-width: 0;
+}
+
+.alpha-mission-header {
+  position: relative !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: .65rem .78rem .68rem !important;
+  overflow: visible !important;
+  clip-path: none !important;
+  white-space: normal !important;
+  border: 1px solid rgba(62, 190, 255, .18) !important;
+  border-radius: .62rem;
+  background:
+    linear-gradient(90deg, rgba(3, 18, 36, .88), rgba(2, 10, 24, .68) 52%, rgba(12, 8, 35, .82)),
+    rgba(1, 7, 17, .78);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.035),
+    0 14px 40px rgba(0,0,0,.22),
+    0 0 30px rgba(30,164,255,.055);
+  backdrop-filter: blur(18px) saturate(1.16);
+}
+
+.alpha-mission-header::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 42%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(49,226,255,.88), rgba(74,122,255,.42), transparent);
+  pointer-events: none;
+}
+
+.alpha-mission-title-row h2 {
+  font-size: clamp(1.42rem, 2vw, 2.02rem) !important;
+  letter-spacing: .025em;
+}
+
+.alpha-mission-header > div:first-child > span {
+  max-width: 62rem !important;
+  color: #8299b9 !important;
+}
+
+.alpha-header-status {
+  align-items: stretch;
+}
+
+.alpha-header-status > div {
+  min-width: 128px !important;
+  padding: .5rem .62rem !important;
+  border-color: rgba(76,178,255,.18) !important;
+  background: linear-gradient(180deg, rgba(7,25,48,.76), rgba(2,10,23,.76)) !important;
+}
+
+.alpha-command-stage {
+  display: grid;
+  grid-template-columns: minmax(250px, .72fr) minmax(0, 2.8fr) minmax(258px, .74fr);
+  grid-template-rows: minmax(560px, 61vh) minmax(214px, auto);
+  grid-template-areas:
+    'left topology right'
+    'left secondary right';
+  gap: .68rem;
+  min-width: 0;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.alpha-command-left {
+  grid-area: left;
+  display: grid;
+  grid-template-rows: minmax(430px, 1.55fr) minmax(178px, .58fr);
+  gap: .68rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.alpha-command-topology {
+  grid-area: topology;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+.alpha-command-topology::after {
+  content: '';
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: -.4rem;
+  height: 2.2rem;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(35,189,255,.16), rgba(117,72,255,.06) 46%, transparent 72%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.alpha-command-secondary {
+  grid-area: secondary;
+  display: grid;
+  grid-template-columns: minmax(0, 1.68fr) minmax(238px, .72fr);
+  gap: .68rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.alpha-command-right {
+  grid-area: right;
+  min-width: 0;
+  min-height: 0;
+}
+
+.alpha-command-right > .alpha-control-rail {
+  height: 100%;
+  border-color: rgba(61,190,255,.34);
+  background:
+    linear-gradient(180deg, rgba(4,18,35,.94), rgba(2,9,21,.96)),
+    rgba(1,7,16,.96);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.035),
+    inset 0 0 48px rgba(30,119,255,.03),
+    0 18px 46px rgba(0,0,0,.32),
+    0 0 34px rgba(37,151,255,.07);
+}
+
+.alpha-command-stage .alpha-topology-hero,
+.alpha-command-stage .alpha-leader-chat,
+.alpha-command-stage .alpha-findings-panel,
+.alpha-command-stage .alpha-agent-grid-panel,
+.alpha-command-stage .alpha-lifecycle-panel {
+  height: 100%;
+}
+
+.alpha-command-stage .alpha-topology-hero {
+  border-radius: .72rem;
+  box-shadow:
+    inset 0 0 90px rgba(31,146,255,.08),
+    0 0 0 1px rgba(70,216,255,.05),
+    0 24px 60px rgba(0,0,0,.38),
+    0 0 54px rgba(32,157,255,.09);
+}
+
+.alpha-command-stage .alpha-topology-layout,
+.alpha-command-stage .alpha-topology-stage,
+.alpha-command-stage .swarm-scene {
+  min-height: 0;
+}
+
+.alpha-command-observability {
+  display: grid;
+  grid-template-columns: minmax(0, .94fr) minmax(0, 1.46fr) minmax(0, .94fr);
+  gap: .68rem;
+  min-width: 0;
+  min-height: 176px;
+  padding-top: .04rem;
+}
+
+.alpha-command-observability .alpha-bottom-panel {
+  height: 100%;
+  border-color: rgba(62,178,255,.22);
+  background:
+    linear-gradient(180deg, rgba(5,18,35,.84), rgba(2,9,20,.9)),
+    rgba(2,8,18,.86);
+}
+
+.alpha-command-observability .alpha-trace-panel {
+  border-color: rgba(83,146,255,.28);
+  box-shadow:
+    inset 0 0 38px rgba(80,83,255,.025),
+    0 16px 38px rgba(0,0,0,.26),
+    0 0 26px rgba(73,105,255,.055);
+}
+
+.alpha-command-stage .alpha-panel-heading,
+.alpha-command-observability .alpha-panel-heading {
+  min-height: 2.15rem;
+}
+
+.alpha-command-stage .alpha-findings-panel .alpha-panel-body {
+  max-height: none;
+}
+
+.alpha-command-stage .alpha-control-rail .alpha-rail-panel {
+  flex: 0 0 auto;
+}
+
+.alpha-footer {
+  margin-top: .02rem;
+  padding-top: .2rem;
+}
+
+@media (min-width: 1480px) {
+  .alpha-command-stage {
+    grid-template-columns: minmax(270px, .72fr) minmax(0, 2.95fr) minmax(278px, .74fr);
+    grid-template-rows: minmax(600px, 63vh) minmax(220px, auto);
+  }
+}
+
+@media (max-width: 1180px) {
+  .alpha-command-stage {
+    grid-template-columns: minmax(235px, .72fr) minmax(0, 2.15fr) minmax(240px, .74fr);
+    grid-template-rows: minmax(520px, 58vh) minmax(218px, auto);
+  }
+
+  .alpha-command-secondary {
+    grid-template-columns: minmax(0, 1.45fr) minmax(220px, .8fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .alpha-mission-header {
+    display: grid !important;
+    align-items: start !important;
+    gap: .6rem !important;
+  }
+
+  .alpha-header-status {
+    justify-content: stretch;
+  }
+
+  .alpha-header-status > div {
+    flex: 1 1 150px;
+  }
+
+  .alpha-command-stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      'topology'
+      'secondary'
+      'left'
+      'right';
+  }
+
+  .alpha-command-topology {
+    min-height: 520px;
+  }
+
+  .alpha-command-left {
+    grid-template-columns: minmax(0, 1.1fr) minmax(240px, .72fr);
+    grid-template-rows: minmax(340px, auto);
+  }
+
+  .alpha-command-right > .alpha-control-rail {
+    max-height: 560px;
+  }
+
+  .alpha-command-observability {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 680px) {
+  .alpha-mission-header {
+    padding: .56rem !important;
+  }
+
+  .alpha-mission-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .alpha-header-status {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .alpha-command-stage {
+    gap: .55rem;
+  }
+
+  .alpha-command-topology {
+    min-height: 470px;
+  }
+
+  .alpha-command-left,
+  .alpha-command-secondary {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: .55rem;
+  }
+
+  .alpha-command-left .alpha-leader-chat {
+    min-height: 420px;
+  }
+
+  .alpha-command-observability {
+    gap: .55rem;
+  }
+
+  .alpha-command-right > .alpha-control-rail {
+    max-height: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alpha-command-topology::after {
+    filter: blur(12px);
+  }
+}
