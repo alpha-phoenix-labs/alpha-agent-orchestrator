@@ -19,7 +19,7 @@
   opacity: 0.16;
   background:
     linear-gradient(180deg, rgba(1, 6, 14, 0.18), rgba(1, 6, 14, 0.74) 58%, rgba(1, 6, 14, 0.94)),
-    url('/alphan-ambient.webp') center 12% / cover no-repeat;
+    url('/alphan-ambient.svg') center 12% / cover no-repeat;
   filter: saturate(1.22) contrast(1.08);
 }
 
