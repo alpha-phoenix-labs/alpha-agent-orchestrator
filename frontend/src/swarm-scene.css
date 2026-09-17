@@ -244,7 +244,10 @@
 }
 
 .swarm-scene__bank--left { left: 3%; }
-.swarm-scene__bank--right { right: 3%; }
+.swarm-scene__bank--right {
+  right: 3%;
+  bottom: 32%;
+}
 
 .swarm-scene__agent {
   position: relative;
