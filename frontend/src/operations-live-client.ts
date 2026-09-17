@@ -172,7 +172,7 @@ export class OperationsLiveClient {
     buildUrl(baseUrl, OPERATIONS_SNAPSHOT_PATH)
     this.#baseUrl = baseUrl
     this.#authorization = `Bearer ${bearerCredential}`
-    this.#fetch = fetchImpl
+    this.#fetch = fetchImpl.bind(globalThis)
   }
 
   async #request(
