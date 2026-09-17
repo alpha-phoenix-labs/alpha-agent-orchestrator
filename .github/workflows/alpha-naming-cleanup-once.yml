@@ -1,0 +1,48 @@
+name: Alpha Naming Cleanup Once
+
+on:
+  push:
+    branches:
+      - phase4/premium-mission-control-remediation
+
+permissions:
+  contents: write
+
+jobs:
+  rename-alpha:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: phase4/premium-mission-control-remediation
+          fetch-depth: 0
+
+      - name: Apply atomic ALPHAN to ALPHA rename
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git mv frontend/public/alphan-ambient.svg frontend/public/alpha-ambient.svg
+          git mv frontend/public/alphan-city-grid.svg frontend/public/alpha-city-grid.svg
+          git mv frontend/src/alphan-premium.css frontend/src/alpha-premium.css
+
+          git rm .github/workflows/alpha-naming-cleanup-once.yml
+
+          while IFS= read -r -d '' file; do
+            sed -i -e 's/ALPHAN/ALPHA/g' -e 's/Alphan/Alpha/g' -e 's/alphan/alpha/g' "$file"
+          done < <(grep -RIlZ --exclude-dir=.git -E 'ALPHAN|Alphan|alphan' . || true)
+
+          if grep -RInE --exclude-dir=.git 'ALPHAN|Alphan|alphan' .; then
+            echo "Residual ALPHAN naming found" >&2
+            exit 1
+          fi
+
+          git diff --check
+          git status --short
+          git add -A
+          git commit -m "Normalize Phase 4 branding from ALPHAN to ALPHA"
+          git push origin HEAD:phase4/premium-mission-control-remediation
