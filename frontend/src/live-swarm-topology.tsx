@@ -190,7 +190,7 @@ export function LiveSwarmTopology({
             const position = nodePositions[index]
             return position ? (
               <TopologyNode
-                key={`${index}-${displayValue(readAvailableField<unknown>(agent, 'agent_id'), index)}`}
+                key={`${index}-${displayValue(readAvailableField<unknown>(agent, 'agent_id'), String(index))}`}
                 contract={agent}
                 position={{ x: position.x, y: position.y }}
                 tone={position.tone}
