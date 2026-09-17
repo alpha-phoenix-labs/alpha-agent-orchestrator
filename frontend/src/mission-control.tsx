@@ -5,6 +5,11 @@ import { readAvailableField, readUnavailableReason, type ViewContract } from './
 import { useI18n } from './i18n'
 import { useOperationsData } from './operations-data'
 
+function displayValue(value: unknown, fallback: string): string {
+  if (value === null || value === undefined || value === '') return fallback
+  return String(value)
+}
+
 function ContractValue({
   contract,
   field,
@@ -24,9 +29,7 @@ function ContractValue({
       ? value
         ? t('common.true')
         : t('common.false')
-      : value === null || value === undefined || value === ''
-        ? t('common.unknown')
-        : String(value)
+      : displayValue(value, t('common.unknown'))
 
   return (
     <div className={`mission-data-cell ${compact ? 'mission-data-cell--compact' : ''}`}>
@@ -108,28 +111,28 @@ function ContractList({
 
 function TopologyNode({ contract, leader = false }: { contract: ViewContract; leader?: boolean }) {
   const { t } = useI18n()
-  const agent = readAvailableField<unknown>(contract, 'agent_id')
-  const role = readAvailableField<unknown>(contract, 'role')
-  const runtime = readAvailableField<unknown>(contract, 'runtime_state')
-  const activity = readAvailableField<unknown>(contract, 'activity')
+  const agent = displayValue(readAvailableField<unknown>(contract, 'agent_id'), t('common.unknown'))
+  const role = displayValue(readAvailableField<unknown>(contract, 'role'), t('common.unknown'))
+  const runtime = displayValue(readAvailableField<unknown>(contract, 'runtime_state'), t('common.unknown'))
+  const activity = displayValue(readAvailableField<unknown>(contract, 'activity'), t('common.unknown'))
 
   return (
     <div
       className={`mission-topology-node ${leader ? 'mission-topology-node--leader' : ''}`}
       tabIndex={0}
-      aria-label={`${t('field.agent')}: ${agent ?? t('common.unknown')}`}
+      aria-label={`${t('field.agent')}: ${agent}`}
     >
       <div className="mission-node-kicker">{leader ? t('system.leaderNode') : t('field.agentNode')}</div>
-      <div className="mission-node-name">{agent === null || agent === undefined || agent === '' ? t('common.unknown') : String(agent)}</div>
-      <div className="mission-node-role">{role === null || role === undefined || role === '' ? t('common.unknown') : String(role)}</div>
+      <div className="mission-node-name">{agent}</div>
+      <div className="mission-node-role">{role}</div>
       <div className="mission-node-status-grid">
         <span>
           <small>{t('field.runtimeState')}</small>
-          <b>{runtime === null || runtime === undefined || runtime === '' ? t('common.unknown') : String(runtime)}</b>
+          <b>{runtime}</b>
         </span>
         <span>
           <small>{t('field.activity')}</small>
-          <b>{activity === null || activity === undefined || activity === '' ? t('common.unknown') : String(activity)}</b>
+          <b>{activity}</b>
         </span>
       </div>
     </div>
@@ -201,8 +204,8 @@ export function MissionControl() {
   const { t } = useI18n()
   const evidenceCount = snapshot?.evidence?.length
   const findingCount = snapshot?.findings?.length
-  const mode = readAvailableField<unknown>(snapshot?.systemState, 'mode')
-  const orderId = readAvailableField<unknown>(snapshot?.activeWorkOrder, 'order_id')
+  const mode = displayValue(readAvailableField<unknown>(snapshot?.systemState, 'mode'), t('common.unknown'))
+  const orderId = displayValue(readAvailableField<unknown>(snapshot?.activeWorkOrder, 'order_id'), t('common.unknown'))
 
   return (
     <div className="mission-control-shell">
@@ -223,11 +226,11 @@ export function MissionControl() {
           </div>
           <div className="mission-context-chip">
             <span>{t('app.systemMode')}</span>
-            <b>{mode === null || mode === undefined || mode === '' ? t('common.unknown') : String(mode)}</b>
+            <b>{mode}</b>
           </div>
           <div className="mission-context-chip">
             <span>{t('mission.activeWorkOrder')}</span>
-            <b>{orderId === null || orderId === undefined || orderId === '' ? t('common.unknown') : String(orderId)}</b>
+            <b>{orderId}</b>
           </div>
         </div>
       </header>
@@ -251,10 +254,10 @@ export function MissionControl() {
                   <div className="min-w-0">
                     <p className="mission-data-label">{t('system.leaderNode')}</p>
                     <p className="mission-leader-name">
-                      {readAvailableField<unknown>(snapshot.leader, 'agent_id') ?? t('common.unknown')}
+                      {displayValue(readAvailableField<unknown>(snapshot.leader, 'agent_id'), t('common.unknown'))}
                     </p>
                     <p className="mission-leader-role">
-                      {readAvailableField<unknown>(snapshot.leader, 'role') ?? t('common.unknown')}
+                      {displayValue(readAvailableField<unknown>(snapshot.leader, 'role'), t('common.unknown'))}
                     </p>
                   </div>
                 </div>
@@ -299,7 +302,7 @@ export function MissionControl() {
           </Panel>
         </div>
 
-        <main className="mission-operational-zone">
+        <div className="mission-operational-zone">
           <TopologyHero leader={snapshot?.leader} agents={snapshot?.agents} />
 
           <Panel title={t('system.agentGrid')} eyebrow="SWARM MATRIX" className="mission-panel--matrix">
@@ -312,9 +315,9 @@ export function MissionControl() {
                   <div className="mission-agent-card-header">
                     <div>
                       <p className="mission-data-label">{t('field.agent')}</p>
-                      <strong>{readAvailableField<unknown>(agent, 'agent_id') ?? t('common.unknown')}</strong>
+                      <strong>{displayValue(readAvailableField<unknown>(agent, 'agent_id'), t('common.unknown'))}</strong>
                     </div>
-                    <span>{readAvailableField<unknown>(agent, 'role') ?? t('common.unknown')}</span>
+                    <span>{displayValue(readAvailableField<unknown>(agent, 'role'), t('common.unknown'))}</span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-3">
                     <ContractValue contract={agent} field="health" label={t('field.health')} compact />
@@ -356,11 +359,11 @@ export function MissionControl() {
                   <article key={index} className="mission-event-record">
                     <div className="mission-event-sequence">
                       <span>{t('field.sequence')}</span>
-                      <b>{readAvailableField<unknown>(event, 'seq') ?? t('common.unknown')}</b>
+                      <b>{displayValue(readAvailableField<unknown>(event, 'seq'), t('common.unknown'))}</b>
                     </div>
                     <div className="min-w-0">
-                      <p>{readAvailableField<unknown>(event, 'event_type') ?? t('common.unknown')}</p>
-                      <span>{readAvailableField<unknown>(event, 'created_at') ?? t('common.unknown')}</span>
+                      <p>{displayValue(readAvailableField<unknown>(event, 'event_type'), t('common.unknown'))}</p>
+                      <span>{displayValue(readAvailableField<unknown>(event, 'created_at'), t('common.unknown'))}</span>
                     </div>
                   </article>
                 )}
@@ -368,7 +371,7 @@ export function MissionControl() {
               <p className="mission-panel-note">{t('evidence.auditNote')}</p>
             </Panel>
           </div>
-        </main>
+        </div>
 
         <aside aria-label={t('mission.rail')} className="mission-control-rail">
           <div className="mission-rail-heading">
@@ -474,7 +477,7 @@ export function MissionControl() {
 
           <RailMetric label={t('field.observedAt')}>
             <span className="mission-rail-observed">
-              {readAvailableField<unknown>(snapshot?.canonicalState, 'observed_at') ?? t('common.unknown')}
+              {displayValue(readAvailableField<unknown>(snapshot?.canonicalState, 'observed_at'), t('common.unknown'))}
             </span>
           </RailMetric>
         </aside>
