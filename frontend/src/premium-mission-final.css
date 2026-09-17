@@ -1,0 +1,18 @@
+/* Final safety/layout corrections layered after premium Mission Control refinement. */
+.alphan-control-rail {
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(61, 176, 255, 0.35) transparent;
+}
+
+@media (max-width: 720px) {
+  .visual-qa-fixture-banner {
+    top: 0.35rem;
+    right: 0.35rem;
+    bottom: auto;
+    padding: 0.28rem 0.42rem;
+    font-size: 0.4rem;
+    opacity: 0.82;
+  }
+}
