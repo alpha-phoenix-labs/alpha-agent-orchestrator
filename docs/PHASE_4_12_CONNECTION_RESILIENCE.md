@@ -92,6 +92,33 @@ SSE selection changes only the transport family. It does not yet select:
 
 Those decisions require verified runtime/authentication constraints. In particular, the browser API choice must not be made before the authentication boundary is known.
 
+## Verified operations-read ownership investigation
+
+The current repository evidence establishes the following boundary:
+
+- backend view-contract semantics are owned by `src/alpha_orchestrator/view_contracts.py`; it defines the source classes, field availability semantics, `SYSTEM_STATE` and the other backend-owned read contracts, plus `view_payload()` serialization that preserves authority and unavailability metadata;
+- the frontend `OperationsSnapshot` in `frontend/src/contracts.ts` is a composition type for those contracts, not a backend authority source;
+- the default application mounts `OperationsDataProvider` without a snapshot, so the production/default frontend path does not currently fetch or receive an authoritative operations snapshot;
+- the existing `scripts/render_read_proxy_server.py` HTTP surface is limited to `/healthz` and `/v1/render/services` and is not a general Operations API;
+- its bearer authentication is specifically the Render read-proxy credential boundary from `src/alpha_orchestrator/render_read_proxy.py`, including Render provider/workspace configuration, and must not be silently repurposed as a generic Operations/SSE authentication contract;
+- repository search found no existing general Operations snapshot endpoint or general live-read authentication owner to extend.
+
+Therefore the missing live path is not merely an unimplemented route. A general read-only Operations HTTP/authentication boundary must be explicitly owned and defined before an SSE endpoint or snapshot-resync endpoint can be implemented safely.
+
+### Required contract before endpoint implementation
+
+The next network implementation may proceed only after repository-owned evidence defines one read-only Operations boundary that:
+
+- authenticates browser reads without exposing provider credentials;
+- serves a fresh authoritative snapshot derived from backend view contracts;
+- streams only typed backend-owned live events over SSE;
+- preserves `TELEMETRY != AUTHORITY` and every `available` / `reason` field;
+- restores authority only after a successful authoritative snapshot resync;
+- exposes no approval, Writer, deploy, unlock, policy override or execution capability;
+- does not reuse the Render-specific proxy credential contract unless a separately approved architecture change explicitly makes that boundary general-purpose.
+
+No token name, endpoint URL, CORS policy, credential transport, replay policy or heartbeat cadence is invented by this investigation.
+
 ## Security and authority boundaries
 
 The following remain unchanged:
@@ -108,6 +135,8 @@ The following remain unchanged:
 
 Not yet implemented:
 
+- general read-only Operations HTTP/authentication boundary;
+- authoritative Operations snapshot endpoint;
 - backend SSE endpoint;
 - browser SSE connection;
 - actual reconnect network dispatch;
