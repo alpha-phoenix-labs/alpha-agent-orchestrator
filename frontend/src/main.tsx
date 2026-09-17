@@ -6,6 +6,7 @@ import './index.css'
 import './premium-mission.css'
 import './premium-mission-refinement.css'
 import './premium-mission-final.css'
+import './premium-mission-cinematic.css'
 
 const root = document.getElementById('root')
 
