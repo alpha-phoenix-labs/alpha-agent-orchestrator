@@ -4,10 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import './index.css'
 import './premium-mission.css'
-import './premium-mission-refinement.css'
-import './premium-mission-final.css'
-import './premium-mission-cinematic.css'
-import './premium-mission-neon.css'
+import './alphan-premium.css'
 
 const root = document.getElementById('root')
 
