@@ -1,6 +1,7 @@
-import { readAvailableField, type ViewContract } from './contracts'
+import { readContractText } from './contract-read-model'
+import type { ViewContract } from './contracts'
 import { useI18n } from './i18n'
-import { MissingAuthority, displayValue } from './premium-mission-primitives'
+import { MissingAuthority } from './premium-mission-primitives'
 import { visualQaFixtureEnabled } from './visual-qa-mode'
 
 const nodePositions = [
@@ -35,10 +36,10 @@ function TopologyNode({
   glyph?: string
 }) {
   const { t } = useI18n()
-  const agent = displayValue(readAvailableField<unknown>(contract, 'agent_id'), t('common.unknown'))
-  const role = displayValue(readAvailableField<unknown>(contract, 'role'), t('common.unknown'))
-  const runtime = displayValue(readAvailableField<unknown>(contract, 'runtime_state'), t('common.unknown'))
-  const activity = displayValue(readAvailableField<unknown>(contract, 'activity'), t('common.unknown'))
+  const agent = readContractText(contract, 'agent_id', t('common.unknown'))
+  const role = readContractText(contract, 'role', t('common.unknown'))
+  const runtime = readContractText(contract, 'runtime_state', t('common.unknown'))
+  const activity = readContractText(contract, 'activity', t('common.unknown'))
 
   return (
     <div
@@ -139,8 +140,8 @@ function ToolsData({ connectors }: { connectors?: readonly ViewContract[] }) {
         connectors.slice(0, 5).map((connector, index) => (
           <div className="alpha-tool-row" key={index}>
             <span className="alpha-tool-icon" aria-hidden="true">◈</span>
-            <span>{displayValue(readAvailableField<unknown>(connector, 'connector_id'), t('common.unknown'))}</span>
-            <small>{displayValue(readAvailableField<unknown>(connector, 'state'), t('common.unknown'))}</small>
+            <span>{readContractText(connector, 'connector_id', t('common.unknown'))}</span>
+            <small>{readContractText(connector, 'state', t('common.unknown'))}</small>
           </div>
         ))
       )}
@@ -190,7 +191,7 @@ export function LiveSwarmTopology({
             const position = nodePositions[index]
             return position ? (
               <TopologyNode
-                key={`${index}-${displayValue(readAvailableField<unknown>(agent, 'agent_id'), String(index))}`}
+                key={`${index}-${readContractText(agent, 'agent_id', String(index))}`}
                 contract={agent}
                 position={{ x: position.x, y: position.y }}
                 tone={position.tone}
