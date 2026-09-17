@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { ShellErrorBoundary } from './app-shell'
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
 import { useI18n } from './i18n'
 import { useOperationsData } from './operations-data'
@@ -45,13 +46,21 @@ function Panel({
   children: ReactNode
   className?: string
 }) {
+  const { t } = useI18n()
   return (
     <section
       aria-label={title}
       className={`rounded-xl border border-white/10 bg-slate-900/60 p-5 shadow-xl shadow-black/10 backdrop-blur-xl ${className}`}
     >
       <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">{title}</h3>
-      <div className="mt-4">{children}</div>
+      <div className="mt-4">
+        <ShellErrorBoundary
+          errorTitle={t('app.viewUnavailable')}
+          errorDetail={t('app.viewUnavailableDetail')}
+        >
+          {children}
+        </ShellErrorBoundary>
+      </div>
     </section>
   )
 }

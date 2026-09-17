@@ -227,7 +227,8 @@ export class ShellErrorBoundary extends Component<ShellErrorBoundaryProps, Shell
     if (this.state.hasError) {
       return (
         <section role="alert" className="rounded-xl border border-amber-300/30 bg-amber-300/5 p-6">
-          <h2 className="text-lg font-semibold text-amber-100">{this.props.errorTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200">FAILED</p>
+          <h2 className="mt-2 text-lg font-semibold text-amber-100">{this.props.errorTitle}</h2>
           <p className="mt-2 text-sm text-amber-50/70">{this.props.errorDetail}</p>
         </section>
       )
