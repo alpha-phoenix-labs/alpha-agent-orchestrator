@@ -5,6 +5,7 @@ import { App } from './App'
 import './index.css'
 import './premium-mission.css'
 import './alpha-premium.css'
+import './swarm-scene.css'
 
 const root = document.getElementById('root')
 
