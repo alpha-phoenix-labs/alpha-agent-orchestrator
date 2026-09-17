@@ -121,6 +121,8 @@ jobs:
       - name: Install browser engines
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Build frontend
+        env:
+          VITE_ENABLE_VISUAL_QA_FIXTURES: 'true'
         run: npm run build
       - name: Start isolated preview
         run: |

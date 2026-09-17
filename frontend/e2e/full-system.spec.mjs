@@ -98,16 +98,20 @@ test('safety-critical authority state remains visible on narrow and desktop layo
   }
 })
 
-test('premium Mission Control desktop composition produces 1440x1000 gate evidence', async ({ page }, testInfo) => {
+test('premium Mission Control desktop composition produces populated 1440x1000 visual-QA evidence', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
 
   await page.setViewportSize({ width: 1440, height: 1000 })
-  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.goto('/?visualQa=premium', { waitUntil: 'networkidle' })
 
+  await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Leader interaction' })).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Live Topology' })).toBeVisible()
+  const topology = page.getByRole('region', { name: 'Live Topology' })
+  await expect(topology).toBeVisible()
+  await expect(topology).toContainText('Leader')
+  await expect(topology).toContainText('Researcher')
   await expect(page.getByLabel('Mission Control rail')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Agent Grid' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Agent Grid' })).toContainText('Synthesizer')
   await expectNoHorizontalOverflow(page)
 
   const firstFold = await page.evaluate(() => {
@@ -127,12 +131,13 @@ test('premium Mission Control desktop composition produces 1440x1000 gate eviden
   })
 })
 
-test('premium Mission Control narrow composition produces 320x800 gate evidence', async ({ page }, testInfo) => {
+test('premium Mission Control narrow composition produces populated 320x800 visual-QA evidence', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
 
   await page.setViewportSize({ width: 320, height: 800 })
-  await page.goto('/', { waitUntil: 'networkidle' })
+  await page.goto('/?visualQa=premium', { waitUntil: 'networkidle' })
 
+  await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
   await expect(page.getByLabel('Active context')).toBeVisible()
   await expect(page.getByLabel('Mission Control rail')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Live Topology' })).toBeVisible()

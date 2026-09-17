@@ -8,6 +8,7 @@ import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
 import { SystemSwarm } from './system-swarm'
 import { TraceWaterfall } from './trace-waterfall'
+import { premiumVisualQaSnapshot } from './visual-qa-fixture'
 import { WorkOrders } from './work-orders'
 
 function IsolatedSurface({ children }: PropsWithChildren) {
@@ -70,10 +71,23 @@ export const routes = [
 
 const router = createBrowserRouter(routes)
 
+function visualQaFixtureEnabled(): boolean {
+  if (import.meta.env.VITE_ENABLE_VISUAL_QA_FIXTURES !== 'true') return false
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('visualQa') === 'premium'
+}
+
 export function App() {
+  const visualQa = visualQaFixtureEnabled()
+
   return (
     <I18nProvider>
-      <OperationsDataProvider>
+      <OperationsDataProvider snapshot={visualQa ? premiumVisualQaSnapshot : null}>
+        {visualQa ? (
+          <div className="visual-qa-fixture-banner" role="status">
+            VISUAL QA FIXTURE · NOT LIVE AUTHORITY
+          </div>
+        ) : null}
         <RouterProvider router={router} />
       </OperationsDataProvider>
     </I18nProvider>
