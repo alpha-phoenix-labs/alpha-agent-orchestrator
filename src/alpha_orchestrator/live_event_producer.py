@@ -12,6 +12,7 @@ from .live_events import (
     LiveEventValidationError,
     parse_live_event,
 )
+from .view_contracts import ViewContract
 
 
 def _default_event_id() -> str:
@@ -27,8 +28,8 @@ class LiveEventProducer:
 
     The producer owns only envelope identity, sequence continuity and the transition
     from the current canonical state version to the caller-supplied next state
-    version. It does not interpret payloads, grant authority, expose a network
-    endpoint or apply events to UI state.
+    version. It does not grant authority, expose a network endpoint or apply
+    events to UI state.
     """
 
     def __init__(
@@ -95,3 +96,18 @@ class LiveEventProducer:
         self._current_state_version = state_version
         self._seen_event_ids.add(event.event_id)
         return event
+
+    def emit_system_state(self, contract: ViewContract) -> LiveEventEnvelope:
+        """Emit the typed mirror of the existing authoritative SYSTEM_STATE contract."""
+
+        from .live_event_payloads import (
+            SYSTEM_STATE_VIEW_EVENT_TYPE,
+            build_system_state_event_payload,
+        )
+
+        payload = build_system_state_event_payload(contract)
+        return self.emit(
+            event_type=SYSTEM_STATE_VIEW_EVENT_TYPE,
+            payload=payload,
+            state_version=payload["state_version"],
+        )
