@@ -53,8 +53,7 @@ jobs:
           ALPHA_SYSTEM_MODE: OFFLINE
           ALPHA_WRITES_ENABLED: 'false'
         run: |
-          . .qa-venv/bin/activate
-          output="$(python scripts/mock_demo.py)"
+          output="$(. .qa-venv/bin/activate && python scripts/mock_demo.py)"
           printf '%s\n' "$output"
           grep -Fq 'MODE: MOCK' <<< "$output"
           grep -Fq 'NO REAL INTEGRATIONS: true' <<< "$output"
@@ -236,3 +235,31 @@ jobs:
           p95 = ordered[max(0, int(len(ordered) * 0.95) - 1)]
           print(f'health_probe_count={len(durations)} p95_seconds={p95:.3f} max_seconds={max(durations):.3f}')
           PY
+
+  operations-preview-external-smoke:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      ALPHA_OPERATIONS_PREVIEW_URL: https://alpha-agent-orchestrator-operations.onrender.com
+      ALPHA_OPERATIONS_PREVIEW_TOKEN: ${{ secrets.ALPHA_OPERATIONS_PREVIEW_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install repository package
+        run: python -m pip install -e .
+      - name: Fail closed when preview credential is unavailable
+        shell: bash
+        run: |
+          if [ -z "$ALPHA_OPERATIONS_PREVIEW_TOKEN" ]; then
+            echo 'Required GitHub Actions secret ALPHA_OPERATIONS_PREVIEW_TOKEN is unavailable.' >&2
+            exit 1
+          fi
+      - name: Verify external read-only Operations preview
+        run: python -m alpha_orchestrator.operations_preview_smoke
