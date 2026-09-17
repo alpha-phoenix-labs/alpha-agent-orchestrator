@@ -113,7 +113,8 @@ test('premium Mission Control desktop composition produces populated 1440x1000 v
 
   const topology = page.getByRole('region', { name: 'Live Topology' })
   await expect(topology).toBeVisible()
-  await expect(topology.getByTestId('swarm-topology-svg')).toBeVisible()
+  await expect(topology.getByTestId('swarm-scene-ambient-svg')).toBeVisible()
+  await expect(topology.locator('.swarm-scene__core')).toBeVisible()
   await expect(topology).toContainText('Leader')
   await expect(topology).toContainText('Researcher')
   expect(await topology.locator('[data-qa-only="true"]').count()).toBeGreaterThan(0)
@@ -151,7 +152,8 @@ test('premium Mission Control narrow composition produces populated 320x800 visu
   await expect(page.getByLabel('Mission Control rail')).toBeVisible()
   const topology = page.getByRole('region', { name: 'Live Topology' })
   await expect(topology).toBeVisible()
-  await expect(topology.getByTestId('swarm-topology-svg')).toBeVisible()
+  await expect(topology.getByTestId('swarm-scene-ambient-svg')).toBeVisible()
+  await expect(topology.locator('.swarm-scene__core')).toBeVisible()
   await expectNoHorizontalOverflow(page)
 
   await page.screenshot({
