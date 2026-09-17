@@ -25,7 +25,8 @@ test('premium cinematic layer uses repository-owned ambience without changing au
   const topologyBackground = await topology.locator('.alphan-topology-stage').evaluate((element) =>
     getComputedStyle(element).backgroundImage,
   )
-  expect(topologyBackground).toContain('alphan-ambient.svg')
+  expect(topologyBackground).toContain('alphan-city-grid.svg')
+  expect(topologyBackground).not.toContain('alphan-ambient.webp')
 
   expect(await topology.locator('.alphan-topology-node').count()).toBeGreaterThanOrEqual(7)
   expect(await topology.locator('[data-qa-only="true"]').count()).toBeGreaterThan(0)
