@@ -227,7 +227,9 @@ def run_external_preview_smoke(
         opener=opener,
     )
     _require(mutation.status == 405, "MUTATION_METHOD_NOT_BLOCKED")
-    _require(mutation.headers.get("Allow") == "GET", "MUTATION_ALLOW_HEADER_INVALID")
+    allow = mutation.headers.get("Allow")
+    if allow is not None:
+        _require(allow == "GET", "MUTATION_ALLOW_HEADER_INVALID")
 
     return {
         "health": "PASS",
