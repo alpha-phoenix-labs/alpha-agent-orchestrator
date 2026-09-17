@@ -181,8 +181,9 @@ export function LiveSwarmTopology({
           <span>COORDINATED INTELLIGENCE</span>
         </div>
 
-        <ToolsData connectors={connectors} />
       </div>
+
+      <ToolsData connectors={connectors} />
 
       <div className="swarm-scene__footer">
         <span className={`swarm-scene__status-dot ${visualQa ? '' : 'swarm-scene__status-dot--warning'}`} aria-hidden="true" />
