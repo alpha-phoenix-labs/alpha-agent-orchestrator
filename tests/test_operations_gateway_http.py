@@ -116,6 +116,35 @@ def test_missing_or_malformed_bearer_returns_401_without_authority_payload() -> 
             assert response.body == b""
 
 
+def test_unauthorized_requests_do_not_invoke_authority_providers() -> None:
+    calls = {"snapshot": 0, "events": 0}
+
+    def snapshot_provider():
+        calls["snapshot"] += 1
+        return ((_system_state(),), _cursor())
+
+    def event_provider():
+        calls["events"] += 1
+        return (_event(),)
+
+    boundary = OperationsReadBoundary(
+        authorizer=DevelopmentOperatorBearerAuthorizer(expected_token="preview-test-token")
+    )
+    adapter = OperationsGatewayHttpAdapter(
+        boundary=boundary,
+        snapshot_provider=snapshot_provider,
+        event_provider=event_provider,
+    )
+
+    for path in (OPERATIONS_SNAPSHOT_PATH, OPERATIONS_EVENTS_PATH):
+        response = adapter.handle(method="GET", path=path, authorization="Bearer wrong")
+        assert isinstance(response, OperationsGatewayResponse)
+        assert response.status == 401
+        assert response.body == b""
+
+    assert calls == {"snapshot": 0, "events": 0}
+
+
 def test_empty_event_stream_is_authorized_before_200_response() -> None:
     boundary = OperationsReadBoundary(
         authorizer=DevelopmentOperatorBearerAuthorizer(expected_token="preview-test-token")
