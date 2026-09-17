@@ -134,7 +134,7 @@ function ToolsData({ connectors }: { connectors?: readonly ViewContract[] }) {
       {!connectors ? (
         <MissingAuthority message={t('system.noConnectors')} compact />
       ) : connectors.length === 0 ? (
-        <p className="alphan-empty">{t('common.backendRecordsZero')}</p>
+        <p className="alphan-empty">0 CONNECTORS</p>
       ) : (
         connectors.slice(0, 5).map((connector, index) => (
           <div className="alphan-tool-row" key={index}>
