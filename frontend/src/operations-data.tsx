@@ -8,6 +8,10 @@ import {
 } from './connection-resilience'
 import type { OperationsSnapshot } from './contracts'
 import {
+  sanitizeDisplayString,
+  sanitizeOperationsSnapshot,
+} from './secret-redaction'
+import {
   evaluateViewStateContext,
   type ViewContextStatus,
   type ViewMode,
@@ -69,14 +73,15 @@ export function OperationsDataProvider({
   const resilienceAllowsAuthority =
     resilience === null ? true : connectionAuthorityAvailable(resilience)
   const currentAuthorityAvailable = snapshot !== null && resilienceAllowsAuthority
-  const currentSnapshot = currentAuthorityAvailable ? snapshot : null
+  const rawCurrentSnapshot = currentAuthorityAvailable ? snapshot : null
   const viewState = evaluateViewStateContext({
-    currentSnapshot,
+    currentSnapshot: rawCurrentSnapshot,
     viewedStateVersion,
     mode: viewMode,
   })
   const authorityAvailable =
     currentAuthorityAvailable && viewState.currentSnapshotPermitted
+  const currentSnapshot = sanitizeOperationsSnapshot(rawCurrentSnapshot)
   const presentedSnapshot = authorityAvailable ? currentSnapshot : null
 
   return (
@@ -91,8 +96,8 @@ export function OperationsDataProvider({
         snapshotStatus: resilience?.snapshotStatus ?? 'UNKNOWN',
         viewContextManaged: viewState.managed,
         viewMode: viewState.mode,
-        viewedStateVersion: viewState.viewedStateVersion,
-        currentStateVersion: viewState.currentStateVersion,
+        viewedStateVersion: sanitizeDisplayString(viewState.viewedStateVersion),
+        currentStateVersion: sanitizeDisplayString(viewState.currentStateVersion),
         viewContextStatus: viewState.status,
         staleContext: viewState.staleContext,
         viewContextReason: viewState.reason,
