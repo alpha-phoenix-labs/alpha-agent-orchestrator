@@ -1,6 +1,6 @@
 # Phase 4.12 - Connection resilience
 
-Status: **FOUNDATIONAL CLIENT RESILIENCE + SSE SELECTED; LIVE ENDPOINT/AUTH/RESYNC PATH NOT YET IMPLEMENTED**
+Status: **FOUNDATIONAL CLIENT RESILIENCE + SSE + TRANSPORT-NEUTRAL OPERATIONS READ BOUNDARY; LIVE ENDPOINT/CONCRETE AUTH/RESYNC PATH NOT YET IMPLEMENTED**
 
 Baseline: `main@045d598e109a93b29c60ba30a48568e6eae7876f`
 
@@ -28,9 +28,11 @@ The branch now has:
 - one typed `SYSTEM_STATE` event family;
 - SSE selected as the server-to-UI transport family;
 - a tested SSE framing helper;
-- the existing frontend connection-resilience state model.
+- the existing frontend connection-resilience state model;
+- `docs/PHASE_4_12_OPERATIONS_READ_BOUNDARY_CONTRACT.md`, which defines the shared read-only snapshot/SSE authorization and authority invariants without selecting a credential mechanism;
+- `src/alpha_orchestrator/operations_read.py`, which implements the transport-neutral fail-closed Operations read boundary and a backend-owned snapshot transport aggregate derived only from `ViewContract` values.
 
-The repository still has no verified backend SSE streaming endpoint, browser live connection, transport authentication contract or authoritative snapshot-resync endpoint. Therefore no network reconnect loop, heartbeat cadence or snapshot-fetch URL is invented here.
+The repository still has no verified backend SSE streaming endpoint, browser live connection, concrete browser transport authentication mechanism or authoritative snapshot-resync endpoint. Therefore no network reconnect loop, heartbeat cadence, browser credential strategy or snapshot-fetch URL is invented here.
 
 ## Implemented resilience boundary
 
@@ -60,7 +62,7 @@ A successful reconnect does not restore authority by itself. Retained data remai
 
 Phase 4.11 `RESYNC_REQUIRED` evaluations are consumed by the resilience model. Missing sequence, collision, stale/out-of-order delivery or state-version drift changes snapshot status to `RESYNC_REQUIRED` without mutating authoritative domain state.
 
-A future SSE integration must obtain a fresh authoritative snapshot before marking resync complete. The required endpoint does not yet exist.
+A future SSE integration must obtain a fresh authoritative snapshot before marking resync complete. The required network endpoint does not yet exist.
 
 ### Heartbeat
 
@@ -103,21 +105,21 @@ The current repository evidence establishes the following boundary:
 - its bearer authentication is specifically the Render read-proxy credential boundary from `src/alpha_orchestrator/render_read_proxy.py`, including Render provider/workspace configuration, and must not be silently repurposed as a generic Operations/SSE authentication contract;
 - repository search found no existing general Operations snapshot endpoint or general live-read authentication owner to extend.
 
-Therefore the missing live path is not merely an unimplemented route. A general read-only Operations HTTP/authentication boundary must be explicitly owned and defined before an SSE endpoint or snapshot-resync endpoint can be implemented safely.
+Therefore the missing live path is not merely an unimplemented route. A general read-only Operations boundary had to be explicitly owned and defined before an SSE endpoint or snapshot-resync endpoint could be implemented safely.
 
-### Required contract before endpoint implementation
+### Transport-neutral Operations read contract now implemented
 
-The next network implementation may proceed only after repository-owned evidence defines one read-only Operations boundary that:
+`docs/PHASE_4_12_OPERATIONS_READ_BOUNDARY_CONTRACT.md` and `src/alpha_orchestrator/operations_read.py` now establish the pre-network contract:
 
-- authenticates browser reads without exposing provider credentials;
-- serves a fresh authoritative snapshot derived from backend view contracts;
-- streams only typed backend-owned live events over SSE;
-- preserves `TELEMETRY != AUTHORITY` and every `available` / `reason` field;
-- restores authority only after a successful authoritative snapshot resync;
-- exposes no approval, Writer, deploy, unlock, policy override or execution capability;
-- does not reuse the Render-specific proxy credential contract unless a separately approved architecture change explicitly makes that boundary general-purpose.
+- snapshot and SSE reads use the same injected authorization decision point;
+- no default-allow path exists and authorization failures are fail-closed;
+- the boundary does not define a header, cookie, token, bearer scheme, CORS policy or identity provider;
+- snapshot transport requires exactly one available `AUTHORITATIVE` `SYSTEM_STATE.state_version` and serializes supplied backend `ViewContract` values through `view_payload()`;
+- source class, availability and reason metadata are preserved;
+- SSE output delegates to the existing canonical `encode_sse_event()` implementation;
+- no approval, Writer, deploy, unlock, policy override or execution capability is exposed.
 
-No token name, endpoint URL, CORS policy, credential transport, replay policy or heartbeat cadence is invented by this investigation.
+This clears the contract-definition prerequisite only. It does not clear the network/runtime gate.
 
 ## Security and authority boundaries
 
@@ -135,15 +137,15 @@ The following remain unchanged:
 
 Not yet implemented:
 
-- general read-only Operations HTTP/authentication boundary;
-- authoritative Operations snapshot endpoint;
-- backend SSE endpoint;
+- concrete browser/network Operations authentication mechanism;
+- authoritative Operations snapshot HTTP endpoint;
+- backend SSE HTTP endpoint;
 - browser SSE connection;
 - actual reconnect network dispatch;
 - heartbeat interval/timeout policy;
 - automatic authoritative snapshot fetch;
-- transport authentication;
 - replay/`Last-Event-ID` semantics;
+- frontend mapping from the backend snapshot transport aggregate into `OperationsSnapshot`;
 - typed payload application into `OperationsSnapshot`.
 
 This document must not be used as evidence that a real live stream exists.
@@ -158,8 +160,11 @@ Tests must continue to prove:
 - reconnect success alone does not restore authority;
 - sequence/state drift requires snapshot resync;
 - heartbeat metadata cannot promote authority;
-- the visible Active Context Bar reports connection loss while canonical fields fall back to `UNKNOWN`.
-
-The SSE framing layer additionally has to preserve the canonical envelope and reject framing injection.
+- the visible Active Context Bar reports connection loss while canonical fields fall back to `UNKNOWN`;
+- snapshot and SSE reads both require the shared Operations read authorizer;
+- authorization failure emits no snapshot or SSE payload;
+- snapshot serialization preserves authority and explicit unavailability metadata;
+- invalid/missing authoritative snapshot state version is rejected;
+- SSE output remains byte-for-byte delegated to the canonical SSE encoder.
 
 No Render runtime file, production configuration, secret or write capability is changed by this patch.
