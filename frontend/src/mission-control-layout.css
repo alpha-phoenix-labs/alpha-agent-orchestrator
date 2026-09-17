@@ -88,6 +88,18 @@
   min-width: 0;
   min-height: 0;
   position: relative;
+  overflow: hidden;
+}
+
+.alpha-command-topology > .swarm-scene {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  min-height: 0;
+}
+
+.alpha-command-topology .swarm-scene__viewport {
+  min-height: 0;
 }
 
 .alpha-command-topology::after {
