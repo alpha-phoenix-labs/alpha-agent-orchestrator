@@ -15,8 +15,8 @@ test('premium cinematic layer uses repository-owned ambience without changing au
   const shellBackground = await page.locator('.operations-shell').evaluate((element) =>
     getComputedStyle(element, '::before').backgroundImage,
   )
-  expect(shellBackground).toContain('alphan-ambient.svg')
   expect(shellBackground).not.toContain('alphan-ambient.webp')
+  expect(shellBackground).toContain('radial-gradient')
 
   const topology = page.getByRole('region', { name: 'Live Topology' })
   await expect(topology).toBeVisible()
@@ -26,6 +26,7 @@ test('premium cinematic layer uses repository-owned ambience without changing au
     getComputedStyle(element).backgroundImage,
   )
   expect(topologyBackground).toContain('alphan-city-grid.svg')
+  expect(topologyBackground).toContain('alphan-ambient.svg')
   expect(topologyBackground).not.toContain('alphan-ambient.webp')
 
   expect(await topology.locator('.alphan-topology-node').count()).toBeGreaterThanOrEqual(7)
