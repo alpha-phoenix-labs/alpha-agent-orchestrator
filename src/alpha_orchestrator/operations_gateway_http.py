@@ -136,6 +136,7 @@ class OperationsGatewayHttpAdapter:
 
     def _snapshot(self, *, authorization: str | None) -> OperationsGatewayResponse:
         try:
+            self._boundary.authorize(auth_context=authorization)
             contracts, live_cursor = self._snapshot_provider()
             body = self._boundary.snapshot(
                 auth_context=authorization,
@@ -163,9 +164,11 @@ class OperationsGatewayHttpAdapter:
 
     def _events(self, *, authorization: str | None) -> GatewayResponse:
         try:
+            self._boundary.authorize(auth_context=authorization)
+            events = self._event_provider()
             body = self._boundary.sse_stream(
                 auth_context=authorization,
-                events=self._event_provider(),
+                events=events,
             )
         except OperationsReadUnauthorized:
             return OperationsGatewayResponse(
