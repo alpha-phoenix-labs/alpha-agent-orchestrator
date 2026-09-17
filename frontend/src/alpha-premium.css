@@ -21,10 +21,11 @@
 }
 
 .visual-qa-fixture-banner {
-  position: fixed;
-  right: .75rem;
-  bottom: .65rem;
-  z-index: 100;
+  position: relative;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 1.44rem);
+  margin: .45rem .72rem 0 auto;
   padding: .35rem .58rem;
   border: 1px solid rgba(245, 158, 11, .34);
   border-radius: .4rem;
