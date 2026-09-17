@@ -1,13 +1,26 @@
+import type { PropsWithChildren } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
-import { AppShell } from './app-shell'
+import { AppShell, ShellErrorBoundary } from './app-shell'
 import { EvidenceAudit } from './evidence-audit'
-import { I18nProvider } from './i18n'
+import { I18nProvider, useI18n } from './i18n'
 import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
 import { SystemSwarm } from './system-swarm'
 import { TraceWaterfall } from './trace-waterfall'
 import { WorkOrders } from './work-orders'
+
+function IsolatedSurface({ children }: PropsWithChildren) {
+  const { t } = useI18n()
+  return (
+    <ShellErrorBoundary
+      errorTitle={t('app.viewUnavailable')}
+      errorDetail={t('app.viewUnavailableDetail')}
+    >
+      {children}
+    </ShellErrorBoundary>
+  )
+}
 
 export const routes = [
   {
@@ -16,24 +29,40 @@ export const routes = [
     children: [
       {
         index: true,
-        element: <MissionControl />,
+        element: (
+          <IsolatedSurface>
+            <MissionControl />
+          </IsolatedSurface>
+        ),
       },
       {
         path: 'work-orders',
-        element: <WorkOrders />,
+        element: (
+          <IsolatedSurface>
+            <WorkOrders />
+          </IsolatedSurface>
+        ),
       },
       {
         path: 'evidence-audit',
         element: (
           <div className="space-y-6">
-            <EvidenceAudit />
-            <TraceWaterfall />
+            <IsolatedSurface>
+              <EvidenceAudit />
+            </IsolatedSurface>
+            <IsolatedSurface>
+              <TraceWaterfall />
+            </IsolatedSurface>
           </div>
         ),
       },
       {
         path: 'system-swarm',
-        element: <SystemSwarm />,
+        element: (
+          <IsolatedSurface>
+            <SystemSwarm />
+          </IsolatedSurface>
+        ),
       },
     ],
   },
