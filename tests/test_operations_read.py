@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from alpha_orchestrator.live_events import parse_live_event
+from alpha_orchestrator.live_events import LiveEventCursor, parse_live_event
 from alpha_orchestrator.live_sse import encode_sse_event
 from alpha_orchestrator.models import SystemMode
 from alpha_orchestrator.operations_read import (
@@ -47,12 +47,16 @@ def _system_state(version: str = "state-v1") -> ViewContract:
     )
 
 
+def _cursor(sequence: int = 7, version: str = "state-v1") -> LiveEventCursor:
+    return LiveEventCursor(last_sequence=sequence, current_state_version=version)
+
+
 def _event():
     return parse_live_event(
         {
             "schema_version": 1,
             "event_id": "evt-1",
-            "sequence": 1,
+            "sequence": 8,
             "base_state_version": "state-v1",
             "state_version": "state-v2",
             "emitted_at": "2026-09-17T19:30:00+00:00",
@@ -68,18 +72,20 @@ def _event():
     )
 
 
-def test_snapshot_preserves_backend_authority_and_unavailability_metadata() -> None:
+def test_snapshot_preserves_backend_authority_and_continuity_metadata() -> None:
     snapshot = OperationsReadSnapshot.from_contracts(
         (
             _system_state(),
             runtime_view_unavailable("NO_AUTHORITATIVE_RUNTIME_STATE"),
-        )
+        ),
+        live_cursor=_cursor(),
     )
 
     payload = json.loads(snapshot.encode_json())
 
     assert payload["schema_version"] == OPERATIONS_READ_SNAPSHOT_SCHEMA_VERSION == 1
     assert payload["state_version"] == "state-v1"
+    assert payload["event_sequence"] == 7
     assert payload["contracts"][0]["contract"] == "SYSTEM_STATE"
     assert payload["contracts"][0]["fields"]["state_version"] == {
         "available": True,
@@ -100,16 +106,22 @@ def test_snapshot_requires_exactly_one_system_state() -> None:
         OperationsReadSnapshotError,
         match="OPERATIONS_SNAPSHOT_REQUIRES_ONE_SYSTEM_STATE",
     ):
-        OperationsReadSnapshot.from_contracts((runtime_view_unavailable("NO_RUNTIME"),))
+        OperationsReadSnapshot.from_contracts(
+            (runtime_view_unavailable("NO_RUNTIME"),),
+            live_cursor=_cursor(),
+        )
 
     with pytest.raises(
         OperationsReadSnapshotError,
         match="OPERATIONS_SNAPSHOT_REQUIRES_ONE_SYSTEM_STATE",
     ):
-        OperationsReadSnapshot.from_contracts((_system_state(), _system_state("state-v2")))
+        OperationsReadSnapshot.from_contracts(
+            (_system_state(), _system_state("state-v2")),
+            live_cursor=_cursor(),
+        )
 
 
-def test_snapshot_rejects_unavailable_or_invalid_state_version() -> None:
+def test_snapshot_rejects_unavailable_invalid_or_mismatched_state_version() -> None:
     unavailable = ViewContract(
         ContractName.SYSTEM_STATE,
         {
@@ -125,7 +137,7 @@ def test_snapshot_rejects_unavailable_or_invalid_state_version() -> None:
         OperationsReadSnapshotError,
         match="OPERATIONS_SNAPSHOT_STATE_VERSION_UNAVAILABLE",
     ):
-        OperationsReadSnapshot.from_contracts((unavailable,))
+        OperationsReadSnapshot.from_contracts((unavailable,), live_cursor=_cursor())
 
     invalid = ViewContract(
         ContractName.SYSTEM_STATE,
@@ -139,20 +151,36 @@ def test_snapshot_rejects_unavailable_or_invalid_state_version() -> None:
         OperationsReadSnapshotError,
         match="OPERATIONS_SNAPSHOT_INVALID_STATE_VERSION",
     ):
-        OperationsReadSnapshot.from_contracts((invalid,))
+        OperationsReadSnapshot.from_contracts((invalid,), live_cursor=_cursor())
+
+    with pytest.raises(
+        OperationsReadSnapshotError,
+        match="OPERATIONS_SNAPSHOT_LIVE_CURSOR_STATE_MISMATCH",
+    ):
+        OperationsReadSnapshot.from_contracts(
+            (_system_state(),),
+            live_cursor=_cursor(version="state-other"),
+        )
 
 
-def test_snapshot_and_sse_use_same_authorizer_and_sse_encoder() -> None:
+def test_snapshot_sse_event_and_stream_use_same_authorizer() -> None:
     context = object()
     authorizer = RecordingAuthorizer(allowed_context=context)
     boundary = OperationsReadBoundary(authorizer=authorizer)
 
-    snapshot_body = boundary.snapshot(auth_context=context, contracts=(_system_state(),))
+    snapshot_body = boundary.snapshot(
+        auth_context=context,
+        contracts=(_system_state(),),
+        live_cursor=_cursor(),
+    )
     event_body = boundary.sse_event(auth_context=context, event=_event())
+    stream = boundary.sse_stream(auth_context=context, events=(_event(),))
 
     assert json.loads(snapshot_body)["state_version"] == "state-v1"
+    assert json.loads(snapshot_body)["event_sequence"] == 7
     assert event_body == encode_sse_event(_event())
-    assert authorizer.calls == [context, context]
+    assert tuple(stream) == (encode_sse_event(_event()),)
+    assert authorizer.calls == [context, context, context]
 
 
 def test_read_boundary_fails_closed_without_or_on_failed_authorization() -> None:
@@ -167,13 +195,23 @@ def test_read_boundary_fails_closed_without_or_on_failed_authorization() -> None
     boundary = OperationsReadBoundary(authorizer=authorizer)
 
     with pytest.raises(OperationsReadUnauthorized, match="TEST_DENIED"):
-        boundary.snapshot(auth_context=object(), contracts=(_system_state(),))
+        boundary.snapshot(
+            auth_context=object(),
+            contracts=(_system_state(),),
+            live_cursor=_cursor(),
+        )
     with pytest.raises(OperationsReadUnauthorized, match="TEST_DENIED"):
         boundary.sse_event(auth_context=object(), event=_event())
+    with pytest.raises(OperationsReadUnauthorized, match="TEST_DENIED"):
+        boundary.sse_stream(auth_context=object(), events=())
 
     broken = OperationsReadBoundary(authorizer=BrokenAuthorizer())
     with pytest.raises(
         OperationsReadUnauthorized,
         match="OPERATIONS_READ_AUTHORIZATION_FAILED",
     ):
-        broken.snapshot(auth_context=context, contracts=(_system_state(),))
+        broken.snapshot(
+            auth_context=context,
+            contracts=(_system_state(),),
+            live_cursor=_cursor(),
+        )
