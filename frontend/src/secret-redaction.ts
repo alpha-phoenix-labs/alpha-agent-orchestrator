@@ -31,7 +31,7 @@ const COOKIE_PATTERN = /\b(?:cookie|set-cookie)\s*[:=]\s*\S+/i
 const PRIVATE_KEY_PATTERN = /-----BEGIN(?: [A-Z0-9]+)? PRIVATE KEY-----/i
 const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\b/
 const COMMON_TOKEN_PATTERN = /\b(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,})\b/
-const SECRET_ASSIGNMENT_PATTERN = /\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|id[_-]?token|bearer[_-]?token|authorization|cookie|set-cookie|password|passwd|private[_-]?key|capability[_-]?token|client[_-]?secret|webhook[_-]?secret|signing[_-]?secret)\s*[:=]\s*[^\s,;]+/i
+const SECRET_ASSIGNMENT_PATTERN = /\b(?:api[_-]?key|api[_-]?token|access[_-]?token|refresh[_-]?token|id[_-]?token|bearer[_-]?token|token|authorization|cookie|set-cookie|session[_-]?cookie|password|passwd|private[_-]?key|capability[_-]?token|credential|credentials|client[_-]?secret|webhook[_-]?secret|signing[_-]?secret|secret)\s*[:=]\s*[^\s,;]+/i
 
 function normalizeFieldName(fieldName: string): string {
   return fieldName.toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -42,12 +42,15 @@ export function isSensitiveDisplayField(fieldName: string): boolean {
   if (SENSITIVE_FIELD_NAMES.has(normalized)) return true
   return (
     normalized.endsWith('apikey') ||
-    normalized.endsWith('accesstoken') ||
-    normalized.endsWith('refreshtoken') ||
-    normalized.endsWith('idtoken') ||
-    normalized.endsWith('bearertoken') ||
+    normalized.endsWith('token') ||
+    normalized.endsWith('cookie') ||
+    normalized.endsWith('password') ||
+    normalized.endsWith('passwd') ||
     normalized.endsWith('privatekey') ||
     normalized.endsWith('capabilitytoken') ||
+    normalized.endsWith('credential') ||
+    normalized.endsWith('credentials') ||
+    normalized.endsWith('secret') ||
     normalized.endsWith('clientsecret') ||
     normalized.endsWith('webhooksecret') ||
     normalized.endsWith('signingsecret')
