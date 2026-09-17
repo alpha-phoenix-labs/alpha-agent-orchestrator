@@ -1,13 +1,12 @@
 import type { ReactNode } from 'react'
 
 import { ShellErrorBoundary } from './app-shell'
-import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
+import { formatContractValue, readContractField } from './contract-read-model'
+import type { ViewContract } from './contracts'
 import { useI18n } from './i18n'
 
 export function displayValue(value: unknown, fallback: string): string {
-  if (value === null || value === undefined || value === '') return fallback
-  if (typeof value === 'object') return JSON.stringify(value)
-  return String(value)
+  return formatContractValue(value, fallback)
 }
 
 export function ContractValue({
@@ -22,8 +21,7 @@ export function ContractValue({
   compact?: boolean
 }) {
   const { t } = useI18n()
-  const value = readAvailableField<unknown>(contract, field)
-  const reason = readUnavailableReason(contract, field)
+  const { value, reason } = readContractField(contract, field)
   const formattedValue =
     typeof value === 'boolean'
       ? value
