@@ -6,6 +6,7 @@ import './index.css'
 import './premium-mission.css'
 import './alpha-premium.css'
 import './swarm-scene.css'
+import './mission-control-layout.css'
 
 const root = document.getElementById('root')
 
