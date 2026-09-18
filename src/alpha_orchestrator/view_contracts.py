@@ -19,10 +19,6 @@ class SourceClass(str, Enum):
     EVIDENCE = "EVIDENCE"
     RUNTIME = "RUNTIME"
     TELEMETRY = "TELEMETRY"
-    APPROVAL = "APPROVAL"
-    CAPABILITY = "CAPABILITY"
-    EXECUTION = "EXECUTION"
-    POST_VERIFY = "POST_VERIFY"
     LOCAL_UI = "LOCAL_UI"
 
 
@@ -43,6 +39,10 @@ class ContractName(str, Enum):
     AUDIT = "AUDIT"
     RUNTIME = "RUNTIME"
     TELEMETRY = "TELEMETRY"
+    APPROVAL = "APPROVAL"
+    CAPABILITY = "CAPABILITY"
+    EXECUTION = "EXECUTION"
+    POST_VERIFY = "POST_VERIFY"
 
 
 class GateId(str, Enum):
