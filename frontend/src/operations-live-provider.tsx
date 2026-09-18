@@ -119,7 +119,7 @@ export function PreviewReadSessionControl() {
   const [credential, setCredential] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  if (!session.enabled || !previewReadSessionControlEnabled()) return null
+  if (!session.enabled || (!session.active && !previewReadSessionControlEnabled())) return null
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
