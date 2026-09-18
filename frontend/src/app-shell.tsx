@@ -5,6 +5,7 @@ import { readAvailableField } from './contracts'
 import { useI18n, type SupportedLocale } from './i18n'
 import type { MessageKey } from './i18n/messages'
 import { useOperationsData } from './operations-data'
+import { PreviewReadSessionControl } from './operations-live-provider'
 
 const navItems: readonly { to: string; labelKey: MessageKey; end?: boolean }[] = [
   { to: '/', labelKey: 'nav.missionControl', end: true },
@@ -155,6 +156,7 @@ export function AppShell() {
             <h1 className="mt-0.5 text-base font-semibold tracking-tight text-slate-100">{t('common.operationsConsole')}</h1>
           </div>
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <PreviewReadSessionControl />
             <LocaleSwitcher />
             <nav aria-label={t('nav.primary')} className="flex flex-wrap gap-1.5">
               {navItems.map((item) => (
