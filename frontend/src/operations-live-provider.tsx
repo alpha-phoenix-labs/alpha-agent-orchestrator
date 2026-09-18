@@ -108,12 +108,18 @@ export function OperationsLiveProvider({
   )
 }
 
+function previewReadSessionControlEnabled(): boolean {
+  if (import.meta.env.VITE_ENABLE_OPERATIONS_PREVIEW_SESSION !== 'true') return false
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('operationsPreview') === 'read'
+}
+
 export function PreviewReadSessionControl() {
   const session = useContext(SessionControlContext)
   const [credential, setCredential] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  if (!session.enabled) return null
+  if (!session.enabled || !previewReadSessionControlEnabled()) return null
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
