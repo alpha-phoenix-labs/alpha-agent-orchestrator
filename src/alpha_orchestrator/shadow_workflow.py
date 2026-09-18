@@ -7,7 +7,7 @@ import math
 import uuid
 
 from .actions import CODE_ACTIONS, INFRA_ACTIONS, writer_for_action
-from .models import EvidenceRef, RiskClass, SystemMode, WorkOrder
+from .models import EvidenceRef, OrderStatus, RiskClass, SystemMode, WorkOrder
 from .read_plane import ReadPolicyDenied, require_fresh_timestamp
 from .shadow_read import ShadowFinding
 from .state import StateStore
@@ -91,6 +91,7 @@ class ShadowWorkflow:
         self.writes_enabled = False
         self.state = state or StateStore({"system_mode": self.mode.value, "writes_enabled": False})
         self._plans: dict[str, ShadowPlan] = {}
+        self._orders: dict[str, WorkOrder] = {}
         self._acks: dict[str, ShadowAcknowledgement] = {}
         self.events: list[dict] = []
 
@@ -195,6 +196,9 @@ class ShadowWorkflow:
             base_state_version=snap.version,
             expected_effect=expected_effect,
             risk=risk,
+            status=OrderStatus.VERIFIED,
+            evidence_verified=True,
+            independent_review_confirmed=True,
             evidence=list(evidence),
         )
         plan = ShadowPlan(
@@ -210,6 +214,7 @@ class ShadowWorkflow:
             created_at=datetime.now(timezone.utc).isoformat(),
         )
         self._plans[plan.order_id] = plan
+        self._orders[order.order_id] = order
         self._event("SHADOW_PLAN_CREATED", {
             "order_id": plan.order_id,
             "plan_hash": plan.plan_hash,
@@ -217,6 +222,12 @@ class ShadowWorkflow:
             "simulation_only": True,
         })
         return plan
+
+    def order_for(self, order_id: str) -> WorkOrder:
+        try:
+            return self._orders[order_id]
+        except KeyError as exc:
+            raise ShadowWorkflowError("UNKNOWN_ORDER") from exc
 
     def acknowledge(self, *, order_id: str, plan_hash: str, acknowledged_by: str) -> ShadowAcknowledgement:
         if acknowledged_by != "USER_ONLY":
