@@ -433,7 +433,7 @@ def audit_view(event: AuditEvent) -> ViewContract:
 
 def approval_view(
     *,
-    approval_id: str,
+    approval_id: str | None,
     order_id: str,
     action: str,
     target: str,
@@ -441,26 +441,31 @@ def approval_view(
     base_state_version: str,
     plan_hash: str,
     risk: str,
-    expires_at: str,
+    expires_at: str | None,
     state: str,
 ) -> ViewContract:
-    return ViewContract(
-        ContractName.APPROVAL,
-        _known(
-            SourceClass.AUTHORITATIVE,
-            approval_id=approval_id,
-            order_id=order_id,
-            action=action,
-            target=target,
-            base_sha=base_sha,
-            base_state_version=base_state_version,
-            plan_hash=plan_hash,
-            risk=risk,
-            expires_at=expires_at,
-            state=state,
-        ),
+    data = _known(
+        SourceClass.AUTHORITATIVE,
+        order_id=order_id,
+        action=action,
+        target=target,
+        base_sha=base_sha,
+        base_state_version=base_state_version,
+        plan_hash=plan_hash,
+        risk=risk,
+        state=state,
     )
-
+    data["approval_id"] = (
+        ViewField.known(SourceClass.AUTHORITATIVE, approval_id)
+        if approval_id is not None
+        else ViewField.unknown(SourceClass.AUTHORITATIVE, "APPROVAL_ID_NOT_ISSUED")
+    )
+    data["expires_at"] = (
+        ViewField.known(SourceClass.AUTHORITATIVE, expires_at)
+        if expires_at is not None
+        else ViewField.unknown(SourceClass.AUTHORITATIVE, "APPROVAL_NOT_YET_GRANTED")
+    )
+    return ViewContract(ContractName.APPROVAL, data)
 
 def capability_view(
     *,
