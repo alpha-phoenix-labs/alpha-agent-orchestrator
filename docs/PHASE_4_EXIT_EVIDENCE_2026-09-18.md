@@ -1,6 +1,6 @@
 # Phase 4 Exit Evidence - 2026-09-18
 
-Status: **READY FOR HUMAN PHASE-4 EXIT REVIEW - DEVELOPMENT ONLY**
+Status: **PHASE 4 EXIT APPROVED BY HUMAN GATE - CLOSED / DEVELOPMENT ONLY**
 
 Applies to: Frozen integrated roadmap Phase 4 SHADOW plus approved Premium Frontend Acceptance amendment.
 
@@ -296,20 +296,25 @@ Against the Phase 4 SHADOW scope and Premium Frontend Acceptance amendment, the 
 - secret-safe preview authentication;
 - no Phase 5 write controls.
 
-**Assessment: Phase 4 implementation is technically ready for the explicit Human Phase-4 Exit / Phase-5 Entry Gate.**
+**Assessment: Phase 4 implementation satisfied the technical exit evidence and the Human Phase-4 Exit was explicitly approved on 2026-09-18. Phase 4 is CLOSED.**
 
-This assessment does not itself approve that gate.
+This approval closes Phase 4 only. It does not itself merge PR #35, deploy the current branch HEAD, authorize production use, or start an active Phase-5 sandbox write.
 
-## 17. Required Human Gate
+## 17. Human Gate result
 
-A human must explicitly decide whether to:
+On 2026-09-18 the user explicitly approved closure with:
 
-1. accept Phase 4 SHADOW as complete for roadmap progression; and
-2. authorize entry into Phase 5 SANDBOX planning/implementation.
+> FREIGABE ZUM SCHLIESSEN VON PHASE 4
 
-Until that approval:
+Result:
 
+- Phase 4 SHADOW is accepted as complete and CLOSED;
+- Phase 4 evidence is handed forward through `docs/PHASE_4_CLOSURE_RECORD_2026-09-18.md`;
+- Phase 5 transition preparation is documented in `docs/PHASE_5_HANDOFF_PROTOCOL_2026-09-18.md`;
 - PR #35 remains unmerged;
-- no protected-branch merge is authorized;
-- no deployment of the newer branch HEAD is authorized;
-- no Phase 5 active write control is authorized.
+- no protected-branch merge is authorized by this gate;
+- no deployment of the newer branch HEAD is authorized by this gate;
+- no production write behavior is authorized;
+- no active Phase-5 sandbox write is started by this documentation update.
+
+The final documentation-only closure HEAD must be revalidated by CI after these records are committed.
