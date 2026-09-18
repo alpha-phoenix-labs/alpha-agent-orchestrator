@@ -142,7 +142,7 @@ jobs:
           PYTHONPATH=../src nohup python ../scripts/operations_gateway_e2e_server.py \
             --host 127.0.0.1 --port 4180 >/tmp/alpha-operations-e2e.log 2>&1 &
           echo $! >/tmp/alpha-operations-e2e.pid
-          nohup npm exec vite -- --host 127.0.0.1 --port 4174 \
+          VITE_ENABLE_OPERATIONS_PREVIEW_SESSION=true nohup npm exec vite -- --host 127.0.0.1 --port 4174 \
             --config e2e/vite.operations.config.mjs >/tmp/alpha-operations-vite.log 2>&1 &
           echo $! >/tmp/alpha-operations-vite.pid
           for attempt in $(seq 1 30); do
