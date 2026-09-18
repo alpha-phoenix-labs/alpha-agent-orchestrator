@@ -163,6 +163,33 @@ jobs:
           cat /tmp/alpha-operations-e2e.log || true
           cat /tmp/alpha-operations-vite.log || true
           exit 1
+      - name: Start isolated Phase 5 sandbox control harness
+        env:
+          ALPHA_PHASE5_SANDBOX_CONTROL_TOKEN: phase5-e2e-control-token
+        run: |
+          PYTHONPATH=../src nohup python ../scripts/phase5_sandbox_control_server.py \
+            --host 127.0.0.1 --port 4181 >/tmp/alpha-phase5-control.log 2>&1 &
+          echo $! >/tmp/alpha-phase5-control.pid
+          VITE_ENABLE_PHASE5_SANDBOX_CONTROL=true nohup npm exec vite -- --host 127.0.0.1 --port 4175 \
+            --config e2e/vite.phase5-control.config.mjs >/tmp/alpha-phase5-vite.log 2>&1 &
+          echo $! >/tmp/alpha-phase5-vite.pid
+          for attempt in $(seq 1 30); do
+            control_ready=false
+            vite_ready=false
+            if curl --fail --silent http://127.0.0.1:4181/healthz >/dev/null; then
+              control_ready=true
+            fi
+            if curl --fail --silent http://127.0.0.1:4175/ >/dev/null; then
+              vite_ready=true
+            fi
+            if [ "$control_ready" = true ] && [ "$vite_ready" = true ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/alpha-phase5-control.log || true
+          cat /tmp/alpha-phase5-vite.log || true
+          exit 1
       - name: Browser and viewport E2E
         run: npx playwright test --config=playwright.config.mjs
       - name: Upload premium visual gate evidence
@@ -182,6 +209,8 @@ jobs:
             /tmp/alpha-vite-preview.log
             /tmp/alpha-operations-e2e.log
             /tmp/alpha-operations-vite.log
+            /tmp/alpha-phase5-control.log
+            /tmp/alpha-phase5-vite.log
           if-no-files-found: ignore
 
   read-only-runtime-smoke:
