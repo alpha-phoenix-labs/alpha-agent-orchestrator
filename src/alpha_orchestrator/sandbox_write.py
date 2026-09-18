@@ -16,6 +16,15 @@ from .events import AuditLog
 from .models import EvidenceRef, OrderStatus, RiskClass, SystemMode, WorkOrder
 from .orchestrator import OrchestratorCore
 from .write_proxy import ExecutionResult
+from .view_contracts import (
+    ViewContract,
+    approval_view,
+    audit_view,
+    capability_view,
+    execution_view,
+    post_verify_view,
+    work_order_view,
+)
 
 
 _SANDBOX_TARGET_ID = re.compile(r"^[A-Za-z0-9._-]+$")
@@ -341,6 +350,10 @@ class SandboxPipeline:
         self.core.proxy.register_executor("git_commit", self.executor)
         self.orders: dict[str, WorkOrder] = {}
         self.requests: dict[str, SandboxApprovalRequest] = {}
+        self._approval_state: dict[str, dict[str, str | None]] = {}
+        self._capability_state: dict[str, dict[str, str]] = {}
+        self._execution_state: dict[str, dict[str, str]] = {}
+        self._post_verify_state: dict[str, dict[str, str]] = {}
 
     def _sync_target_state(self) -> tuple[str, str]:
         base_sha = self.target.current_head()
@@ -405,6 +418,11 @@ class SandboxPipeline:
         )
         self.orders[order.order_id] = order
         self.requests[order.order_id] = request
+        self._approval_state[order.order_id] = {
+            "approval_id": None,
+            "expires_at": None,
+            "state": "PENDING",
+        }
         self.core.audit.append(
             "HUMAN_APPROVAL_REQUESTED",
             {
@@ -432,6 +450,11 @@ class SandboxPipeline:
             approved_by=approved_by,
         )
         order.status = OrderStatus.APPROVED
+        self._approval_state[order.order_id] = {
+            "approval_id": approval.approval_id,
+            "expires_at": approval.expires_at.isoformat(),
+            "state": "APPROVED",
+        }
         self.core.audit.append(
             "HUMAN_APPROVAL_GRANTED",
             {
@@ -498,6 +521,13 @@ class SandboxPipeline:
                 plan_hash=order.plan_hash,
                 current_state_version=current_state_version,
             )
+            self._capability_state[order.order_id] = {
+                "capability_id": capability.capability_id,
+                "scope": order.action,
+                "target": order.target,
+                "expires_at": capability.expires_at.isoformat(),
+                "consumed_state": "ISSUED",
+            }
             credential = self.credentials.issue(order=order)
             self.executor.bind_credential(order=order, credential=credential)
             credential_meta = self.credentials.metadata(credential.credential_id)
@@ -520,6 +550,12 @@ class SandboxPipeline:
                 order=order,
                 capability=capability,
             )
+            self._capability_state[order.order_id]["consumed_state"] = "CONSUMED"
+            self._execution_state[order.order_id] = {
+                "execution_id": execution_id,
+                "state": "COMPLETED" if result.success else "FAILED",
+                "detail": result.detail,
+            }
             self.core.audit.append(
                 "WRITE_EXECUTION",
                 {
@@ -537,6 +573,12 @@ class SandboxPipeline:
 
             order.status = OrderStatus.POST_VERIFY
             post = self.post_verifier.verify(order=order, execution=result)
+            self._post_verify_state[order.order_id] = {
+                "state": "PASSED" if post.passed else "FAILED",
+                "reason": post.reason,
+                "observed_sha": post.observed_sha,
+                "artifact_digest": post.artifact_digest,
+            }
             self.core.audit.append(
                 "POST_WRITE_VERIFY",
                 {
@@ -574,6 +616,66 @@ class SandboxPipeline:
                     "released": released,
                 },
             )
+
+
+    def control_contracts(self, order_id: str) -> tuple[ViewContract, ...]:
+        order = self.orders[order_id]
+        request = self.requests[order_id]
+        approval = self._approval_state[order_id]
+        contracts: list[ViewContract] = [
+            work_order_view(order),
+            approval_view(
+                approval_id=approval["approval_id"],
+                order_id=order.order_id,
+                action=order.action,
+                target=order.target,
+                base_sha=request.base_sha,
+                base_state_version=order.base_state_version,
+                plan_hash=order.plan_hash,
+                risk=order.risk.value,
+                expires_at=approval["expires_at"],
+                state=str(approval["state"]),
+            ),
+        ]
+
+        capability = self._capability_state.get(order_id)
+        if capability is not None:
+            contracts.append(
+                capability_view(
+                    capability_id=capability["capability_id"],
+                    order_id=order_id,
+                    scope=capability["scope"],
+                    target=capability["target"],
+                    expires_at=capability["expires_at"],
+                    consumed_state=capability["consumed_state"],
+                )
+            )
+
+        execution = self._execution_state.get(order_id)
+        if execution is not None:
+            contracts.append(
+                execution_view(
+                    execution_id=execution["execution_id"],
+                    order_id=order_id,
+                    state=execution["state"],
+                    detail=execution["detail"],
+                )
+            )
+
+        post_verify = self._post_verify_state.get(order_id)
+        if post_verify is not None:
+            contracts.append(
+                post_verify_view(
+                    order_id=order_id,
+                    state=post_verify["state"],
+                    reason=post_verify["reason"],
+                    observed_sha=post_verify["observed_sha"],
+                    artifact_digest=post_verify["artifact_digest"],
+                )
+            )
+
+        contracts.extend(audit_view(event) for event in self.core.audit.events)
+        return tuple(contracts)
 
 
 def audit_contains_secret(audit: AuditLog, secret: str) -> bool:
