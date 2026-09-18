@@ -5,6 +5,7 @@ import {
   evaluateLiveEvent,
   LIVE_EVENT_SCHEMA_VERSION,
   parseLiveEvent,
+  projectRecentLiveEvent,
 } from './live-events'
 
 function eventPayload(overrides: Record<string, unknown> = {}) {
@@ -56,6 +57,28 @@ describe('Phase 4.11 live event schema safety', () => {
     expect(parseLiveEvent(eventPayload({ extra_field: 'nope' }))).toEqual({
       ok: false,
       reason: 'INVALID_EVENT_FIELDS',
+    })
+  })
+
+  it('projects only safe Recent Events metadata and drops arbitrary payload fields', () => {
+    const parsed = parseLiveEvent(eventPayload({
+      payload: {
+        contract: 'SYSTEM_STATE',
+        source_class: 'AUTHORITATIVE',
+        token: 'secret-value-that-must-not-reach-the-ui',
+        nested: { payload: 'not-rendered' },
+      },
+    }))
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) throw new Error(parsed.reason)
+
+    expect(projectRecentLiveEvent(parsed.event)).toEqual({
+      sequence: 11,
+      emittedAt: '2026-09-17T00:30:00+00:00',
+      eventType: 'WORK_ORDER_UPDATED',
+      stateVersion: 'state-v8',
+      contract: 'SYSTEM_STATE',
+      sourceClass: 'AUTHORITATIVE',
     })
   })
 
