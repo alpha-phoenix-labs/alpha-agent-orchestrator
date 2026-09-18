@@ -14,6 +14,7 @@ import { OperationsDataProvider } from './operations-data'
 import { OperationsLiveClient, OperationsLiveClientError } from './operations-live-client'
 import { OperationsLiveSession } from './operations-live-session'
 import type { OperationsSnapshot } from './contracts'
+import type { RecentLiveEvent } from './live-events'
 
 type SessionControl = Readonly<{
   enabled: boolean
@@ -46,6 +47,7 @@ export function OperationsLiveProvider({
   const [client, setClient] = useState<LiveClient | null>(null)
   const [snapshot, setSnapshot] = useState<OperationsSnapshot | null>(null)
   const [resilience, setResilience] = useState<ConnectionResilienceState | null>(null)
+  const [recentEvents, setRecentEvents] = useState<readonly RecentLiveEvent[]>([])
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -54,6 +56,7 @@ export function OperationsLiveProvider({
     const abort = new AbortController()
     abortRef.current = abort
     setSnapshot(null)
+    setRecentEvents([])
     setResilience(createConnectionResilienceState('NOT_REQUIRED'))
 
     const session = new OperationsLiveSession({
@@ -61,6 +64,7 @@ export function OperationsLiveProvider({
       onState: (state) => {
         if (abort.signal.aborted) return
         setSnapshot(state.snapshot)
+        setRecentEvents(state.recentEvents)
         setResilience(state.resilience)
       },
     })
@@ -93,6 +97,7 @@ export function OperationsLiveProvider({
         abortRef.current = null
         setClient(null)
         setSnapshot(null)
+        setRecentEvents([])
         setResilience(null)
       },
     }),
@@ -101,7 +106,7 @@ export function OperationsLiveProvider({
 
   return (
     <SessionControlContext.Provider value={control}>
-      <OperationsDataProvider snapshot={snapshot} resilience={resilience}>
+      <OperationsDataProvider snapshot={snapshot} resilience={resilience} recentEvents={recentEvents}>
         {children}
       </OperationsDataProvider>
     </SessionControlContext.Provider>
