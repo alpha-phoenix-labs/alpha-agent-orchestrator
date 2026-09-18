@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import {\n  createLiveEventCursor,\n  evaluateLiveEvent,\n  type LiveEventCursor,\n  type LiveEventEnvelope,\n  type LiveEventEvaluation,\n} from './live-events'
+import {
+  createLiveEventCursor,
+  evaluateLiveEvent,
+  type LiveEventCursor,
+  type LiveEventEnvelope,
+  type LiveEventEvaluation,
+} from './live-events'
 import {
   OperationsLiveClientError,
   type OperationsSnapshotRead,
@@ -77,7 +83,10 @@ describe('OperationsLiveSession', () => {
         if (snapshotRead === 3) return read(3, 'state-v3')
         throw new OperationsLiveClientError('SNAPSHOT_HTTP_ERROR', 503)
       },
-      async consumeEvents(\n        cursor: LiveEventCursor,\n        onEvaluation: (evaluation: LiveEventEvaluation) => void,\n      ): Promise<OperationsStreamResult> {
+      async consumeEvents(
+        cursor: LiveEventCursor,
+        onEvaluation: (evaluation: LiveEventEvaluation) => void,
+      ): Promise<OperationsStreamResult> {
         streamRead += 1
         if (streamRead === 1) {
           onEvaluation(evaluateLiveEvent(cursor, event(1, 'state-v1', 'state-v2')))
@@ -120,7 +129,10 @@ describe('OperationsLiveSession', () => {
       async fetchSnapshot(): Promise<OperationsSnapshotRead> {
         return read(0, 'state-v1')
       },
-      async consumeEvents(\n        cursor: LiveEventCursor,\n        onEvaluation: (evaluation: LiveEventEvaluation) => void,\n      ): Promise<OperationsStreamResult> {
+      async consumeEvents(
+        cursor: LiveEventCursor,
+        onEvaluation: (evaluation: LiveEventEvaluation) => void,
+      ): Promise<OperationsStreamResult> {
         onEvaluation(evaluateLiveEvent(cursor, event(1, 'state-v1', 'state-v2')))
         abort.abort()
         return {
@@ -151,7 +163,10 @@ describe('OperationsLiveSession', () => {
         if (snapshotRead === 1) return read(0, 'state-v1')
         throw new OperationsLiveClientError('SNAPSHOT_HTTP_ERROR', 503)
       },
-      async consumeEvents(\n        cursor: LiveEventCursor,\n        onEvaluation: (evaluation: LiveEventEvaluation) => void,\n      ): Promise<OperationsStreamResult> {
+      async consumeEvents(
+        cursor: LiveEventCursor,
+        onEvaluation: (evaluation: LiveEventEvaluation) => void,
+      ): Promise<OperationsStreamResult> {
         const evaluation = evaluateLiveEvent(cursor, event(2, 'state-v1', 'state-v2'))
         onEvaluation(evaluation)
         return { reason: 'RESYNC_REQUIRED', cursor }
