@@ -1,5 +1,6 @@
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
 import { useI18n } from './i18n'
+import type { RecentLiveEvent } from './live-events'
 import { useOperationsData } from './operations-data'
 import {
   ContractList,
@@ -249,24 +250,27 @@ function ControlRail({ snapshot }: { snapshot: ReturnType<typeof useOperationsDa
   )
 }
 
-function RecentEvents({ events }: { events?: readonly ViewContract[] }) {
+function RecentEvents({ events }: { events: readonly RecentLiveEvent[] }) {
   const { t } = useI18n()
 
   return (
-    <Panel title={t('evidence.auditTimeline')} eyebrow="RECENT EVENTS" className="alpha-bottom-panel">
-      <ContractList
-        contracts={events}
-        emptyMessage={t('evidence.noAudit')}
-        className="alpha-event-list"
-        render={(event, index) => (
-          <div className="alpha-event-row" key={index}>
-            <span>{fieldValue(event, 'created_at', t('common.unknown'))}</span>
-            <strong>{fieldValue(event, 'event_type', t('common.unknown'))}</strong>
-            <small>#{fieldValue(event, 'seq', t('common.unknown'))}</small>
-          </div>
-        )}
-      />
-      <p className="alpha-panel-note">{t('evidence.auditNote')}</p>
+    <Panel title={t('mission.recentEvents')} eyebrow="RECENT EVENTS" className="alpha-bottom-panel">
+      {events.length === 0 ? (
+        <p className="alpha-empty">{t('mission.noRecentEvents')}</p>
+      ) : (
+        <div className="alpha-event-list">
+          {events.map((event) => (
+            <div className="alpha-event-row" key={`${event.sequence}:${event.stateVersion}`}>
+              <span>{event.emittedAt}</span>
+              <strong>{event.eventType}</strong>
+              <small>
+                #{event.sequence} · {event.contract ?? t('common.unknown')} · {event.sourceClass ?? t('common.unknown')} · {event.stateVersion}
+              </small>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="alpha-panel-note">{t('mission.recentEventsNote')}</p>
     </Panel>
   )
 }
@@ -364,7 +368,7 @@ function FindingsPanel({ findings }: { findings?: readonly ViewContract[] }) {
 }
 
 export function MissionControl() {
-  const { snapshot, authorityAvailable } = useOperationsData()
+  const { snapshot, authorityAvailable, recentEvents } = useOperationsData()
   const { t } = useI18n()
   const mode = fieldValue(snapshot?.systemState, 'mode', t('common.unknown'))
   const orderId = fieldValue(snapshot?.activeWorkOrder, 'order_id', t('common.unknown'))
@@ -425,7 +429,7 @@ export function MissionControl() {
         </section>
 
         <section className="alpha-command-observability" aria-label="Mission observability deck">
-          <RecentEvents events={snapshot?.audit} />
+          <RecentEvents events={recentEvents} />
           <TraceScaffold />
           <EvidenceSummary evidence={snapshot?.evidence} findings={snapshot?.findings} />
         </section>
