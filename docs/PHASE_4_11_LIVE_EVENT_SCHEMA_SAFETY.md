@@ -1,32 +1,33 @@
 # Phase 4.11 - Live event ingestion and schema safety
 
-Status: **FOUNDATIONAL PATCH + BACKEND ENVELOPE PRODUCER + ONE TYPED SYSTEM_STATE EVENT FAMILY + SSE SELECTED; ENDPOINT NOT YET IMPLEMENTED**
+Status: **REAL SSE DELIVERY + MOUNTED BROWSER INGESTION + RECENT EVENTS SURFACE IMPLEMENTED — PHASE 4 READ-ONLY**
 
-Baseline: `main@a65ffbbb1be5557b1810ca140d715b911e26b286`
+Applies to: Phase 4 SHADOW / read-only Operations Console.
 
 ## Scope
 
-This work establishes the Phase 4.11 safety boundary required before any live event stream may mutate Operations Console state.
+Phase 4.11 establishes the live-event safety boundary required before an event may affect current Operations Console state or appear in the live Recent Events product surface.
 
-The frozen roadmap requires enough event identity/versioning to detect duplicate events, missing sequence, stale/out-of-order delivery, state-version drift and snapshot/resync requirements. It also requires explicit schema validation and guarantees that invalid or schema-incompatible events do not mutate authoritative UI state.
+The frozen roadmap requires enough event identity/versioning to detect duplicate events, missing sequence, stale/out-of-order delivery, state-version drift and snapshot/resync requirements. Invalid or schema-incompatible events must fail closed and must not mutate authoritative UI state.
 
-## Verified current state
+The approved Premium Frontend Acceptance amendment additionally requires a real read-only Recent Events surface once a backend/live contract is available.
 
-The current Phase 4 development branch contains:
+## Current verified implementation
+
+The current Phase 4 branch contains:
 
 - `src/alpha_orchestrator/live_events.py` with the canonical envelope and fail-closed continuity checks;
-- `src/alpha_orchestrator/live_event_producer.py` with a backend envelope producer;
-- `src/alpha_orchestrator/live_event_payloads.py` with one typed event family derived directly from the existing backend-owned `SYSTEM_STATE` view contract;
-- `src/alpha_orchestrator/live_sse.py` with the selected SSE framing boundary;
-- the frontend mirror and fail-closed event validator.
+- `src/alpha_orchestrator/live_event_producer.py` with a repository-owned envelope producer;
+- `src/alpha_orchestrator/live_event_payloads.py` with the typed `VIEW_CONTRACT_SYSTEM_STATE` family;
+- `src/alpha_orchestrator/live_sse.py` with canonical SSE framing;
+- the protected Operations snapshot + SSE HTTP boundary;
+- the frontend canonical envelope parser/evaluator;
+- typed `SYSTEM_STATE` event application into the Operations snapshot;
+- mounted browser snapshot/SSE ingestion;
+- reconnect, stale, sequence-gap, resync and unavailable handling;
+- a Mission Control Recent Events surface backed by accepted live-event metadata.
 
-SSE is now selected for the verified one-way server-to-UI Phase 4 live requirement. A network streaming endpoint is still not implemented, so this is not runtime evidence that a live stream exists.
-
-## Canonical state-version correction
-
-A root-cause check found that the authoritative `StateSnapshot.version` used by guards, approvals, Work Orders and `SYSTEM_STATE` is a string digest, while the original Phase 4.11 event cursor modeled state versions as non-negative integers.
-
-The live-event envelope and frontend mirror therefore use non-empty string state versions. Continuity is checked by exact equality between `base_state_version` and the cursor's current authoritative state version. Ordering remains the responsibility of the integer `sequence` field.
+External DEVELOPMENT/PREVIEW smoke verifies the real repository-owned producer and protected HTTP/SSE delivery path. Controlled browser E2E verifies mounted client ingestion and UI behavior through actual HTTP/SSE requests.
 
 ## Canonical envelope
 
@@ -41,24 +42,11 @@ The backend-owned schema defines:
 - `event_type`
 - `payload`
 
-Schema version `1` remains accepted. `base_state_version` and `state_version` are non-empty canonical state-version strings.
-
-## Backend envelope producer
-
-`LiveEventProducer`:
-
-- starts from explicit `last_sequence` and `current_state_version`;
-- emits monotonic sequence numbers;
-- sets `base_state_version` from its current baseline;
-- requires a non-empty next state version;
-- requires unique event identities for the producer lifetime;
-- requires timezone-aware timestamps;
-- validates the complete generated envelope before advancing its cursor;
-- does not grant authority or apply payloads to frontend state.
+Schema version `1` is accepted. State versions are non-empty canonical strings. Ordering is carried by the integer sequence.
 
 ## Typed SYSTEM_STATE event family
 
-`VIEW_CONTRACT_SYSTEM_STATE` is a direct typed mirror of the existing `SYSTEM_STATE` view contract:
+`VIEW_CONTRACT_SYSTEM_STATE` is a typed mirror of the existing backend-owned `SYSTEM_STATE` view contract:
 
 - `contract = SYSTEM_STATE`
 - `source_class = AUTHORITATIVE`
@@ -66,56 +54,104 @@ Schema version `1` remains accepted. `base_state_version` and `state_version` ar
 - `writes_enabled`
 - `state_version`
 
-The payload builder fails closed for the wrong contract, unavailable fields, wrong provenance or invalid field types. `emit_system_state(...)` derives the envelope state version from the typed payload's existing authoritative state version.
+The typed application path rejects the wrong contract, wrong source class, invalid field types or state-version mismatch.
 
-## Selected transport framing
+An accepted event is still not an approval, verification result or permission grant. It is accepted only for schema/continuity and supported typed application.
 
-SSE is selected because the verified Phase 4 live flow is server -> UI only and no bidirectional browser control requirement exists.
+## Recent Events contract decision
 
-`src/alpha_orchestrator/live_sse.py` provides framing only:
+The existing canonical `LiveEventEnvelope` plus the supported `VIEW_CONTRACT_SYSTEM_STATE` family is an available backend/live contract for the Premium Frontend Acceptance requirement for Recent Events.
 
-- content type `text/event-stream; charset=utf-8`;
-- `id` = canonical event ID;
-- `event` = canonical event type;
-- `data` = complete canonical envelope as compact JSON;
-- blank-line record termination;
-- CR/LF injection in `id` or `event` is rejected.
+Therefore the product surface is now backed directly by accepted live events rather than by the unrelated `AUDIT` collection.
 
-This does not expose an endpoint or choose authentication, heartbeat cadence, retry cadence, replay persistence or snapshot-resync URL. Native browser `EventSource` is also not yet mandated because the concrete browser connection mechanism depends on the verified authentication contract.
+The Recent Events presentation deliberately projects only bounded safe metadata from an accepted event:
+
+- emitted timestamp;
+- event type;
+- sequence;
+- resulting state version;
+- contract identity when supplied;
+- source class when supplied.
+
+The arbitrary event payload is not forwarded to the Recent Events UI.
+
+This is an explicit safety boundary: future event families do not automatically gain payload rendering merely because their envelope is accepted.
+
+Recent Events is observability only:
+
+- live event != Audit authority;
+- live event != Evidence verification;
+- live event != Finding classification;
+- live event != Approval;
+- live event != write eligibility;
+- live event activity != permission.
+
+Accepted Recent Events are retained only in memory for the active read session and are bounded to the latest 20 records. Disconnecting the development read session clears the presentation buffer.
+
+## Transport and browser behavior
+
+SSE is selected for the verified one-way server-to-UI Phase 4 requirement.
+
+The active browser path uses:
+
+- an authoritative snapshot before current authority is exposed;
+- the same bearer credential for snapshot and SSE;
+- canonical SSE parsing;
+- canonical envelope validation;
+- contiguous sequence/state-version validation;
+- supported typed event application;
+- fail-closed resync when continuity is not proven.
+
+A stream disconnect marks retained authority stale. Reconnect alone does not restore authority; a fresh authoritative snapshot is required.
+
+Heartbeat is not currently required by the finite verified Phase 4 transport behavior. A future long-lived production transport must re-evaluate liveness/heartbeat requirements from runtime evidence.
 
 ## Safety decisions
 
 The ingestion gate returns `ACCEPTED`, `DUPLICATE`, `RESYNC_REQUIRED` or `INVALID`.
 
-Malformed schema, duplicate identity, sequence collision, stale/out-of-order delivery, missing sequence, state-version drift and invalid typed payloads fail closed without advancing authoritative domain state.
+Malformed schema, duplicate identity, sequence collision, stale/out-of-order delivery, missing sequence and state-version drift fail closed.
 
-`ACCEPTED` means only that the envelope is structurally and sequentially safe. It does not mean verified, approved, write-eligible or authoritative by itself.
+Only an `ACCEPTED` event that also passes supported typed snapshot application is added to Recent Events. Rejected, duplicate or resync-required envelopes are not promoted into the product surface as accepted activity.
 
-## Authority boundaries
+## Secret and payload boundary
 
-The following remain mandatory:
+Recent Events does not render the raw envelope payload.
 
-- `TELEMETRY != AUTHORITY`;
-- live event delivery != Audit authority;
-- animation/activity != verification;
-- client-side validation never grants write eligibility;
-- malformed or incompatible events never mutate authoritative UI state;
-- no Writer, approval, deploy, unlock or execution capability is added.
+The UI receives only the safe metadata projection listed above, and presentation strings pass through the existing display redaction boundary.
 
-## Deferred / blocked
+Regression coverage explicitly proves that arbitrary payload fields, including a token-shaped test field, are not present in the Recent Events projection.
 
-Not yet implemented:
+No token, cookie, credential, private key, capability token or full sensitive payload is authorized for Recent Events rendering.
 
-- backend HTTP streaming endpoint;
-- browser live connection;
-- transport authentication;
+## Current limitations
+
+Current Phase 4 supports one typed live event family: `VIEW_CONTRACT_SYSTEM_STATE`.
+
+Not claimed:
+
+- additional typed event families;
+- persistent event-history storage;
 - replay / `Last-Event-ID` semantics;
-- heartbeat policy;
-- reconnect network dispatch;
-- authoritative snapshot-resync endpoint;
-- typed payload application into `OperationsSnapshot`;
-- additional typed event families.
+- a standalone authoritative TRACE contract;
+- conversion of live-event history into Audit;
+- production identity/auth readiness;
+- Phase 5 write behavior.
 
-See `docs/PHASE_4_11_LIVE_TRANSPORT_DECISION.md` for the transport decision and remaining runtime gate.
+These limitations do not convert unavailable data into inferred authority.
 
-No Render runtime file, production configuration, secret or write capability is changed by this patch.
+## Phase 4.11 acceptance statement
+
+For the current Phase 4 scope:
+
+- canonical schema safety: implemented;
+- real producer: implemented and externally smoke-verified;
+- real SSE delivery: implemented and externally smoke-verified;
+- mounted browser ingestion: implemented and browser-E2E verified;
+- supported typed event application: implemented;
+- Recent Events real read-only product surface: implemented against accepted live-event metadata;
+- arbitrary payload rendering: prohibited;
+- malformed/duplicate/gap/drift handling: fail-closed;
+- write capability introduced by this work: none.
+
+Final Phase-4 exit remains subject to the complete roadmap gate and explicit Human Phase-4 Exit / Phase-5 Entry decision.
