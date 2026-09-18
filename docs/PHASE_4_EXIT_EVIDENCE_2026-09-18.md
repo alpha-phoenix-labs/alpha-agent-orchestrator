@@ -18,12 +18,12 @@ Authority order used for this review:
 
 Current implementation baseline:
 
-`phase4/premium-mission-control-remediation@1be20b48668924973ffe698f8f61eb0993782a58`
+`phase4/premium-mission-control-remediation@42b20aea573c8a0311b712f444553339be9b8aa6`
 
 Verified on that baseline:
 
-- `control-plane-ci #232` -> SUCCESS;
-- `full-system-validation #154` -> SUCCESS;
+- `control-plane-ci #244` -> SUCCESS;
+- `full-system-validation #166` -> SUCCESS;
 - backend validation -> SUCCESS;
 - frontend validation/build -> SUCCESS;
 - browser E2E -> SUCCESS;
@@ -31,6 +31,8 @@ Verified on that baseline:
 - external Operations Preview smoke -> SUCCESS.
 
 PR #35 remains open, draft and unmerged.
+
+This refresh incorporates the final Recent Events live-contract closure on implementation baseline `42b20aea573c8a0311b712f444553339be9b8aa6`. The external DEVELOPMENT/PREVIEW Render service remains on older deployed commit `b4ae402ba192c953fa86b56d16c1446b4fc16068`; no deploy is implied by this evidence update.
 
 ## 2. Real Phase 4 SHADOW Work Order path
 
@@ -110,7 +112,15 @@ CONFIRMED:
 - typed `VIEW_CONTRACT_SYSTEM_STATE` event family;
 - repository-owned `LiveEventProducer`;
 - canonical SSE framing;
-- fetch-based browser SSE consumption.
+- fetch-based browser SSE consumption;
+- accepted live events are projected into a dedicated `RecentLiveEvent` presentation model;
+- the Recent Events projection exposes bounded metadata only: sequence, emitted timestamp, event type, resulting state version, contract identity when present and source class when present;
+- arbitrary raw event payload is not forwarded to the Recent Events UI;
+- accepted Recent Events are retained in memory only for the active read session and bounded to the latest 20 records;
+- disconnect/session reset clears the Recent Events presentation buffer;
+- only `ACCEPTED` events that also pass supported typed snapshot application are promoted into Recent Events;
+- duplicate, malformed and resync-required envelopes are not promoted as accepted activity;
+- Recent Events remains observability only and does not imply Audit authority, Evidence verification, Finding classification, approval, write eligibility, capability grant or permission.
 
 ## 7. Real producer and external delivery path
 
@@ -145,6 +155,8 @@ CONFIRMED in controlled real HTTP/SSE browser runtime:
 - snapshot and SSE use the same bearer credential;
 - initial authoritative snapshot is required before authority becomes current;
 - live SYSTEM_STATE event application updates state/version continuity;
+- the mounted browser path renders accepted `VIEW_CONTRACT_SYSTEM_STATE` activity in the real Recent Events surface;
+- browser regression coverage keeps Recent Events separate from Audit-backed fixtures;
 - stream disconnect marks retained data stale;
 - bounded reconnect scheduling is dispatched;
 - reconnect passes through CONNECTING;
@@ -241,13 +253,18 @@ Last independently confirmed live deployment:
 - deployed commit: `b4ae402ba192c953fa86b56d16c1446b4fc16068`;
 - status: live.
 
-The current branch HEAD `1be20b48668924973ffe698f8f61eb0993782a58` is not claimed as deployed.
+The reviewed implementation baseline `42b20aea573c8a0311b712f444553339be9b8aa6` is not claimed as deployed.
+
+This evidence refresh is intentionally a documentation-only follow-up to that implementation baseline. Its commit advances the branch HEAD; the exact resulting documentation HEAD must therefore be validated by CI after this write rather than self-referenced from inside the same commit.
 
 The green external smoke proves compatibility with the deployed protected read service, not deployment of the newer branch code.
 
 ## 15. Known limitations that remain explicit
 
 - production identity/auth is unresolved;
+- current Phase 4 supports one typed live event family: `VIEW_CONTRACT_SYSTEM_STATE`;
+- Recent Events history is session-memory-only and bounded to the latest 20 accepted records;
+- no persistent live-event history or Last-Event-ID replay semantics are claimed;
 - the external preview producer has no ongoing repository-owned authority-change subscription beyond its current SYSTEM_STATE emission;
 - the external Render preview does not yet serve the newer real Shadow Work Order contract set from current branch HEAD;
 - the real Shadow Work Order path is proven in controlled CI browser runtime, not by the currently deployed Render commit;
@@ -266,6 +283,7 @@ Against the Phase 4 SHADOW scope and Premium Frontend Acceptance amendment, the 
 - backend-owned contract safety;
 - a real read-only Shadow Work Order path from request/read/verification/finding/plan into the browser Console;
 - real producer + protected SSE delivery;
+- real read-only Recent Events surface backed by accepted live-event metadata with payload minimization;
 - mounted browser snapshot/SSE client;
 - actual reconnect dispatch;
 - bounded backoff;
