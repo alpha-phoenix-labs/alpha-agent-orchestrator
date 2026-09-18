@@ -25,6 +25,17 @@ jobs:
           ALPHA_SYSTEM_MODE: OFFLINE
           ALPHA_WRITES_ENABLED: 'false'
         run: python -m pytest
+      - name: Phase 5 sandbox gate preparation - no execution
+        env:
+          ALPHA_SYSTEM_MODE: OFFLINE
+          ALPHA_WRITES_ENABLED: 'false'
+        run: |
+          output="$(python scripts/phase5_sandbox_gate.py)"
+          printf '%s\n' "$output"
+          grep -Fq 'STATUS: WAITING_FOR_APPROVAL' <<< "$output"
+          grep -Fq 'NO WRITE EXECUTED: true' <<< "$output"
+          grep -Fq 'NO CREDENTIAL ISSUED: true' <<< "$output"
+          grep -Fq 'NO CAPABILITY MINTED: true' <<< "$output"
       - name: Phase 2 mock demo - no execution
         env:
           ALPHA_SYSTEM_MODE: OFFLINE
