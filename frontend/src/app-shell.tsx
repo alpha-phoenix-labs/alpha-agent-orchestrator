@@ -5,6 +5,7 @@ import { readAvailableField } from './contracts'
 import { useI18n, type SupportedLocale } from './i18n'
 import type { MessageKey } from './i18n/messages'
 import { useOperationsData } from './operations-data'
+import { PreviewReadSessionControl } from './operations-live-provider'
 
 const navItems: readonly { to: string; labelKey: MessageKey; end?: boolean }[] = [
   { to: '/', labelKey: 'nav.missionControl', end: true },
@@ -40,9 +41,9 @@ function ActiveContextBar() {
   return (
     <section
       aria-label={t('app.activeContext')}
-      className="grid gap-3 border-y border-white/10 bg-slate-950/70 px-4 py-3 text-xs text-slate-300 md:grid-cols-4 md:px-6"
+      className="operations-context-strip grid gap-3 border-y px-4 py-2.5 text-xs text-slate-300 md:grid-cols-4 md:px-6"
     >
-      <ContextItem label={t('common.authority')} value={authorityValue} />
+      <ContextItem label={t('common.authority')} value={authorityValue} accent={authorityAvailable} />
       <ContextItem label={t('app.systemMode')} value={mode ?? t('common.unknown')} />
       <ContextItem label={t('app.repository')} value={repository ?? t('common.unknown')} />
       <ContextItem
@@ -81,10 +82,10 @@ function StateContextBar() {
       aria-label="STATE CONTEXT"
       role={warning ? 'status' : undefined}
       className={[
-        'grid gap-3 border-b px-4 py-3 text-xs md:grid-cols-5 md:px-6',
+        'grid gap-3 border-b px-4 py-2.5 text-xs md:grid-cols-5 md:px-6',
         warning
           ? 'border-amber-300/20 bg-amber-300/5 text-amber-50/80'
-          : 'border-white/10 bg-slate-950/50 text-slate-300',
+          : 'operations-context-strip text-slate-300',
       ].join(' ')}
     >
       <ContextItem label="VIEW MODE" value={viewMode} />
@@ -105,11 +106,11 @@ function StateContextBar() {
   )
 }
 
-function ContextItem({ label, value }: { label: string; value: string }) {
+function ContextItem({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <span className="shrink-0 uppercase tracking-[0.14em] text-slate-500">{label}</span>
-      <span className="truncate font-mono text-slate-100">{value}</span>
+      <span className="shrink-0 uppercase tracking-[0.14em] text-slate-600">{label}</span>
+      <span className={`truncate font-mono ${accent ? 'text-cyan-100' : 'text-slate-100'}`}>{value}</span>
     </div>
   )
 }
@@ -122,7 +123,7 @@ function LocaleSwitcher() {
   ]
 
   return (
-    <div className="flex items-center gap-1" role="group" aria-label={t('locale.label')}>
+    <div className="flex items-center gap-1 rounded-lg border border-white/[0.07] bg-black/20 p-1" role="group" aria-label={t('locale.label')}>
       {locales.map((item) => (
         <button
           key={item.value}
@@ -130,10 +131,10 @@ function LocaleSwitcher() {
           aria-pressed={locale === item.value}
           onClick={() => setLocale(item.value)}
           className={[
-            'rounded-md border px-2 py-1 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+            'rounded-md px-2 py-1 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
             locale === item.value
-              ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100'
-              : 'border-white/10 bg-white/[0.03] text-slate-400 hover:text-white',
+              ? 'bg-cyan-300/10 text-cyan-100 shadow-[inset_0_0_0_1px_rgba(103,232,249,0.18)]'
+              : 'text-slate-500 hover:text-slate-200',
           ].join(' ')}
         >
           {t(item.labelKey)}
@@ -147,16 +148,17 @@ export function AppShell() {
   const { t } = useI18n()
 
   return (
-    <div className="min-h-screen bg-[#05070A] text-slate-100">
-      <header className="border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur-xl md:px-6">
-        <div className="mx-auto flex max-w-[1600px] flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300">{t('common.alpha')}</p>
-            <h1 className="text-lg font-semibold tracking-tight">{t('common.operationsConsole')}</h1>
+    <div className="operations-shell">
+      <header className="operations-topbar px-4 md:px-6">
+        <div className="mx-auto flex min-h-16 max-w-[1600px] flex-col gap-3 py-2.5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <p className="operations-brand-mark text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-300">{t('common.alpha')}</p>
+            <h1 className="mt-0.5 text-base font-semibold tracking-tight text-slate-100">{t('common.operationsConsole')}</h1>
           </div>
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+            <PreviewReadSessionControl />
             <LocaleSwitcher />
-            <nav aria-label={t('nav.primary')} className="flex flex-wrap gap-2">
+            <nav aria-label={t('nav.primary')} className="flex flex-wrap gap-1.5">
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -164,10 +166,10 @@ export function AppShell() {
                   end={item.end}
                   className={({ isActive }) =>
                     [
-                      'rounded-md border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
+                      'relative rounded-lg border px-3 py-2 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300',
                       isActive
-                        ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100'
-                        : 'border-white/10 bg-white/[0.03] text-slate-300 hover:border-white/20 hover:text-white',
+                        ? 'border-cyan-300/20 bg-cyan-300/[0.08] text-cyan-50 shadow-[0_0_24px_rgba(34,211,238,0.05)]'
+                        : 'border-white/[0.06] bg-white/[0.02] text-slate-400 hover:border-white/15 hover:text-slate-100',
                     ].join(' ')
                   }
                 >
@@ -182,7 +184,7 @@ export function AppShell() {
       <ActiveContextBar />
       <StateContextBar />
 
-      <main className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
+      <main className="mx-auto max-w-[1600px] px-4 py-4 md:px-6 md:py-5">
         <ShellErrorBoundary
           errorTitle={t('app.viewUnavailable')}
           errorDetail={t('app.viewUnavailableDetail')}

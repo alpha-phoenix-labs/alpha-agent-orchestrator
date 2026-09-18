@@ -53,8 +53,7 @@ jobs:
           ALPHA_SYSTEM_MODE: OFFLINE
           ALPHA_WRITES_ENABLED: 'false'
         run: |
-          . .qa-venv/bin/activate
-          output="$(python scripts/mock_demo.py)"
+          output="$(. .qa-venv/bin/activate && python scripts/mock_demo.py)"
           printf '%s\n' "$output"
           grep -Fq 'MODE: MOCK' <<< "$output"
           grep -Fq 'NO REAL INTEGRATIONS: true' <<< "$output"
@@ -121,6 +120,8 @@ jobs:
       - name: Install browser engines
         run: npx playwright install --with-deps chromium firefox webkit
       - name: Build frontend
+        env:
+          VITE_ENABLE_VISUAL_QA_FIXTURES: 'true'
         run: npm run build
       - name: Start isolated preview
         run: |
@@ -134,8 +135,43 @@ jobs:
           done
           cat /tmp/alpha-vite-preview.log
           exit 1
+      - name: Start isolated Operations network harness
+        env:
+          ALPHA_E2E_OPERATIONS_PREVIEW_TOKEN: phase4-e2e-preview-token
+          ALPHA_GITHUB_READ_TOKEN: ${{ github.token }}
+        run: |
+          PYTHONPATH=../src nohup python ../scripts/operations_gateway_e2e_server.py \
+            --host 127.0.0.1 --port 4180 >/tmp/alpha-operations-e2e.log 2>&1 &
+          echo $! >/tmp/alpha-operations-e2e.pid
+          VITE_ENABLE_OPERATIONS_PREVIEW_SESSION=true nohup npm exec vite -- --host 127.0.0.1 --port 4174 \
+            --config e2e/vite.operations.config.mjs >/tmp/alpha-operations-vite.log 2>&1 &
+          echo $! >/tmp/alpha-operations-vite.pid
+          for attempt in $(seq 1 30); do
+            gateway_ready=false
+            vite_ready=false
+            if curl --fail --silent http://127.0.0.1:4180/healthz >/dev/null; then
+              gateway_ready=true
+            fi
+            if curl --fail --silent http://127.0.0.1:4174/ >/dev/null; then
+              vite_ready=true
+            fi
+            if [ "$gateway_ready" = true ] && [ "$vite_ready" = true ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/alpha-operations-e2e.log || true
+          cat /tmp/alpha-operations-vite.log || true
+          exit 1
       - name: Browser and viewport E2E
         run: npx playwright test --config=playwright.config.mjs
+      - name: Upload premium visual gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: premium-mission-control-visual-evidence
+          path: frontend/test-results/**/mission-control-*.png
+          if-no-files-found: warn
       - name: Upload browser failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
@@ -144,6 +180,8 @@ jobs:
           path: |
             frontend/test-results
             /tmp/alpha-vite-preview.log
+            /tmp/alpha-operations-e2e.log
+            /tmp/alpha-operations-vite.log
           if-no-files-found: ignore
 
   read-only-runtime-smoke:
@@ -198,3 +236,35 @@ jobs:
           p95 = ordered[max(0, int(len(ordered) * 0.95) - 1)]
           print(f'health_probe_count={len(durations)} p95_seconds={p95:.3f} max_seconds={max(durations):.3f}')
           PY
+
+  operations-preview-external-smoke:
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      ALPHA_OPERATIONS_PREVIEW_URL: https://alpha-agent-orchestrator-operations.onrender.com
+      ALPHA_OPERATIONS_PREVIEW_TOKEN: ${{ secrets.ALPHA_OPERATIONS_PREVIEW_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install repository package
+        run: python -m pip install -e .
+      - name: Fail closed when preview credential is unavailable
+        shell: bash
+        run: |
+          if [ -z "$ALPHA_OPERATIONS_PREVIEW_TOKEN" ]; then
+            echo 'Required GitHub Actions secret ALPHA_OPERATIONS_PREVIEW_TOKEN is unavailable.' >&2
+            exit 1
+          fi
+      - name: Warm external Operations preview with bounded health retries
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            "$ALPHA_OPERATIONS_PREVIEW_URL/healthz" >/dev/null
+      - name: Verify external read-only Operations preview
+        run: python -m alpha_orchestrator.operations_preview_smoke

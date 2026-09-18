@@ -1,271 +1,444 @@
-import type { ReactNode } from 'react'
-
-import { ShellErrorBoundary } from './app-shell'
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
 import { useI18n } from './i18n'
+import type { RecentLiveEvent } from './live-events'
 import { useOperationsData } from './operations-data'
+import {
+  ContractList,
+  ContractValue,
+  MissingAuthority,
+  Panel,
+  displayValue,
+} from './premium-mission-primitives'
+import { LeaderChat, TopologyHero } from './premium-mission-topology'
 
-function ContractValue({
+function fieldValue(contract: ViewContract | undefined, field: string, fallback: string): string {
+  return displayValue(readAvailableField<unknown>(contract, field), fallback)
+}
+
+function FieldWithReason({
   contract,
   field,
-  label,
 }: {
-  contract?: ViewContract
+  contract: ViewContract
   field: string
-  label: string
 }) {
   const { t } = useI18n()
-  const value = readAvailableField<unknown>(contract, field)
+  const value = fieldValue(contract, field, t('common.unknown'))
   const reason = readUnavailableReason(contract, field)
-  const formattedValue =
-    typeof value === 'boolean'
-      ? value
-        ? t('common.true')
-        : t('common.false')
-      : value === null || value === undefined || value === ''
-        ? t('common.unknown')
-        : String(value)
 
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-md border border-white/10 bg-black/20 px-3 py-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
-        {label}
-      </span>
-      <span className="break-words font-mono text-sm text-slate-100">{formattedValue}</span>
-      {reason ? <span className="text-xs text-slate-500">{reason}</span> : null}
+    <div className="alpha-table-value">
+      <span>{value}</span>
+      {reason ? <small>{reason}</small> : null}
     </div>
   )
 }
 
-function Panel({
-  title,
-  children,
-  className = '',
+function AgentGrid({ agents }: { agents?: readonly ViewContract[] }) {
+  const { t } = useI18n()
+
+  return (
+    <Panel title={t('system.agentGrid')} eyebrow="AGENT GRID" className="alpha-agent-grid-panel">
+      {!agents ? (
+        <MissingAuthority message={t('system.noAgentsForGrid')} compact />
+      ) : agents.length === 0 ? (
+        <p className="alpha-empty">{t('common.backendRecordsZero')}</p>
+      ) : (
+        <div className="alpha-agent-table" role="table" aria-label={t('system.agentGrid')}>
+          <div className="alpha-agent-table-head" role="row">
+            <span>{t('field.agent')}</span>
+            <span>{t('field.role')}</span>
+            <span>{t('field.health')}</span>
+            <span>{t('field.runtimeState')}</span>
+            <span>{t('field.activity')}</span>
+          </div>
+          <div className="alpha-agent-table-body">
+            {agents.slice(0, 10).map((agent, index) => (
+              <div className="alpha-agent-row" role="row" key={index}>
+                <div className="alpha-agent-identity">
+                  <span className="alpha-mini-orb" aria-hidden="true">A</span>
+                  <FieldWithReason contract={agent} field="agent_id" />
+                </div>
+                <FieldWithReason contract={agent} field="role" />
+                <FieldWithReason contract={agent} field="health" />
+                <FieldWithReason contract={agent} field="runtime_state" />
+                <FieldWithReason contract={agent} field="activity" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <p className="alpha-panel-note">{t('system.agentSeparationNote')}</p>
+    </Panel>
+  )
+}
+
+function LifecyclePanel({
+  lifecycle,
+  workOrder,
 }: {
-  title: string
-  children: ReactNode
-  className?: string
+  lifecycle?: ViewContract
+  workOrder?: ViewContract
 }) {
   const { t } = useI18n()
+
   return (
-    <section
-      aria-label={title}
-      className={`rounded-xl border border-white/10 bg-slate-900/60 p-5 shadow-xl shadow-black/10 backdrop-blur-xl ${className}`}
-    >
-      <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-slate-300">{title}</h3>
-      <div className="mt-4">
-        <ShellErrorBoundary
-          errorTitle={t('app.viewUnavailable')}
-          errorDetail={t('app.viewUnavailableDetail')}
-        >
-          {children}
-        </ShellErrorBoundary>
+    <Panel title={t('mission.lifecycle')} eyebrow="WORK ORDER LIFECYCLE" className="alpha-lifecycle-panel">
+      <div className="alpha-lifecycle-visual">
+        <span className="alpha-lifecycle-line" aria-hidden="true" />
+        <div className="alpha-lifecycle-step">
+          <span className="alpha-lifecycle-dot" aria-hidden="true" />
+          <ContractValue contract={workOrder} field="status" label={t('field.orderStatus')} compact />
+        </div>
+        <div className="alpha-lifecycle-step">
+          <span className="alpha-lifecycle-dot alpha-lifecycle-dot--violet" aria-hidden="true" />
+          <ContractValue contract={lifecycle} field="stage" label={t('field.lifecycleStage')} compact />
+        </div>
       </div>
-    </section>
+      {!lifecycle ? <MissingAuthority message={t('mission.noLifecycle')} compact /> : null}
+      <p className="alpha-panel-note">{t('work.lifecycleNote')}</p>
+    </Panel>
   )
 }
 
-function MissingAuthority({ message }: { message: string }) {
+function ControlRail({ snapshot }: { snapshot: ReturnType<typeof useOperationsData>['snapshot'] }) {
   const { t } = useI18n()
+  const telemetryMetrics = readAvailableField<unknown>(snapshot?.telemetry, 'metrics')
+  const metrics =
+    telemetryMetrics && typeof telemetryMetrics === 'object' && !Array.isArray(telemetryMetrics)
+      ? Object.entries(telemetryMetrics as Record<string, unknown>).slice(0, 5)
+      : []
+
   return (
-    <div className="rounded-md border border-amber-300/20 bg-amber-300/5 px-3 py-3 text-sm text-amber-50/80">
-      <strong className="font-semibold text-amber-100">{t('common.unavailable')}</strong>
-      <p className="mt-1 text-xs leading-5 text-amber-50/60">{message}</p>
-    </div>
+    <aside aria-label={t('mission.rail')} className="alpha-control-rail">
+      <div className="alpha-rail-header">
+        <div>
+          <span>CONTROL RAIL</span>
+          <strong>{t('mission.rail')}</strong>
+        </div>
+        <span className="alpha-readonly-lock">STRICT READ ONLY</span>
+      </div>
+
+      <Panel title={t('app.systemMode')} eyebrow="AUTHORITY" className="alpha-rail-panel">
+        {snapshot?.systemState ? (
+          <div className="alpha-rail-pairs">
+            <ContractValue contract={snapshot.systemState} field="mode" label={t('app.systemMode')} compact />
+            <ContractValue contract={snapshot.systemState} field="writes_enabled" label={t('field.writesEnabled')} compact />
+          </div>
+        ) : (
+          <MissingAuthority message={t('system.noSystemState')} compact />
+        )}
+      </Panel>
+
+      <Panel title={t('mission.canonicalState')} eyebrow="CANONICAL STATE" className="alpha-rail-panel">
+        {snapshot?.canonicalState ? (
+          <div className="alpha-rail-stack">
+            <ContractValue contract={snapshot.canonicalState} field="repository" label={t('app.repository')} compact />
+            <div className="alpha-rail-pairs">
+              <ContractValue contract={snapshot.canonicalState} field="branch" label={t('field.branch')} compact />
+              <ContractValue contract={snapshot.canonicalState} field="head_sha" label={t('field.head')} compact />
+            </div>
+            <ContractValue contract={snapshot.canonicalState} field="freshness_result" label={t('field.freshness')} compact />
+          </div>
+        ) : (
+          <MissingAuthority message={t('mission.canonicalUnavailable')} compact />
+        )}
+      </Panel>
+
+      <Panel title={t('mission.activeWorkOrder')} eyebrow="ACTIVE WORK ORDER" className="alpha-rail-panel">
+        {snapshot?.activeWorkOrder ? (
+          <div className="alpha-rail-stack">
+            <ContractValue contract={snapshot.activeWorkOrder} field="order_id" label={t('field.orderId')} compact />
+            <div className="alpha-rail-pairs">
+              <ContractValue contract={snapshot.activeWorkOrder} field="status" label={t('field.status')} compact />
+              <ContractValue contract={snapshot.activeWorkOrder} field="risk" label={t('field.risk')} compact />
+            </div>
+            <ContractValue contract={snapshot.activeWorkOrder} field="action" label={t('field.action')} compact />
+            <ContractValue contract={snapshot.activeWorkOrder} field="target" label={t('field.target')} compact />
+          </div>
+        ) : (
+          <MissingAuthority message={t('mission.noActiveWorkOrder')} compact />
+        )}
+      </Panel>
+
+      <Panel title={t('mission.gates')} eyebrow="SAFETY GATES" className="alpha-rail-panel">
+        <ContractList
+          contracts={snapshot?.gates}
+          emptyMessage={t('mission.noGates')}
+          className="alpha-rail-list"
+          render={(gate, index) => (
+            <div className="alpha-rail-record" key={index}>
+              <ContractValue contract={gate} field="gate_id" label={t('field.gate')} compact />
+              <div className="alpha-rail-pairs">
+                <ContractValue contract={gate} field="allowed" label={t('field.allowed')} compact />
+                <ContractValue contract={gate} field="reason" label={t('field.reason')} compact />
+              </div>
+            </div>
+          )}
+        />
+      </Panel>
+
+      <Panel title={t('mission.locks')} eyebrow="LOCKS" className="alpha-rail-panel">
+        <ContractList
+          contracts={snapshot?.locks}
+          emptyMessage={t('mission.noLocks')}
+          className="alpha-rail-list"
+          render={(lock, index) => (
+            <div className="alpha-rail-record" key={index}>
+              <ContractValue contract={lock} field="resource" label={t('field.resource')} compact />
+              <div className="alpha-rail-pairs">
+                <ContractValue contract={lock} field="owner" label={t('field.owner')} compact />
+                <ContractValue contract={lock} field="order_id" label={t('field.orderId')} compact />
+              </div>
+            </div>
+          )}
+        />
+      </Panel>
+
+      <Panel title={t('mission.writerStatus')} eyebrow="WRITER BOUNDARY" className="alpha-rail-panel">
+        {snapshot?.writer ? (
+          <div className="alpha-rail-stack">
+            <ContractValue contract={snapshot.writer} field="writer_id" label={t('field.writer')} compact />
+            <ContractValue contract={snapshot.writer} field="proposal_only" label={t('field.proposalOnly')} compact />
+            <ContractValue contract={snapshot.writer} field="runtime_state" label={t('field.runtimeState')} compact />
+          </div>
+        ) : (
+          <MissingAuthority message={t('mission.noWriter')} compact />
+        )}
+      </Panel>
+
+      <Panel title={t('mission.blockers')} eyebrow="BLOCKERS" className="alpha-rail-panel">
+        <MissingAuthority message={t('mission.noBlockers')} compact />
+      </Panel>
+
+      <section className="alpha-runtime-card" aria-label="Runtime and telemetry">
+        <div className="alpha-runtime-heading">
+          <span>RUNTIME / TELEMETRY</span>
+          <strong>TELEMETRY ≠ AUTHORITY</strong>
+        </div>
+        {snapshot?.runtime ? (
+          <div className="alpha-runtime-pairs">
+            <ContractValue contract={snapshot.runtime} field="state" label={t('field.runtimeState')} compact />
+            <ContractValue contract={snapshot.runtime} field="observed_at" label={t('field.runtimeObservedAt')} compact />
+          </div>
+        ) : (
+          <MissingAuthority message={t('system.noRuntime')} compact />
+        )}
+        <div className="alpha-metric-list">
+          {metrics.length === 0 ? (
+            <MissingAuthority message={t('system.noTelemetry')} compact />
+          ) : (
+            metrics.map(([key, value]) => {
+              const numeric = typeof value === 'number' && Number.isFinite(value)
+              const width = numeric ? Math.max(4, Math.min(100, Math.abs(value))) : 0
+              return (
+                <div className="alpha-metric-row" key={key}>
+                  <div>
+                    <span>{key}</span>
+                    <strong>{displayValue(value, t('common.unknown'))}</strong>
+                  </div>
+                  <span className="alpha-metric-track" aria-hidden="true">
+                    {numeric ? <span style={{ width: `${width}%` }} /> : null}
+                  </span>
+                </div>
+              )
+            })
+          )}
+        </div>
+      </section>
+    </aside>
   )
 }
 
-function ContractList({
-  contracts,
-  emptyMessage,
-  render,
+function RecentEvents({ events }: { events: readonly RecentLiveEvent[] }) {
+  const { t } = useI18n()
+
+  return (
+    <Panel title={t('mission.recentEvents')} eyebrow="RECENT EVENTS" className="alpha-bottom-panel">
+      {events.length === 0 ? (
+        <p className="alpha-empty">{t('mission.noRecentEvents')}</p>
+      ) : (
+        <div className="alpha-event-list">
+          {events.map((event) => (
+            <div className="alpha-event-row" key={`${event.sequence}:${event.stateVersion}`}>
+              <span>{event.emittedAt}</span>
+              <strong>{event.eventType}</strong>
+              <small>
+                #{event.sequence} · {event.contract ?? t('common.unknown')} · {event.sourceClass ?? t('common.unknown')} · {event.stateVersion}
+              </small>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="alpha-panel-note">{t('mission.recentEventsNote')}</p>
+    </Panel>
+  )
+}
+
+function TraceScaffold() {
+  const { t } = useI18n()
+  const stages = [
+    t('trace.route'),
+    t('trace.read'),
+    t('trace.verify'),
+    t('trace.plan'),
+    t('trace.humanGate'),
+    t('trace.execution'),
+    t('trace.postVerify'),
+  ]
+
+  return (
+    <Panel title={t('trace.title')} eyebrow="TRACE / WATERFALL" className="alpha-bottom-panel alpha-trace-panel">
+      <div className="alpha-trace-scale" aria-hidden="true">
+        <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+      </div>
+      <div className="alpha-trace-rows">
+        {stages.map((stage, index) => (
+          <div className="alpha-trace-row" key={stage}>
+            <span>{stage}</span>
+            <div className="alpha-trace-track" aria-hidden="true">
+              <i style={{ left: `${index * 9}%` }} />
+            </div>
+            <strong>{t('common.unavailable')}</strong>
+          </div>
+        ))}
+      </div>
+      <p className="alpha-panel-note">{t('trace.boundaryNote')}</p>
+    </Panel>
+  )
+}
+
+function EvidenceSummary({
+  evidence,
+  findings,
 }: {
-  contracts: readonly ViewContract[] | undefined
-  emptyMessage: string
-  render: (contract: ViewContract, index: number) => ReactNode
+  evidence?: readonly ViewContract[]
+  findings?: readonly ViewContract[]
 }) {
   const { t } = useI18n()
-  if (!contracts) {
-    return <MissingAuthority message={emptyMessage} />
-  }
 
-  if (contracts.length === 0) {
-    return <p className="text-sm text-slate-400">{t('common.backendRecordsZero')}</p>
-  }
+  return (
+    <Panel title={t('mission.evidenceSummary')} eyebrow="EVIDENCE & AUDIT" className="alpha-bottom-panel">
+      <div className="alpha-evidence-counts">
+        <div><span>EVIDENCE</span><strong>{evidence?.length ?? t('common.unknown')}</strong></div>
+        <div><span>FINDINGS</span><strong>{findings?.length ?? t('common.unknown')}</strong></div>
+      </div>
+      <div className="alpha-count-label">
+        {t('common.backendReferencesCount', { count: evidence?.length ?? t('common.unknown') })}
+      </div>
+      <ContractList
+        contracts={evidence}
+        emptyMessage={t('mission.noEvidence')}
+        className="alpha-evidence-list"
+        render={(item, index) => (
+          <div className="alpha-evidence-row" key={index}>
+            <span>{fieldValue(item, 'source', t('common.unknown'))}</span>
+            <strong>{fieldValue(item, 'reference', t('common.unknown'))}</strong>
+            <small>{fieldValue(item, 'verification_state', t('common.unknown'))}</small>
+          </div>
+        )}
+      />
+      <p className="alpha-panel-note">{t('mission.evidenceNote')}</p>
+    </Panel>
+  )
+}
 
-  return <div className="space-y-3">{contracts.map(render)}</div>
+function FindingsPanel({ findings }: { findings?: readonly ViewContract[] }) {
+  const { t } = useI18n()
+
+  return (
+    <Panel title={t('mission.currentFindings')} eyebrow="EVIDENCE SIGNALS" className="alpha-findings-panel">
+      <div className="alpha-count-label">
+        {t('common.backendRecordsCount', { count: findings?.length ?? t('common.unknown') })}
+      </div>
+      <ContractList
+        contracts={findings}
+        emptyMessage={t('mission.noFindings')}
+        className="alpha-finding-list"
+        render={(finding, index) => (
+          <div className="alpha-finding-row" key={index}>
+            <strong>{fieldValue(finding, 'claim', t('common.unknown'))}</strong>
+            <span>{fieldValue(finding, 'reader_id', t('common.unknown'))}</span>
+            <small>{fieldValue(finding, 'classification', t('common.unknown'))}</small>
+          </div>
+        )}
+      />
+    </Panel>
+  )
 }
 
 export function MissionControl() {
-  const { snapshot, authorityAvailable } = useOperationsData()
+  const { snapshot, authorityAvailable, recentEvents } = useOperationsData()
   const { t } = useI18n()
-  const evidenceCount = snapshot?.evidence?.length
-  const findingCount = snapshot?.findings?.length
+  const mode = fieldValue(snapshot?.systemState, 'mode', t('common.unknown'))
+  const orderId = fieldValue(snapshot?.activeWorkOrder, 'order_id', t('common.unknown'))
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
+    <div className="alpha-console">
+      <header className="alpha-mission-header">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">{t('common.phase45ReadOnly')}</p>
-          <h2 className="mt-1 text-3xl font-semibold tracking-tight">{t('mission.title')}</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">{t('mission.description')}</p>
+          <p>ALPHA · MULTI-AGENT INTELLIGENCE</p>
+          <div className="alpha-mission-title-row">
+            <h2>{t('mission.title')}</h2>
+            <span className="alpha-live-chip">READ ONLY</span>
+          </div>
+          <span>{t('mission.description')}</span>
         </div>
-        <div className="rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-300">
-          {t('common.authority')} {authorityAvailable ? t('common.available') : t('common.unavailable')}
+        <div className="alpha-header-status">
+          <div>
+            <span>{t('common.authority')}</span>
+            <strong>{authorityAvailable ? t('common.available') : t('common.unavailable')}</strong>
+          </div>
+          <div>
+            <span>{t('app.systemMode')}</span>
+            <strong>{mode}</strong>
+          </div>
+          <div>
+            <span>{t('mission.activeWorkOrder')}</span>
+            <strong>{orderId}</strong>
+          </div>
         </div>
       </header>
 
       {!authorityAvailable ? (
-        <div role="status" className="rounded-xl border border-amber-300/25 bg-amber-300/5 p-4 text-sm text-amber-50/80">
-          {t('mission.authorityUnavailable')}
+        <div role="status" className="alpha-authority-banner">
+          <span className="alpha-status-dot alpha-status-dot--warning" aria-hidden="true" />
+          <span>{t('mission.authorityUnavailable')}</span>
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
-        <div className="space-y-4">
-          <Panel title={t('mission.leaderInteraction')}>
-            {snapshot?.leader ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ContractValue contract={snapshot.leader} field="agent_id" label={t('field.agent')} />
-                <ContractValue contract={snapshot.leader} field="role" label={t('field.role')} />
-                <ContractValue contract={snapshot.leader} field="runtime_state" label={t('field.runtimeState')} />
-                <ContractValue contract={snapshot.leader} field="activity" label={t('field.activity')} />
-                <div className="sm:col-span-2">
-                  <MissingAuthority message={t('mission.noInteractionHistory')} />
-                </div>
-              </div>
-            ) : (
-              <MissingAuthority message={t('mission.noLeader')} />
-            )}
-          </Panel>
+      <div className="alpha-command-deck" data-layout="command-deck-v2">
+        <section className="alpha-command-stage" aria-label="Mission command stage">
+          <div className="alpha-command-left">
+            <LeaderChat leader={snapshot?.leader} />
+            <FindingsPanel findings={snapshot?.findings} />
+          </div>
 
-          <Panel title={t('mission.activeWorkOrder')}>
-            {snapshot?.activeWorkOrder ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <ContractValue contract={snapshot.activeWorkOrder} field="order_id" label={t('field.orderId')} />
-                <ContractValue contract={snapshot.activeWorkOrder} field="status" label={t('field.status')} />
-                <ContractValue contract={snapshot.activeWorkOrder} field="risk" label={t('field.risk')} />
-                <ContractValue contract={snapshot.activeWorkOrder} field="action" label={t('field.action')} />
-                <ContractValue contract={snapshot.activeWorkOrder} field="target" label={t('field.target')} />
-                <ContractValue contract={snapshot.activeWorkOrder} field="base_state_version" label={t('field.baseState')} />
-              </div>
-            ) : (
-              <MissingAuthority message={t('mission.noActiveWorkOrder')} />
-            )}
-          </Panel>
+          <div className="alpha-command-topology">
+            <TopologyHero leader={snapshot?.leader} agents={snapshot?.agents} connectors={snapshot?.connectors} />
+          </div>
 
-          <Panel title={t('mission.lifecycle')}>
-            {snapshot?.lifecycle ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <ContractValue contract={snapshot.lifecycle} field="order_status" label={t('field.orderStatus')} />
-                <ContractValue contract={snapshot.lifecycle} field="stage" label={t('field.lifecycleStage')} />
-              </div>
-            ) : (
-              <MissingAuthority message={t('mission.noLifecycle')} />
-            )}
-          </Panel>
+          <div className="alpha-command-secondary">
+            <AgentGrid agents={snapshot?.agents} />
+            <LifecyclePanel lifecycle={snapshot?.lifecycle} workOrder={snapshot?.activeWorkOrder} />
+          </div>
 
-          <Panel title={t('mission.currentFindings')}>
-            <div className="mb-3 text-xs uppercase tracking-[0.12em] text-slate-500">
-              {t('common.backendRecordsCount', { count: findingCount ?? t('common.unknown') })}
-            </div>
-            <ContractList
-              contracts={snapshot?.findings}
-              emptyMessage={t('mission.noFindings')}
-              render={(finding, index) => (
-                <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <ContractValue contract={finding} field="claim" label={t('field.claim')} />
-                    <ContractValue contract={finding} field="reader_id" label={t('field.reader')} />
-                    <ContractValue contract={finding} field="observation_id" label={t('field.observation')} />
-                    <ContractValue contract={finding} field="classification" label={t('field.classification')} />
-                  </div>
-                </article>
-              )}
-            />
-          </Panel>
+          <div className="alpha-command-right">
+            <ControlRail snapshot={snapshot} />
+          </div>
+        </section>
 
-          <Panel title={t('mission.evidenceSummary')}>
-            <div className="mb-3 text-xs uppercase tracking-[0.12em] text-slate-500">
-              {t('common.backendReferencesCount', { count: evidenceCount ?? t('common.unknown') })}
-            </div>
-            <ContractList
-              contracts={snapshot?.evidence}
-              emptyMessage={t('mission.noEvidence')}
-              render={(evidence, index) => (
-                <article key={index} className="rounded-lg border border-white/10 bg-black/20 p-3">
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <ContractValue contract={evidence} field="source" label={t('field.source')} />
-                    <ContractValue contract={evidence} field="reference" label={t('field.reference')} />
-                    <ContractValue contract={evidence} field="verification_state" label={t('field.verificationState')} />
-                  </div>
-                </article>
-              )}
-            />
-            <p className="mt-3 text-xs leading-5 text-slate-500">{t('mission.evidenceNote')}</p>
-          </Panel>
-        </div>
-
-        <aside aria-label={t('mission.rail')} className="space-y-4">
-          <Panel title={t('mission.canonicalState')}>
-            {snapshot?.canonicalState ? (
-              <div className="space-y-3">
-                <ContractValue contract={snapshot.canonicalState} field="repository" label={t('app.repository')} />
-                <ContractValue contract={snapshot.canonicalState} field="branch" label={t('field.branch')} />
-                <ContractValue contract={snapshot.canonicalState} field="head_sha" label={t('field.head')} />
-                <ContractValue contract={snapshot.canonicalState} field="observed_at" label={t('field.observedAt')} />
-                <ContractValue contract={snapshot.canonicalState} field="freshness_result" label={t('field.freshness')} />
-              </div>
-            ) : (
-              <MissingAuthority message={t('mission.canonicalUnavailable')} />
-            )}
-          </Panel>
-
-          <Panel title={t('mission.gates')}>
-            <ContractList
-              contracts={snapshot?.gates}
-              emptyMessage={t('mission.noGates')}
-              render={(gate, index) => (
-                <article key={index} className="grid gap-2 rounded-lg border border-white/10 bg-black/20 p-3">
-                  <ContractValue contract={gate} field="gate_id" label={t('field.gate')} />
-                  <ContractValue contract={gate} field="allowed" label={t('field.allowed')} />
-                  <ContractValue contract={gate} field="reason" label={t('field.reason')} />
-                </article>
-              )}
-            />
-          </Panel>
-
-          <Panel title={t('mission.locks')}>
-            <ContractList
-              contracts={snapshot?.locks}
-              emptyMessage={t('mission.noLocks')}
-              render={(lock, index) => (
-                <article key={index} className="grid gap-2 rounded-lg border border-white/10 bg-black/20 p-3">
-                  <ContractValue contract={lock} field="resource" label={t('field.resource')} />
-                  <ContractValue contract={lock} field="owner" label={t('field.owner')} />
-                  <ContractValue contract={lock} field="order_id" label={t('field.orderId')} />
-                </article>
-              )}
-            />
-          </Panel>
-
-          <Panel title={t('mission.writerStatus')}>
-            {snapshot?.writer ? (
-              <div className="space-y-3">
-                <ContractValue contract={snapshot.writer} field="writer_id" label={t('field.writer')} />
-                <ContractValue contract={snapshot.writer} field="proposal_only" label={t('field.proposalOnly')} />
-                <ContractValue contract={snapshot.writer} field="runtime_state" label={t('field.runtimeState')} />
-              </div>
-            ) : (
-              <MissingAuthority message={t('mission.noWriter')} />
-            )}
-          </Panel>
-
-          <Panel title={t('mission.blockers')}>
-            <MissingAuthority message={t('mission.noBlockers')} />
-          </Panel>
-        </aside>
+        <section className="alpha-command-observability" aria-label="Mission observability deck">
+          <RecentEvents events={recentEvents} />
+          <TraceScaffold />
+          <EvidenceSummary evidence={snapshot?.evidence} findings={snapshot?.findings} />
+        </section>
       </div>
+
+      <footer className="alpha-footer">
+        <span>ALPHA · PRIVATE DEVELOPMENT · PHASE 4</span>
+        <span>STRICT READ ONLY · TELEMETRY ≠ AUTHORITY</span>
+      </footer>
     </div>
   )
 }

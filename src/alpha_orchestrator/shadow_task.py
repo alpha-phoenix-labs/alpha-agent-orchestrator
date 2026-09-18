@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Callable
 import uuid
 
-from .models import RiskClass
+from .models import RiskClass, WorkOrder
 from .shadow_read import ShadowFinding, ShadowReadService
 from .shadow_workflow import ShadowPlan, ShadowWorkflow, ShadowWorkflowError
 
@@ -33,6 +33,7 @@ class ShadowTaskRequest:
 @dataclass(frozen=True)
 class ShadowTaskResult:
     request_id: str
+    order: WorkOrder
     findings: tuple[ShadowFinding, ...]
     plan: ShadowPlan
     independent_review_confirmed: bool
@@ -86,6 +87,7 @@ class ShadowTaskRunner:
 
         return ShadowTaskResult(
             request_id="REQ-" + uuid.uuid4().hex[:16].upper(),
+            order=self.workflow.order_for(plan.order_id),
             findings=findings,
             plan=plan,
             independent_review_confirmed=True,

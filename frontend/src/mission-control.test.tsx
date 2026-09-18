@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { OperationsSnapshot, SourceClass, ViewContract, ViewField } from './contracts'
 import { MissionControl } from './mission-control'
+import type { RecentLiveEvent } from './live-events'
 import { OperationsDataProvider } from './operations-data'
 
 afterEach(cleanup)
@@ -19,15 +20,19 @@ function view(contract: string, fields: Record<string, ViewField>): ViewContract
   return { contract, fields }
 }
 
-function renderMissionControl(snapshot?: OperationsSnapshot | null) {
+function renderMissionControl(snapshot?: OperationsSnapshot | null, recentEvents: readonly RecentLiveEvent[] = []) {
   render(
-    <OperationsDataProvider snapshot={snapshot}>
+    <OperationsDataProvider snapshot={snapshot} recentEvents={recentEvents}>
       <MissionControl />
     </OperationsDataProvider>,
   )
 }
 
 const snapshot: OperationsSnapshot = {
+  systemState: view('SYSTEM_STATE', {
+    mode: known('AUTHORITATIVE', 'READ_ONLY'),
+    writes_enabled: known('AUTHORITATIVE', false),
+  }),
   canonicalState: view('CANONICAL_STATE', {
     repository: known('AUTHORITATIVE', 'alpha-phoenix-labs/alpha-agent-orchestrator'),
     branch: known('AUTHORITATIVE', 'main'),
@@ -62,6 +67,13 @@ const snapshot: OperationsSnapshot = {
       verification_state: known('EVIDENCE', 'READ_VALIDATED'),
     }),
   ],
+  audit: [
+    view('AUDIT_EVENT', {
+      seq: known('AUTHORITATIVE', 17),
+      event_type: known('AUTHORITATIVE', 'WORK_ORDER_OBSERVED'),
+      created_at: known('AUTHORITATIVE', '2026-09-16T19:00:04+00:00'),
+    }),
+  ],
   gates: [
     view('GATE', {
       gate_id: known('AUTHORITATIVE', 'PRE_APPROVAL'),
@@ -87,7 +99,27 @@ const snapshot: OperationsSnapshot = {
     runtime_state: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_RUNTIME_STATE'),
     activity: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_ACTIVITY'),
   }),
+  agents: [
+    view('AGENT', {
+      agent_id: known('AUTHORITATIVE', 'reader-01'),
+      role: known('AUTHORITATIVE', 'READER'),
+      health: unknown('AUTHORITATIVE', 'NO_AUTHORITATIVE_AGENT_HEALTH'),
+      runtime_state: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_RUNTIME_STATE'),
+      activity: unknown('RUNTIME', 'NO_AUTHORITATIVE_AGENT_ACTIVITY'),
+    }),
+  ],
 }
+
+const recentEvents: readonly RecentLiveEvent[] = [
+  {
+    sequence: 1,
+    emittedAt: '2026-09-18T00:00:00+00:00',
+    eventType: 'VIEW_CONTRACT_SYSTEM_STATE',
+    stateVersion: 'state-v2',
+    contract: 'SYSTEM_STATE',
+    sourceClass: 'AUTHORITATIVE',
+  },
+]
 
 describe('Phase 4.5 Mission Control', () => {
   it('fails closed and exposes no operational controls without a backend snapshot', () => {
@@ -98,19 +130,47 @@ describe('Phase 4.5 Mission Control', () => {
 
     for (const panelName of [
       'Leader interaction',
-      'Active Work Order',
       'Lifecycle',
       'Current Findings',
-      'Evidence Summary',
+      'System mode',
       'Canonical State',
+      'Active Work Order',
       'Gates',
       'Locks',
       'Writer status',
       'Blockers',
+      'Live Topology',
+      'Agent Grid',
+      'Evidence Summary',
+      'Recent Events',
     ]) {
       expect(screen.getByRole('region', { name: panelName })).toBeInTheDocument()
     }
 
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('renders the premium three-zone read-only composition from backend contracts', () => {
+    renderMissionControl(snapshot, recentEvents)
+
+    const topology = screen.getByRole('region', { name: 'Live Topology' })
+    expect(topology).toHaveTextContent('leader')
+    expect(topology).toHaveTextContent('reader-01')
+    expect(topology).toHaveTextContent('NO_RUNTIME_ACTIVITY_EDGE_CONTRACT')
+
+    const agentGrid = screen.getByRole('region', { name: 'Agent Grid' })
+    expect(agentGrid).toHaveTextContent('reader-01')
+    expect(agentGrid).toHaveTextContent('NO_AUTHORITATIVE_AGENT_HEALTH')
+
+    const events = screen.getByRole('region', { name: 'Recent Events' })
+    expect(events).toHaveTextContent('VIEW_CONTRACT_SYSTEM_STATE')
+    expect(events).toHaveTextContent('SYSTEM_STATE')
+    expect(events).toHaveTextContent('AUTHORITATIVE')
+    expect(events).toHaveTextContent('state-v2')
+    expect(events).not.toHaveTextContent('WORK_ORDER_OBSERVED')
+
+    expect(screen.getByLabelText('Mission Control rail')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
   })

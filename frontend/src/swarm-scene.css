@@ -1,0 +1,581 @@
+.swarm-scene {
+  position: relative;
+  overflow: hidden;
+  min-height: 720px;
+  border: 1px solid rgba(111, 226, 255, 0.16);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(7, 17, 35, 0.92), rgba(2, 7, 18, 0.98));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 32px 90px rgba(0, 0, 0, 0.42),
+    0 0 80px rgba(46, 142, 255, 0.08);
+}
+
+.swarm-scene::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(64, 215, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 53% 51%, rgba(140, 74, 255, 0.12), transparent 38%),
+    linear-gradient(100deg, rgba(15, 46, 85, 0.16), transparent 28%, transparent 72%, rgba(75, 30, 115, 0.14));
+}
+
+.swarm-scene__header {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid rgba(111, 226, 255, 0.09);
+  background: linear-gradient(180deg, rgba(8, 21, 42, 0.82), rgba(5, 13, 29, 0.3));
+  backdrop-filter: blur(18px);
+}
+
+.swarm-scene__eyebrow,
+.swarm-scene__meta span,
+.swarm-scene__tools-title,
+.swarm-scene__brandline span,
+.swarm-scene__agent-copy span,
+.swarm-scene__agent-copy small,
+.swarm-scene__core-copy span,
+.swarm-scene__core-copy small {
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+}
+
+.swarm-scene__eyebrow {
+  margin: 0 0 5px;
+  font-size: 10px;
+  color: rgba(124, 231, 255, 0.72);
+}
+
+.swarm-scene__header h3 {
+  margin: 0;
+  font-size: clamp(24px, 2vw, 34px);
+  line-height: 1;
+  color: #f5fbff;
+  text-shadow: 0 0 30px rgba(87, 214, 255, 0.16);
+}
+
+.swarm-scene__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 48%;
+}
+
+.swarm-scene__meta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 11px;
+  border: 1px solid rgba(111, 226, 255, 0.13);
+  border-radius: 999px;
+  background: rgba(6, 17, 36, 0.74);
+  font-size: 9px;
+  color: rgba(216, 245, 255, 0.78);
+  box-shadow: inset 0 0 24px rgba(61, 207, 255, 0.04);
+}
+
+.swarm-scene__viewport {
+  position: relative;
+  min-height: 600px;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse at 50% 46%, rgba(28, 184, 255, 0.16) 0%, rgba(43, 76, 162, 0.07) 24%, transparent 52%),
+    radial-gradient(ellipse at 50% 68%, rgba(113, 57, 255, 0.12), transparent 42%),
+    linear-gradient(180deg, rgba(2, 11, 27, 0.28), rgba(1, 5, 15, 0.9));
+}
+
+.swarm-scene__ambient {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.swarm-scene__stars {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.7;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 8% 18%, rgba(255,255,255,.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 18% 42%, rgba(102,226,255,.8) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 31% 12%, rgba(255,255,255,.45) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 67% 16%, rgba(184,136,255,.72) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 82% 29%, rgba(255,255,255,.58) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 93% 12%, rgba(99,218,255,.65) 0 1px, transparent 1.8px);
+}
+
+.swarm-scene__horizon-glow {
+  position: absolute;
+  z-index: 2;
+  left: 17%;
+  right: 17%;
+  bottom: 19%;
+  height: 11%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(52, 199, 255, 0.21), rgba(116, 68, 255, 0.08) 42%, transparent 74%);
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+.swarm-scene__core-zone {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 48%;
+  width: min(36vw, 390px);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+}
+
+.swarm-scene__core-zone::before,
+.swarm-scene__core-zone::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.swarm-scene__core-zone::before {
+  inset: 4%;
+  border: 1px solid rgba(95, 222, 255, 0.24);
+  box-shadow:
+    inset 0 0 38px rgba(39, 204, 255, 0.06),
+    0 0 42px rgba(64, 170, 255, 0.08);
+  transform: rotateX(68deg) rotateZ(-8deg);
+}
+
+.swarm-scene__core-zone::after {
+  inset: 20%;
+  border: 1px solid rgba(167, 104, 255, 0.24);
+  transform: rotateX(71deg) rotateZ(22deg);
+  box-shadow: 0 0 36px rgba(142, 83, 255, 0.08);
+}
+
+.swarm-scene__core {
+  position: relative;
+  z-index: 4;
+  width: 178px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(129, 234, 255, 0.42);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 28%, rgba(219, 250, 255, 0.92) 0 2%, rgba(98, 226, 255, 0.52) 4%, transparent 18%),
+    radial-gradient(circle at 50% 48%, rgba(27, 166, 255, 0.5), rgba(23, 64, 142, 0.74) 42%, rgba(17, 19, 62, 0.96) 69%, rgba(4, 7, 20, 0.98));
+  box-shadow:
+    inset -24px -20px 48px rgba(37, 15, 88, 0.68),
+    inset 16px 12px 32px rgba(91, 222, 255, 0.13),
+    0 0 34px rgba(59, 207, 255, 0.34),
+    0 0 96px rgba(94, 64, 255, 0.22);
+}
+
+.swarm-scene__core::before {
+  content: '';
+  position: absolute;
+  inset: -22px;
+  border: 1px solid rgba(107, 220, 255, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 30px rgba(107, 220, 255, 0.06);
+}
+
+.swarm-scene__core-mark {
+  font-size: 58px;
+  font-weight: 700;
+  color: rgba(239, 253, 255, 0.96);
+  text-shadow:
+    0 0 10px rgba(120, 232, 255, 0.9),
+    0 0 30px rgba(91, 193, 255, 0.7),
+    0 0 64px rgba(129, 78, 255, 0.54);
+}
+
+.swarm-scene__core-copy {
+  position: absolute;
+  top: calc(50% + 108px);
+  left: 50%;
+  width: 260px;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+.swarm-scene__core-copy strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #f4fbff;
+}
+
+.swarm-scene__core-copy span,
+.swarm-scene__core-copy small {
+  display: block;
+  margin-top: 4px;
+  font-size: 8px;
+  color: rgba(175, 224, 241, 0.62);
+}
+
+.swarm-scene__bank {
+  position: absolute;
+  z-index: 6;
+  top: 16%;
+  bottom: 18%;
+  width: 31%;
+  display: grid;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.swarm-scene__bank--left { left: 3%; }
+.swarm-scene__bank--right { right: 3%; }
+
+.swarm-scene__agent {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(109, 215, 255, 0.15);
+  border-radius: 17px;
+  background:
+    linear-gradient(115deg, rgba(8, 26, 51, 0.84), rgba(6, 13, 30, 0.58));
+  backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.035),
+    0 14px 32px rgba(0,0,0,.2),
+    0 0 28px rgba(44, 167, 255, 0.04);
+}
+
+.swarm-scene__agent::after {
+  content: '';
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  width: 1px;
+  opacity: 0.65;
+  background: linear-gradient(180deg, transparent, rgba(90, 224, 255, 0.86), transparent);
+}
+
+.swarm-scene__bank--left .swarm-scene__agent::after { right: -9px; }
+.swarm-scene__bank--right .swarm-scene__agent::after { left: -9px; }
+
+.swarm-scene__agent-orb {
+  position: relative;
+  flex: 0 0 44px;
+  width: 44px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(125, 231, 255, 0.38);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 38% 30%, rgba(226, 252, 255, .8), rgba(77, 209, 255, .42) 10%, transparent 24%),
+    radial-gradient(circle, rgba(23, 135, 220, .55), rgba(23, 40, 91, .94) 60%, rgba(7, 10, 26, .98));
+  color: #eafcff;
+  font-size: 16px;
+  box-shadow: 0 0 24px rgba(62, 195, 255, 0.16);
+}
+
+.swarm-scene__bank--right .swarm-scene__agent:nth-child(even) .swarm-scene__agent-orb,
+.swarm-scene__bank--left .swarm-scene__agent:nth-child(odd) .swarm-scene__agent-orb {
+  border-color: rgba(177, 122, 255, 0.4);
+  box-shadow: 0 0 24px rgba(145, 90, 255, 0.14);
+}
+
+.swarm-scene__agent-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.swarm-scene__agent-copy strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: rgba(244, 251, 255, 0.96);
+}
+
+.swarm-scene__agent-copy span,
+.swarm-scene__agent-copy small {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 7px;
+  color: rgba(161, 211, 229, 0.62);
+}
+
+.swarm-scene__beam {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 48%;
+  width: 29%;
+  height: 1px;
+  transform-origin: 0 50%;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(77, 219, 255, .66), rgba(99, 139, 255, .28) 56%, transparent);
+  box-shadow: 0 0 10px rgba(61, 198, 255, 0.36);
+}
+
+.swarm-scene__beam--1 { transform: rotate(202deg); }
+.swarm-scene__beam--2 { transform: rotate(180deg); }
+.swarm-scene__beam--3 { transform: rotate(158deg); }
+.swarm-scene__beam--4 { transform: rotate(-22deg); }
+.swarm-scene__beam--5 { transform: rotate(0deg); }
+.swarm-scene__beam--6 { transform: rotate(22deg); }
+
+.swarm-scene__tools {
+  position: relative;
+  z-index: 8;
+  display: grid;
+  grid-template-columns: minmax(96px, .72fr) repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: auto;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(111, 226, 255, 0.10);
+  border-bottom: 1px solid rgba(111, 226, 255, 0.08);
+  background: rgba(4, 13, 28, 0.84);
+  backdrop-filter: blur(16px);
+}
+
+.swarm-scene__tools-title {
+  align-self: center;
+  margin: 0;
+  font-size: 8px;
+  color: rgba(143, 225, 248, 0.7);
+}
+
+.swarm-scene__tool-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 6px;
+  min-width: 0;
+  min-height: 34px;
+  padding-left: 8px;
+  border-left: 1px solid rgba(255,255,255,.05);
+  font-size: 9px;
+  color: rgba(225, 243, 250, 0.82);
+}
+
+.swarm-scene__tool-row > span:not(.swarm-scene__tool-icon),
+.swarm-scene__tool-row small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swarm-scene__tool-row small {
+  grid-column: 2;
+  color: rgba(138, 201, 221, 0.55);
+}
+
+.swarm-scene__tool-icon {
+  grid-row: 1 / span 2;
+  color: rgba(94, 223, 255, 0.8);
+}
+
+.swarm-scene__brandline {
+  position: absolute;
+  z-index: 7;
+  left: 3%;
+  bottom: 4%;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.swarm-scene__brandline span {
+  font-size: 8px;
+  color: rgba(147, 207, 227, 0.48);
+}
+
+.swarm-scene__missing-agents {
+  position: absolute;
+  z-index: 7;
+  left: 3%;
+  right: 3%;
+  top: 20%;
+}
+
+.swarm-scene__empty {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 12%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 11px;
+  color: rgba(178, 211, 224, 0.62);
+}
+
+.swarm-scene__footer {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 13px 18px 15px;
+  border-top: 1px solid rgba(111, 226, 255, 0.08);
+  background: rgba(3, 10, 23, 0.72);
+  font-size: 9px;
+  color: rgba(163, 207, 223, 0.62);
+}
+
+.swarm-scene__footer strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 9px;
+  color: rgba(224, 246, 252, 0.82);
+}
+
+.swarm-scene__footer p { margin: 0; }
+
+.swarm-scene__status-dot {
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #71eaff;
+  box-shadow: 0 0 12px rgba(113, 234, 255, 0.7);
+}
+
+.swarm-scene__status-dot--warning {
+  background: #f5b85c;
+  box-shadow: 0 0 12px rgba(245, 184, 92, 0.55);
+}
+
+@media (max-width: 1100px) {
+  .swarm-scene { min-height: 820px; }
+  .swarm-scene__viewport { min-height: 700px; }
+  .swarm-scene__core-zone { top: 43%; width: 330px; }
+  .swarm-scene__bank { top: 11%; bottom: 33%; width: 34%; }
+  .swarm-scene__tools {
+    grid-template-columns: minmax(96px, .8fr) repeat(3, minmax(0, 1fr));
+  }
+  .swarm-scene__brandline { bottom: 16%; }
+}
+
+@media (max-width: 760px) {
+  .swarm-scene {
+    min-height: 0;
+    border-radius: 20px;
+  }
+
+  .swarm-scene__header {
+    flex-direction: column;
+    padding: 18px;
+  }
+
+  .swarm-scene__meta {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .swarm-scene__viewport {
+    min-height: 980px;
+    padding: 18px;
+  }
+
+  .swarm-scene__core-zone {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: 280px;
+    margin: 36px auto 72px;
+    transform: none;
+  }
+
+  .swarm-scene__core { width: 150px; }
+  .swarm-scene__core-mark { font-size: 48px; }
+
+  .swarm-scene__bank {
+    position: relative;
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    width: 100%;
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .swarm-scene__bank--right { margin-top: 10px; }
+  .swarm-scene__agent::after,
+  .swarm-scene__beam { display: none; }
+
+  .swarm-scene__tools {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .swarm-scene__tools-title {
+    grid-column: 1 / -1;
+  }
+
+  .swarm-scene__brandline {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .swarm-scene__missing-agents,
+  .swarm-scene__empty {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    transform: none;
+    margin: 14px 0;
+  }
+
+  .swarm-scene__footer { padding: 13px 16px 15px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .swarm-scene__core {
+    animation: swarm-scene-breathe 5.6s ease-in-out infinite;
+  }
+
+  .swarm-scene__beam {
+    animation: swarm-scene-beam 3.8s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes swarm-scene-breathe {
+  0%, 100% { box-shadow: inset -24px -20px 48px rgba(37,15,88,.68), inset 16px 12px 32px rgba(91,222,255,.13), 0 0 34px rgba(59,207,255,.28), 0 0 96px rgba(94,64,255,.18); }
+  50% { box-shadow: inset -24px -20px 48px rgba(37,15,88,.68), inset 16px 12px 32px rgba(91,222,255,.18), 0 0 54px rgba(59,207,255,.42), 0 0 118px rgba(94,64,255,.27); }
+}
+
+@keyframes swarm-scene-beam {
+  from { opacity: 0.34; }
+  to { opacity: 0.82; }
+}

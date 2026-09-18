@@ -134,6 +134,9 @@ export const enUS = {
   'mission.noWriter': 'No authoritative writer view is present.',
   'mission.noBlockers': 'No authoritative Blocker contract exists in the Phase 4.2 view-contract set. The frontend does not reclassify gate denials, lock state or telemetry as blockers.',
   'mission.rail': 'Mission Control rail',
+  'mission.recentEvents': 'Recent Events',
+  'mission.noRecentEvents': 'No accepted live events have been observed in this read session.',
+  'mission.recentEventsNote': 'Accepted live-event metadata from the current read session. Observability only; payloads are not rendered and event activity does not grant authority or write permission.',
 
   'work.title': 'Work Orders',
   'work.description': 'Backend-owned Work Order state is displayed without local approval, execution, verification, lifecycle-stage or policy inference.',
@@ -379,6 +382,9 @@ export const deDE: Record<MessageKey, string> = {
   'mission.noWriter': 'Kein autoritativer Writer-View vorhanden.',
   'mission.noBlockers': 'Im View-Contract-Set von Phase 4.2 existiert kein autoritativer Blocker-Vertrag. Das Frontend klassifiziert Gate-Ablehnungen, Lock-Zustand oder Telemetrie nicht als Blocker um.',
   'mission.rail': 'Mission-Control-Seitenleiste',
+  'mission.recentEvents': 'Letzte Ereignisse',
+  'mission.noRecentEvents': 'In dieser Lesesitzung wurden keine akzeptierten Live-Ereignisse beobachtet.',
+  'mission.recentEventsNote': 'Akzeptierte Live-Ereignismetadaten aus der aktuellen Lesesitzung. Nur Beobachtbarkeit; Payloads werden nicht dargestellt und Ereignisaktivität verleiht weder Autorität noch Schreibberechtigung.',
 
   'work.title': 'Arbeitsaufträge',
   'work.description': 'Backend-eigener Work-Order-Zustand wird angezeigt, ohne lokale Ableitung von Approval, Execution, Verifikation, Lifecycle-Stufe oder Richtlinien.',

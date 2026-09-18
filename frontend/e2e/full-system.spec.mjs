@@ -3,6 +3,14 @@ import { expect, test } from '@playwright/test'
 const routes = ['/', '/work-orders', '/evidence-audit', '/system-swarm']
 const operationalControlName = /approve|execute|deploy|unlock|enable writer|force/i
 
+async function expectNoHorizontalOverflow(page) {
+  const dimensions = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+  }))
+  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth)
+}
+
 for (const route of routes) {
   test(`${route} renders without client errors or operational write controls`, async ({ page }) => {
     const pageErrors = []
@@ -19,6 +27,7 @@ for (const route of routes) {
     expect(await page.getByRole('button', { name: operationalControlName }).count()).toBe(0)
     expect(await page.locator('button').count()).toBe(await localeControls.getByRole('button').count())
     expect(await page.locator('input, textarea, select').count()).toBe(0)
+    expect(await page.locator('[data-qa-only="true"]').count()).toBe(0)
     expect(pageErrors).toEqual([])
   })
 }
@@ -86,5 +95,70 @@ test('safety-critical authority state remains visible on narrow and desktop layo
     await expect(activeContext).toContainText('UNAVAILABLE')
     await expect(activeContext).toContainText('UNKNOWN')
     await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+    await expectNoHorizontalOverflow(page)
   }
+})
+
+test('premium Mission Control desktop composition produces populated 1440x1000 visual-QA evidence', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
+
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.goto('/?visualQa=premium', { waitUntil: 'networkidle' })
+
+  await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
+  const leader = page.getByRole('region', { name: 'Leader interaction' })
+  await expect(leader).toBeVisible()
+  await expect(leader.getByTestId('visual-qa-conversation')).toBeVisible()
+  await expect(leader).toContainText('Agenten zugewiesen')
+
+  const topology = page.getByRole('region', { name: 'Live Topology' })
+  await expect(topology).toBeVisible()
+  await expect(topology.getByTestId('swarm-scene-ambient-svg')).toBeVisible()
+  await expect(topology.locator('.swarm-scene__core')).toBeVisible()
+  await expect(topology).toContainText('Leader')
+  await expect(topology).toContainText('Researcher')
+  expect(await topology.locator('[data-qa-only="true"]').count()).toBeGreaterThan(0)
+
+  await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Agent Grid' })).toContainText('Synthesizer')
+  expect(await page.locator('input, textarea, select').count()).toBe(0)
+  await expectNoHorizontalOverflow(page)
+
+  const firstFold = await page.evaluate(() => {
+    const regions = [
+      document.querySelector('[aria-label="Leader interaction"]'),
+      document.querySelector('[aria-label="Live Topology"]'),
+      document.querySelector('[aria-label="Mission Control rail"]'),
+    ]
+    return regions.map((region) => region?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY)
+  })
+  for (const top of firstFold) expect(top).toBeLessThan(1000)
+
+  await page.screenshot({
+    path: testInfo.outputPath('mission-control-1440x1000.png'),
+    fullPage: false,
+    animations: 'disabled',
+  })
+})
+
+test('premium Mission Control narrow composition produces populated 320x800 visual-QA evidence', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Canonical premium visual evidence is captured in Chromium.')
+
+  await page.setViewportSize({ width: 320, height: 800 })
+  await page.goto('/?visualQa=premium', { waitUntil: 'networkidle' })
+
+  await expect(page.getByText('VISUAL QA FIXTURE · NOT LIVE AUTHORITY')).toBeVisible()
+  await expect(page.getByLabel('Active context')).toBeVisible()
+  await expect(page.getByLabel('Mission Control rail')).toBeVisible()
+  const topology = page.getByRole('region', { name: 'Live Topology' })
+  await expect(topology).toBeVisible()
+  await expect(topology.getByTestId('swarm-scene-ambient-svg')).toBeVisible()
+  await expect(topology.locator('.swarm-scene__core')).toBeVisible()
+  await expectNoHorizontalOverflow(page)
+
+  await page.screenshot({
+    path: testInfo.outputPath('mission-control-320x800.png'),
+    fullPage: false,
+    animations: 'disabled',
+  })
 })

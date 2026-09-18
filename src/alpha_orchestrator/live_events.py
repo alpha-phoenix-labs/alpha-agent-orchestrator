@@ -28,8 +28,8 @@ class LiveEventEnvelope:
     schema_version: int
     event_id: str
     sequence: int
-    base_state_version: int
-    state_version: int
+    base_state_version: str
+    state_version: str
     emitted_at: str
     event_type: str
     payload: Mapping[str, Any]
@@ -40,13 +40,13 @@ class LiveEventCursor:
     """Client-side ordering baseline derived from an authoritative snapshot/resync."""
 
     last_sequence: int
-    current_state_version: int
+    current_state_version: str
     seen_event_ids: frozenset[str] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:
         if type(self.last_sequence) is not int or self.last_sequence < 0:
             raise ValueError("INVALID_CURSOR_SEQUENCE")
-        if type(self.current_state_version) is not int or self.current_state_version < 0:
+        if not isinstance(self.current_state_version, str) or not self.current_state_version.strip():
             raise ValueError("INVALID_CURSOR_STATE_VERSION")
 
 
@@ -111,13 +111,10 @@ def parse_live_event(value: object) -> LiveEventEnvelope:
 
     event_id = _require_non_empty_string(value["event_id"], "INVALID_EVENT_ID")
     sequence = _require_int(value["sequence"], "INVALID_SEQUENCE", minimum=1)
-    base_state_version = _require_int(
-        value["base_state_version"], "INVALID_BASE_STATE_VERSION", minimum=0
+    base_state_version = _require_non_empty_string(
+        value["base_state_version"], "INVALID_BASE_STATE_VERSION"
     )
-    state_version = _require_int(value["state_version"], "INVALID_STATE_VERSION", minimum=0)
-    if state_version < base_state_version:
-        raise LiveEventValidationError("STATE_VERSION_BEFORE_BASE")
-
+    state_version = _require_non_empty_string(value["state_version"], "INVALID_STATE_VERSION")
     emitted_at = _require_timestamp(value["emitted_at"])
     event_type = _require_non_empty_string(value["event_type"], "INVALID_EVENT_TYPE")
     payload = value["payload"]

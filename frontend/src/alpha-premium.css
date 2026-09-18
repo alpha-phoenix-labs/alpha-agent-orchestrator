@@ -1,0 +1,631 @@
+/*
+ * ALPHA canonical premium visual layer.
+ * Presentation only. Authority, approval, freshness, locks and writer state
+ * continue to come exclusively from backend-owned contracts.
+ */
+
+:root {
+  --alpha-cyan: #00f0ff;
+  --alpha-blue: #2563eb;
+  --alpha-purple: #a855f7;
+  --alpha-emerald: #10b981;
+  --alpha-amber: #f59e0b;
+  --alpha-bg: #020617;
+  --alpha-glass: rgba(2, 6, 23, 0.64);
+  --alpha-glass-strong: rgba(2, 6, 23, 0.82);
+  --alpha-border: rgba(34, 211, 238, 0.28);
+  --alpha-border-strong: rgba(34, 211, 238, 0.56);
+  --alpha-violet-border: rgba(168, 85, 247, 0.34);
+  --alpha-glow: 0 0 25px rgba(6, 182, 212, 0.15);
+  --alpha-glow-active: 0 0 38px rgba(6, 182, 212, 0.32), 0 0 90px rgba(168, 85, 247, 0.09);
+}
+
+.visual-qa-fixture-banner {
+  position: relative;
+  z-index: 2;
+  width: max-content;
+  max-width: calc(100% - 1.44rem);
+  margin: .45rem .72rem 0 auto;
+  padding: .35rem .58rem;
+  border: 1px solid rgba(245, 158, 11, .34);
+  border-radius: .4rem;
+  background: rgba(19, 12, 3, .92);
+  color: #f5d48a;
+  font: 700 .48rem/1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(245, 158, 11, .08);
+  pointer-events: none;
+}
+
+.operations-shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow-x: clip;
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, .18), rgba(2, 6, 23, .82) 74%, #020617 100%),
+    radial-gradient(circle at 50% -8%, rgba(0, 240, 255, .15), transparent 34rem),
+    radial-gradient(circle at 84% 22%, rgba(168, 85, 247, .13), transparent 30rem),
+    radial-gradient(circle at 16% 44%, rgba(14, 165, 233, .07), transparent 24rem),
+    url('/alpha-city-grid.svg') center top / cover fixed no-repeat,
+    var(--alpha-bg);
+}
+
+.operations-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .72;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(255,255,255,.72) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 68% 11%, rgba(0,240,255,.70) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 89% 31%, rgba(168,85,247,.66) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 35% 37%, rgba(255,255,255,.46) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 54% 62%, rgba(0,240,255,.46) 0 1px, transparent 1.6px),
+    linear-gradient(180deg, transparent 0 68%, rgba(0,240,255,.035) 88%, transparent 100%);
+  background-size: 190px 170px, 240px 210px, 280px 250px, 220px 180px, 260px 230px, auto;
+  mix-blend-mode: screen;
+}
+
+.operations-shell::after {
+  content: '';
+  position: fixed;
+  left: 7%;
+  right: 7%;
+  bottom: -16rem;
+  height: 27rem;
+  z-index: -1;
+  pointer-events: none;
+  border-top: 1px solid rgba(0,240,255,.20);
+  border-radius: 50% 50% 0 0;
+  box-shadow: 0 -12px 52px rgba(0,240,255,.06), 0 -32px 105px rgba(168,85,247,.055);
+  transform: perspective(920px) rotateX(62deg);
+}
+
+.operations-shell > * { position: relative; z-index: 1; }
+
+.operations-topbar {
+  min-height: 68px;
+  border-bottom-color: rgba(53, 192, 255, .26);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(46,202,255,.09), transparent 22rem),
+    radial-gradient(circle at 88% 0%, rgba(163,73,255,.06), transparent 24rem),
+    linear-gradient(90deg, rgba(2,11,24,.98), rgba(2,9,19,.94) 48%, rgba(8,7,27,.96));
+  box-shadow: inset 0 -1px rgba(92,211,255,.05), 0 12px 40px rgba(0,0,0,.38), 0 0 34px rgba(31,148,255,.05);
+  backdrop-filter: blur(22px) saturate(1.2);
+}
+
+.operations-brand-mark::before {
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  filter: drop-shadow(0 0 9px rgba(52,231,255,.72)) drop-shadow(0 0 15px rgba(166,76,255,.36));
+}
+
+.operations-brand-mark::after {
+  font-size: 1.04rem;
+  letter-spacing: .28em;
+}
+
+.alpha-preview-session-control {
+  display: flex;
+  align-items: center;
+  gap: .42rem;
+  min-height: 2rem;
+  padding: .28rem .38rem;
+  border: 1px solid rgba(74, 193, 255, .16);
+  border-radius: .55rem;
+  background: rgba(3, 14, 29, .72);
+  color: #7895b7;
+  font: 650 .56rem/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.alpha-preview-session-control label {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.alpha-preview-session-control input {
+  width: 8.5rem;
+  min-width: 0;
+  padding: .34rem .42rem;
+  border: 1px solid rgba(93, 213, 255, .18);
+  border-radius: .4rem;
+  outline: none;
+  background: rgba(1, 7, 17, .82);
+  color: #d8f7ff;
+}
+
+.alpha-preview-session-control input:focus-visible,
+.alpha-preview-session-control button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(103, 232, 249, .58);
+}
+
+.alpha-preview-session-control button {
+  padding: .38rem .5rem;
+  border: 1px solid rgba(80, 220, 255, .20);
+  border-radius: .4rem;
+  background: rgba(15, 102, 145, .12);
+  color: #a9efff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.alpha-preview-session-control strong {
+  color: #8affd0;
+}
+
+.alpha-preview-session-control small {
+  color: #f6c26b;
+}
+
+.operations-context-strip {
+  min-height: 26px;
+  padding-top: .35rem !important;
+  padding-bottom: .35rem !important;
+  border-color: rgba(64,171,255,.11) !important;
+  background: rgba(1,7,17,.80) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.018), 0 1px 16px rgba(16,91,172,.04);
+  backdrop-filter: blur(14px);
+}
+
+.operations-shell main {
+  max-width: 1920px !important;
+  padding: .58rem .72rem .45rem !important;
+}
+
+.alpha-panel,
+.alpha-runtime-card,
+.alpha-topology-hero,
+.alpha-control-rail {
+  border-color: var(--alpha-border);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.045), transparent 25%, rgba(0,240,255,.015) 62%, rgba(168,85,247,.025)),
+    var(--alpha-glass);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  box-shadow: inset 0 1px rgba(255,255,255,.055), inset 0 -1px rgba(0,240,255,.025), var(--alpha-glow), 0 18px 42px rgba(0,0,0,.34);
+}
+
+.alpha-panel::before,
+.alpha-runtime-card::before,
+.alpha-topology-hero::before {
+  background: linear-gradient(90deg, rgba(0,240,255,.78), rgba(59,130,246,.38) 44%, rgba(168,85,247,.42) 72%, transparent 94%);
+}
+
+.alpha-panel-heading,
+.alpha-topology-heading {
+  background: linear-gradient(180deg, rgba(7,23,45,.68), rgba(3,13,27,.16));
+}
+
+.alpha-panel-title,
+.alpha-topology-heading h3 {
+  color: #bfeeff;
+  text-shadow: 0 0 14px rgba(62,202,255,.12);
+}
+
+.alpha-live-chip,
+.alpha-readonly-lock,
+.alpha-runtime-chip {
+  border-color: rgba(16,185,129,.38);
+  background: rgba(16,185,129,.09);
+  color: #8affd0;
+  box-shadow: inset 0 0 20px rgba(16,185,129,.09), 0 0 16px rgba(16,185,129,.05);
+}
+
+.alpha-authority-banner {
+  min-height: 1.8rem;
+  border-color: rgba(245,158,11,.25);
+  background: linear-gradient(90deg, rgba(98,61,11,.16), rgba(4,12,24,.66));
+  box-shadow: inset 0 1px rgba(255,255,255,.02), 0 0 16px rgba(245,158,11,.035);
+}
+
+/* Mission Control composition */
+.alpha-console { gap: .5rem; }
+
+.alpha-mission-header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.alpha-dashboard-grid {
+  grid-template-columns: minmax(285px,.84fr) minmax(0,2.5fr) minmax(292px,.88fr);
+  grid-template-rows: minmax(360px,39vh) minmax(220px,23vh) minmax(174px,18vh);
+  gap: .62rem;
+}
+
+.alpha-leader-stack,
+.alpha-middle-grid,
+.alpha-bottom-grid { gap: .62rem; }
+
+/* Leader Chat */
+.alpha-leader-chat {
+  border-color: var(--alpha-border-strong);
+  background:
+    linear-gradient(180deg, rgba(3,17,34,.90), rgba(1,8,18,.88)),
+    var(--alpha-glass);
+  box-shadow: inset 0 0 42px rgba(27,126,255,.05), var(--alpha-glow-active), 0 18px 38px rgba(0,0,0,.30);
+}
+
+.alpha-chat-header {
+  padding: .18rem 0 .58rem;
+  border-bottom-color: rgba(69,178,255,.14);
+}
+
+.alpha-avatar {
+  width: 2.05rem;
+  height: 2.05rem;
+  border: 1px solid rgba(70,228,255,.72);
+  background: radial-gradient(circle at 34% 28%, #62f3ff, #267dff 46%, #7a3ce1 100%);
+  box-shadow: 0 0 0 4px rgba(49,206,255,.04), 0 0 22px rgba(44,167,255,.32), 0 0 36px rgba(124,70,255,.14);
+}
+
+.alpha-chat-stream--qa { overflow: hidden; }
+
+.alpha-qa-conversation {
+  display: grid;
+  gap: .52rem;
+  min-height: 0;
+  overflow: auto;
+  padding-right: .1rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(53,180,255,.22) transparent;
+}
+
+.alpha-chat-bubble {
+  border-color: rgba(0,240,255,.16);
+  background: linear-gradient(145deg, rgba(8,24,48,.76), rgba(2,8,23,.62));
+  box-shadow: inset 0 1px rgba(255,255,255,.035), 0 10px 28px rgba(0,0,0,.22);
+}
+
+.alpha-chat-bubble--user {
+  margin-left: 1.55rem;
+  border-color: rgba(56,189,248,.28);
+  background: linear-gradient(145deg, rgba(14,74,130,.62), rgba(8,31,74,.72));
+}
+
+.alpha-chat-bubble--leader {
+  margin-right: .75rem;
+  border-color: rgba(47,222,255,.30);
+  background: linear-gradient(145deg, rgba(9,59,84,.34), rgba(5,18,39,.76));
+}
+
+.alpha-chat-bubble p { color: #c7d8ea; font-size: .61rem; line-height: 1.52; }
+.alpha-chat-meta { color: #6f8daf; font-size: .47rem; }
+.alpha-chat-meta span:first-child { color: #74ddff; }
+
+.alpha-chat-checklist {
+  display: grid;
+  gap: .18rem;
+  margin: .45rem 0 0;
+  padding: 0;
+  list-style: none;
+  color: #7f96b3;
+  font-size: .49rem;
+}
+
+.alpha-chat-checklist li { display: flex; align-items: center; gap: .35rem; }
+.alpha-chat-checklist li span {
+  display: inline-grid;
+  width: .78rem;
+  height: .78rem;
+  place-items: center;
+  border: 1px solid rgba(66,238,190,.28);
+  border-radius: 999px;
+  background: rgba(23,129,98,.10);
+  color: #5df2be;
+  box-shadow: 0 0 10px rgba(63,247,186,.08);
+}
+
+.alpha-chat-composer--qa {
+  min-height: 2.35rem;
+  border-color: rgba(58,182,255,.20);
+  background: linear-gradient(180deg, rgba(5,23,43,.78), rgba(2,11,23,.92));
+  color: #647d9d;
+}
+
+.alpha-composer-send {
+  display: inline-grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  border: 1px solid rgba(61,218,255,.24);
+  border-radius: .42rem;
+  background: linear-gradient(135deg, rgba(40,176,255,.20), rgba(117,73,255,.22));
+  color: #78e4ff;
+  box-shadow: 0 0 14px rgba(45,169,255,.10);
+}
+
+/* Canonical Live Swarm Topology */
+.alpha-topology-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: var(--alpha-border-strong);
+  background:
+    radial-gradient(circle at 50% 43%, rgba(45,205,255,.13), transparent 27%),
+    radial-gradient(circle at 74% 42%, rgba(158,75,255,.09), transparent 28%),
+    linear-gradient(180deg, rgba(2,11,24,.88), rgba(1,7,16,.95));
+  box-shadow: inset 0 0 74px rgba(29,146,255,.075), var(--alpha-glow-active), 0 22px 54px rgba(0,0,0,.38);
+}
+
+.alpha-topology-heading,
+.alpha-topology-layout,
+.alpha-topology-footer { position: relative; z-index: 2; }
+
+.alpha-topology-layout {
+  grid-template-columns: minmax(0,1fr) minmax(145px,.24fr);
+  gap: .52rem;
+  padding: .52rem;
+}
+
+.alpha-topology-stage {
+  position: relative;
+  isolation: isolate;
+  min-height: 22.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(0,240,255,.20);
+  border-radius: .52rem;
+  background:
+    linear-gradient(180deg, rgba(1,7,17,.26), rgba(1,7,17,.56) 70%, rgba(1,7,17,.86)),
+    radial-gradient(circle at 50% 49%, rgba(50,210,255,.20), transparent 22%),
+    radial-gradient(circle at 69% 38%, rgba(167,77,255,.12), transparent 24%),
+    radial-gradient(ellipse at 48% 84%, rgba(255,160,71,.055), transparent 34%),
+    url('/alpha-city-grid.svg') center 58% / cover no-repeat;
+  background-blend-mode: normal, screen, screen, screen, screen;
+  box-shadow: inset 0 0 110px rgba(14,76,154,.15), inset 0 -52px 84px rgba(1,5,12,.70), 0 0 38px rgba(0,240,255,.08);
+}
+
+.alpha-topology-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent 0 49.8%, rgba(0,240,255,.07) 50%, transparent 50.2%),
+    linear-gradient(180deg, transparent 0 49.8%, rgba(168,85,247,.05) 50%, transparent 50.2%),
+    radial-gradient(circle at 50% 52%, transparent 0 27%, rgba(0,240,255,.075) 27.2% 27.5%, transparent 27.8% 100%);
+  opacity: .72;
+}
+
+.alpha-topology-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(3,12,24,.46), transparent 18%, transparent 82%, rgba(3,10,23,.50)), linear-gradient(180deg, rgba(2,8,18,.03), transparent 44%, rgba(2,7,16,.58));
+}
+
+.alpha-topology-canvas,
+.alpha-topology-center,
+.alpha-topology-stage > .alpha-topology-node,
+.alpha-topology-brand-copy,
+.alpha-topology-empty { position: absolute; z-index: 2; }
+
+.alpha-topology-canvas { inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; }
+.alpha-topology-center { top: 50%; left: 50%; transform: translate(-50%,-50%); isolation: isolate; }
+.alpha-topology-stage > .alpha-topology-node { transform: translate(-50%,-50%); }
+
+.alpha-topology-center::before,
+.alpha-topology-center::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+  transform: translate(-50%,-50%);
+}
+
+.alpha-topology-center::before {
+  width: 11.8rem;
+  height: 11.8rem;
+  z-index: -2;
+  border: 1px solid rgba(0,240,255,.34);
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(54,226,255,.16), rgba(66,102,255,.075) 42%, rgba(169,73,255,.05) 58%, transparent 72%);
+  box-shadow: 0 0 30px rgba(0,240,255,.24), 0 0 78px rgba(168,85,247,.22), inset 0 0 40px rgba(0,240,255,.12);
+  animation: alpha-core-breathe 4.8s ease-in-out infinite;
+}
+
+.alpha-topology-center::after {
+  width: 1px;
+  height: 14rem;
+  z-index: -3;
+  background: linear-gradient(180deg, transparent, rgba(77,227,255,.44) 34%, rgba(181,84,255,.36) 62%, transparent);
+  box-shadow: 0 0 12px rgba(64,210,255,.28);
+}
+
+.alpha-topology-node {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: .22rem;
+  min-width: 92px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  outline: none;
+}
+
+.alpha-topology-node:focus-visible { border-radius: .45rem; box-shadow: 0 0 0 2px rgba(58,214,255,.62), 0 0 22px rgba(72,140,255,.35); }
+
+.alpha-node-orbit {
+  position: absolute;
+  width: 4.25rem;
+  height: 4.25rem;
+  border: 1px solid rgba(0,240,255,.42);
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgba(0,240,255,.16);
+  animation: alpha-orbit-spin 9s linear infinite;
+}
+
+.alpha-node-core {
+  display: inline-grid;
+  width: 3.2rem;
+  height: 3.2rem;
+  place-items: center;
+  border: 1px solid rgba(74,218,255,.76);
+  border-radius: 999px;
+  color: #e8ffff;
+  font-weight: 800;
+  background: radial-gradient(circle at 34% 30%, #75f5ff, #2c78ff 48%, #7341dc 100%);
+  box-shadow: 0 0 0 4px rgba(39,198,255,.045), 0 0 20px rgba(48,177,255,.33), 0 0 38px rgba(104,72,255,.15);
+}
+
+.alpha-topology-node--violet .alpha-node-core { border-color: rgba(192,132,252,.72); box-shadow: 0 0 0 4px rgba(170,77,255,.045), 0 0 22px rgba(164,78,255,.34), 0 0 40px rgba(71,143,255,.12); }
+.alpha-topology-node--emerald .alpha-node-core { border-color: rgba(52,211,153,.72); background: radial-gradient(circle at 34% 30%, #d1ffef, #5cf4c1 20%, var(--alpha-emerald) 56%, #087a5c 100%); box-shadow: 0 0 24px rgba(16,185,129,.30); }
+
+.alpha-topology-node--leader { min-width: 118px; }
+.alpha-topology-node--leader .alpha-node-orbit { width: 6rem; height: 6rem; border-color: rgba(168,85,247,.58); animation-duration: 6s; }
+.alpha-topology-node--leader .alpha-node-core {
+  width: 4.9rem;
+  height: 4.9rem;
+  border-color: rgba(90,238,255,.94);
+  font-size: 1.18rem;
+  background: radial-gradient(circle at 34% 28%, #e8ffff 0%, #86f7ff 12%, var(--alpha-cyan) 28%, #3977ff 54%, var(--alpha-purple) 100%);
+  box-shadow: 0 0 0 7px rgba(0,240,255,.07), 0 0 34px rgba(0,240,255,.64), 0 0 88px rgba(168,85,247,.36);
+}
+
+.alpha-node-copy { max-width: 128px; text-align: center; }
+.alpha-node-copy strong { display: block; color: #edfaff; font-size: .64rem; text-shadow: 0 1px 8px rgba(0,0,0,.76), 0 0 12px rgba(50,202,255,.10); }
+.alpha-node-copy span { display: block; margin-top: .04rem; color: #7790ad; font-size: .47rem; }
+.alpha-node-copy small { display: block; margin-top: .05rem; color: #75f0c4; font-size: .43rem; white-space: nowrap; }
+
+.alpha-svg-orbit { fill: none; stroke: rgba(0,240,255,.16); stroke-width: 1.1; }
+.alpha-svg-orbit--inner { stroke: rgba(168,85,247,.20); }
+.alpha-edge-shadow { fill: none; stroke: rgba(0,240,255,.12); stroke-width: 5; }
+.alpha-edge-flow { fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-dasharray: 10 14; filter: drop-shadow(0 0 7px rgba(0,240,255,.48)); animation: alpha-flow-travel 2.8s linear infinite; }
+.alpha-edge-flow--violet { filter: drop-shadow(0 0 8px rgba(168,85,247,.46)); animation-duration: 3.4s; }
+.alpha-orbit-particles circle { fill: var(--alpha-cyan); filter: drop-shadow(0 0 9px rgba(0,240,255,.82)); animation: alpha-particle-pulse 2.6s ease-in-out infinite alternate; }
+.alpha-orbit-particles circle:nth-child(2n) { fill: var(--alpha-purple); animation-delay: -1.1s; }
+
+.alpha-tools {
+  border-color: rgba(0,240,255,.22);
+  background: rgba(1,8,18,.62);
+  backdrop-filter: blur(16px);
+}
+.alpha-tool-row { border-color: rgba(0,240,255,.12); background: rgba(3,15,30,.56); }
+
+.alpha-topology-footer { border-top-color: rgba(0,240,255,.10); background: rgba(1,8,17,.48); }
+
+.alpha-metric-track > span { background: linear-gradient(90deg, var(--alpha-cyan), #3b82f6 52%, var(--alpha-purple)); box-shadow: 0 0 12px rgba(0,240,255,.28); }
+
+/* System / Swarm route */
+.alpha-system-swarm { display: grid; gap: .7rem; min-width: 0; color: #edf7ff; }
+.alpha-system-header { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: .35rem .25rem .65rem; border-bottom: 1px solid rgba(0,240,255,.12); }
+.alpha-system-header p { margin: 0; color: #65e9ff; font-size: .58rem; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+.alpha-system-header h2 { margin: .18rem 0 0; color: #f4fbff; font-size: clamp(1.25rem,2vw,1.8rem); font-weight: 700; }
+.alpha-system-header span:not(.alpha-readonly-lock) { display: block; max-width: 58rem; margin-top: .22rem; color: #7890ad; font-size: .68rem; line-height: 1.45; }
+
+.alpha-system-grid {
+  display: grid;
+  grid-template-columns: minmax(260px,.85fr) minmax(0,1.55fr) minmax(280px,.9fr);
+  grid-template-areas:
+    'overview topology health'
+    'agents topology control'
+    'connectors locks policies'
+    'agentgrid agentgrid agentgrid';
+  gap: .7rem;
+  min-width: 0;
+}
+
+.alpha-system-overview { grid-area: overview; }
+.alpha-system-agents { grid-area: agents; }
+.alpha-system-connectors { grid-area: connectors; }
+.alpha-system-locks { grid-area: locks; }
+.alpha-system-topology { grid-area: topology; min-width: 0; min-height: 580px; }
+.alpha-system-health { grid-area: health; }
+.alpha-system-control-plane { grid-area: control; }
+.alpha-system-policies { grid-area: policies; }
+.alpha-system-agent-grid-area { grid-area: agentgrid; min-width: 0; }
+.alpha-system-topology > .alpha-topology-hero { height: 100%; }
+
+.alpha-swarm-stack,
+.alpha-swarm-list { display: grid; gap: .42rem; }
+.alpha-system-facts { display: grid; gap: .38rem; }
+.alpha-system-facts--two { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.alpha-system-facts--three { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.alpha-swarm-record { padding: .42rem; border: 1px solid rgba(0,240,255,.10); border-radius: .45rem; background: linear-gradient(145deg, rgba(6,22,42,.54), rgba(2,8,20,.58)); box-shadow: inset 0 1px rgba(255,255,255,.02); }
+.alpha-swarm-record-grid { display: grid; gap: .34rem; }
+.alpha-swarm-record-grid--two { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.alpha-swarm-record-grid--three { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.alpha-swarm-record-grid--agents { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.alpha-swarm-record-grid--grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.alpha-panel-note--lead { margin: 0 0 .5rem; }
+
+.alpha-agent-row:hover,
+.alpha-event-row:hover,
+.alpha-evidence-row:hover { background: linear-gradient(90deg, rgba(0,240,255,.055), rgba(168,85,247,.045)); box-shadow: inset 2px 0 rgba(0,240,255,.42), 0 0 20px rgba(0,240,255,.04); }
+
+@keyframes alpha-orbit-spin { to { transform: rotate(360deg); } }
+@keyframes alpha-flow-travel { to { stroke-dashoffset: -48; } }
+@keyframes alpha-core-breathe {
+  0%,100% { transform: translate(-50%,-50%) scale(.96); opacity: .72; }
+  50% { transform: translate(-50%,-50%) scale(1.04); opacity: 1; }
+}
+@keyframes alpha-particle-pulse {
+  from { opacity: .38; transform: scale(.85); transform-origin: center; }
+  to { opacity: 1; transform: scale(1.22); transform-origin: center; }
+}
+
+@media (max-width: 1260px) {
+  .alpha-dashboard-grid { grid-template-columns: minmax(240px,.78fr) minmax(0,2fr) minmax(255px,.82fr); }
+  .alpha-system-grid { grid-template-columns: minmax(230px,.8fr) minmax(0,1.35fr); grid-template-areas: 'overview topology' 'agents topology' 'connectors locks' 'health control' 'policies policies' 'agentgrid agentgrid'; }
+  .alpha-system-topology { min-height: 560px; }
+}
+
+@media (max-width: 1024px) {
+  .alpha-dashboard-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .alpha-system-grid { grid-template-columns: 1fr; grid-template-areas: 'topology' 'overview' 'agents' 'connectors' 'locks' 'health' 'control' 'policies' 'agentgrid'; }
+  .alpha-system-topology { min-height: 520px; }
+  .alpha-topology-layout { grid-template-columns: minmax(0,1fr) 124px; }
+}
+
+@media (max-width: 720px) {
+  .operations-shell main { padding: .42rem !important; }
+  .alpha-system-header { align-items: stretch; flex-direction: column; }
+  .alpha-system-facts--two,
+  .alpha-system-facts--three,
+  .alpha-swarm-record-grid--two,
+  .alpha-swarm-record-grid--three,
+  .alpha-swarm-record-grid--agents,
+  .alpha-swarm-record-grid--grid { grid-template-columns: 1fr; }
+  .alpha-topology-layout { grid-template-columns: 1fr; }
+  .alpha-tools { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .alpha-tools-heading { grid-column: 1 / -1; }
+  .alpha-topology-stage { min-height: 34rem; }
+  .alpha-topology-stage > .alpha-topology-node { min-width: 76px; }
+}
+
+@media (max-width: 560px) {
+  .alpha-panel,
+  .alpha-runtime-card,
+  .alpha-control-rail,
+  .alpha-topology-hero { backdrop-filter: blur(16px) saturate(115%); -webkit-backdrop-filter: blur(16px) saturate(115%); }
+  .operations-shell { background: radial-gradient(circle at 50% 0%, rgba(0,240,255,.10), transparent 24rem), var(--alpha-bg); }
+  .alpha-topology-stage { background: linear-gradient(180deg, rgba(1,7,17,.48), rgba(1,7,17,.90)), radial-gradient(circle at 50% 48%, rgba(50,210,255,.15), transparent 30%), url('/alpha-city-grid.svg') center / cover no-repeat; }
+  .alpha-topology-center::before { width: 8rem; height: 8rem; }
+  .alpha-topology-node--leader .alpha-node-core { width: 4.2rem; height: 4.2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alpha-topology-center::before,
+  .alpha-topology-center::after,
+  .alpha-node-orbit,
+  .alpha-edge-flow,
+  .alpha-orbit-particles circle { animation: none !important; transition: none !important; }
+}

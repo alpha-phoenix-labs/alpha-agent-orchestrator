@@ -7,6 +7,7 @@ import {
   type SnapshotStatus,
 } from './connection-resilience'
 import type { OperationsSnapshot } from './contracts'
+import type { RecentLiveEvent } from './live-events'
 import {
   sanitizeDisplayString,
   sanitizeOperationsSnapshot,
@@ -34,6 +35,7 @@ type OperationsData = {
   viewContextReason: string
   approvalInvalidationAvailable: false
   approvalInvalidationReason: 'NO_APPROVAL_VIEW_CONTRACT'
+  recentEvents: readonly RecentLiveEvent[]
 }
 
 const OperationsDataContext = createContext<OperationsData>({
@@ -53,6 +55,7 @@ const OperationsDataContext = createContext<OperationsData>({
   viewContextReason: 'NO_VIEWED_STATE_BINDING',
   approvalInvalidationAvailable: false,
   approvalInvalidationReason: 'NO_APPROVAL_VIEW_CONTRACT',
+  recentEvents: [],
 })
 
 type OperationsDataProviderProps = PropsWithChildren<{
@@ -60,6 +63,7 @@ type OperationsDataProviderProps = PropsWithChildren<{
   resilience?: ConnectionResilienceState | null
   viewMode?: ViewMode
   viewedStateVersion?: string | null
+  recentEvents?: readonly RecentLiveEvent[]
 }>
 
 export function OperationsDataProvider({
@@ -67,6 +71,7 @@ export function OperationsDataProvider({
   resilience = null,
   viewMode = 'LIVE',
   viewedStateVersion = null,
+  recentEvents = [],
   children,
 }: OperationsDataProviderProps) {
   const connectionManaged = resilience !== null
@@ -83,6 +88,14 @@ export function OperationsDataProvider({
     currentAuthorityAvailable && viewState.currentSnapshotPermitted
   const currentSnapshot = sanitizeOperationsSnapshot(rawCurrentSnapshot)
   const presentedSnapshot = authorityAvailable ? currentSnapshot : null
+  const safeRecentEvents = recentEvents.map((event) => ({
+    ...event,
+    emittedAt: sanitizeDisplayString(event.emittedAt) ?? event.emittedAt,
+    eventType: sanitizeDisplayString(event.eventType) ?? event.eventType,
+    stateVersion: sanitizeDisplayString(event.stateVersion) ?? event.stateVersion,
+    contract: sanitizeDisplayString(event.contract),
+    sourceClass: sanitizeDisplayString(event.sourceClass),
+  }))
 
   return (
     <OperationsDataContext.Provider
@@ -103,6 +116,7 @@ export function OperationsDataProvider({
         viewContextReason: viewState.reason,
         approvalInvalidationAvailable: viewState.approvalInvalidationAvailable,
         approvalInvalidationReason: viewState.approvalInvalidationReason,
+        recentEvents: safeRecentEvents,
       }}
     >
       {children}
