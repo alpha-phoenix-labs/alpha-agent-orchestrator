@@ -109,6 +109,59 @@
   letter-spacing: .28em;
 }
 
+.alpha-preview-session-control {
+  display: flex;
+  align-items: center;
+  gap: .42rem;
+  min-height: 2rem;
+  padding: .28rem .38rem;
+  border: 1px solid rgba(74, 193, 255, .16);
+  border-radius: .55rem;
+  background: rgba(3, 14, 29, .72);
+  color: #7895b7;
+  font: 650 .56rem/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.alpha-preview-session-control label {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.alpha-preview-session-control input {
+  width: 8.5rem;
+  min-width: 0;
+  padding: .34rem .42rem;
+  border: 1px solid rgba(93, 213, 255, .18);
+  border-radius: .4rem;
+  outline: none;
+  background: rgba(1, 7, 17, .82);
+  color: #d8f7ff;
+}
+
+.alpha-preview-session-control input:focus-visible,
+.alpha-preview-session-control button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(103, 232, 249, .58);
+}
+
+.alpha-preview-session-control button {
+  padding: .38rem .5rem;
+  border: 1px solid rgba(80, 220, 255, .20);
+  border-radius: .4rem;
+  background: rgba(15, 102, 145, .12);
+  color: #a9efff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.alpha-preview-session-control strong {
+  color: #8affd0;
+}
+
+.alpha-preview-session-control small {
+  color: #f6c26b;
+}
+
 .operations-context-strip {
   min-height: 26px;
   padding-top: .35rem !important;
