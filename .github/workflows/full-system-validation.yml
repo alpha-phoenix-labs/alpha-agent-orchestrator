@@ -262,5 +262,9 @@ jobs:
             echo 'Required GitHub Actions secret ALPHA_OPERATIONS_PREVIEW_TOKEN is unavailable.' >&2
             exit 1
           fi
+      - name: Warm external Operations preview with bounded health retries
+        run: |
+          curl --fail --silent --show-error --retry 12 --retry-delay 5 --retry-all-errors \
+            "$ALPHA_OPERATIONS_PREVIEW_URL/healthz" >/dev/null
       - name: Verify external read-only Operations preview
         run: python -m alpha_orchestrator.operations_preview_smoke
