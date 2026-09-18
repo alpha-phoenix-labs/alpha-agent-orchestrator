@@ -11,7 +11,7 @@ import {
   type ReconnectBackoffPolicy,
 } from './connection-resilience'
 import type { OperationsSnapshot } from './contracts'
-import type { LiveEventCursor, LiveEventEvaluation } from './live-events'
+import { projectRecentLiveEvent, type LiveEventCursor, type LiveEventEvaluation, type RecentLiveEvent } from './live-events'
 import {
   OperationsLiveClient,
   OperationsLiveClientError,
@@ -27,6 +27,7 @@ export type OperationsLiveSessionState = Readonly<{
   transportSnapshot: OperationsSnapshotTransport | null
   snapshot: OperationsSnapshot | null
   cursor: LiveEventCursor | null
+  recentEvents: readonly RecentLiveEvent[]
   resilience: ConnectionResilienceState
 }>
 
@@ -81,6 +82,7 @@ export class OperationsLiveSession {
       transportSnapshot: null,
       snapshot: null,
       cursor: null,
+      recentEvents: [],
       resilience: createConnectionResilienceState('NOT_REQUIRED'),
     }
   }
@@ -116,6 +118,7 @@ export class OperationsLiveSession {
         transportSnapshot: read.snapshot,
         snapshot,
         cursor: read.cursor,
+        recentEvents: this.#state.recentEvents,
         resilience,
       })
       return true
@@ -139,10 +142,15 @@ export class OperationsLiveSession {
             evaluation.event,
           )
           const snapshot = mapOperationsSnapshotTransport(transportSnapshot)
+          const recentEvents = [
+            ...this.#state.recentEvents,
+            projectRecentLiveEvent(evaluation.event),
+          ].slice(-20)
           this.#publish({
             transportSnapshot,
             snapshot,
             cursor: evaluation.cursor,
+            recentEvents,
             resilience,
           })
           return
