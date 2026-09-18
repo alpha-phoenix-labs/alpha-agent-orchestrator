@@ -174,7 +174,8 @@ class SandboxGitTarget:
         commit_sha = self.current_head()
         return {
             "ok": True,
-            "sandbox": True,\n            "execution_detail": "SANDBOX_EXECUTION_OK",
+            "sandbox": True,
+            "execution_detail": "SANDBOX_EXECUTION_OK",
             "target": order.target,
             "commit_sha": commit_sha,
             "artifact_digest": sha256(raw.encode("utf-8")).hexdigest(),
