@@ -1,109 +1,125 @@
 # Phase 4.12 - Browser auth and preview hosting decision
 
-Status: **DEVELOPMENT/PREVIEW AUTH + HOSTING SELECTED; NO SERVICE PROVISIONED OR DEPLOYED**
+Status: **DEVELOPMENT/PREVIEW AUTH + HOSTING IMPLEMENTED AND RUNTIME-VERIFIED; PRODUCTION AUTH UNRESOLVED**
 
 Applies to: Phase 4 read-only Operations Console snapshot + SSE runtime proof.
 
-This decision is limited to DEVELOPMENT/PREVIEW. It does not authorize production authentication, Phase 5 write capability, a merge to a protected branch, secret provisioning, service creation, or deployment.
+This decision is limited to DEVELOPMENT/PREVIEW. It does not authorize production authentication, Phase 5 write capability, merge to a protected branch, production traffic, or future secret changes.
 
 ## Verified evidence basis
 
-The current repository/runtime evidence establishes:
+The repository/runtime now establishes:
 
-- `src/alpha_orchestrator/operations_read.py` already owns the shared fail-closed authorization decision for snapshot and SSE reads;
-- `docs/PHASE_4_12_OPERATIONS_NETWORK_OWNER_DECISION.md` selects a dedicated Operations Read Gateway, separate from the Render provider proxy;
-- the existing Render service is a provider-specific Phase 3 read proxy and must not be reused as the Operations browser auth boundary;
-- the frontend currently has no verified browser identity/auth integration;
-- there is no accessible Vercel team/project for this repository;
-- the verified Render workspace is available and already hosts the separate provider proxy;
-- browser `EventSource` does not support caller-defined `Authorization` headers, while `fetch()` supports custom request headers.
+- `src/alpha_orchestrator/operations_read.py` owns the shared fail-closed authorization decision for snapshot and SSE reads;
+- the dedicated Operations Read Gateway is distinct from the Render provider proxy;
+- the browser path uses fetch-based SSE because the selected preview credential is sent through an `Authorization` header;
+- the DEVELOPMENT/PREVIEW credential represents the fixed preview principal `DEVELOPMENT_OPERATOR`;
+- the credential is opaque, server-side configured, provider-independent and read-only;
+- browser credential handling is memory-only;
+- the mounted frontend live provider uses the same credential for snapshot and SSE;
+- the preview-session credential entry surface is explicitly gated to DEVELOPMENT/PREVIEW mode;
+- deterministic browser E2E proves the credential is not persisted in localStorage, sessionStorage or cookies;
+- the dedicated Render Operations Preview service has been provisioned and deployed with auto-deploy disabled;
+- external CI smoke verifies the protected read-only preview service.
 
-## Development/preview browser authorization decision
+## Development/preview browser authorization
 
-For Phase 4 DEVELOPMENT/PREVIEW runtime proof, the Operations Read Gateway will use a repository-owned **opaque development operator bearer credential**.
+The credential remains subject to these mandatory properties:
 
-The credential represents one fixed preview principal:
+- random/opaque;
+- never a provider credential;
+- never committed to the repository;
+- never emitted in logs, URLs, query parameters, telemetry, audit payloads or UI state;
+- browser memory only for the active preview session;
+- not persisted in localStorage, sessionStorage, cookies, generated static assets or build-time public frontend configuration;
+- snapshot and SSE use the same `Authorization: Bearer ...` credential and same Operations read boundary;
+- denied, missing or malformed credentials fail closed;
+- authorization grants read access only.
 
-`DEVELOPMENT_OPERATOR`
+The current UI input exists only when:
 
-This is an authorization mechanism for controlled Phase 4 preview only. It is not a production identity system and must not be promoted to one by implication.
+1. `VITE_ENABLE_OPERATIONS_PREVIEW_SESSION=true`; and
+2. the page is explicitly opened with `?operationsPreview=read`.
 
-Required properties:
+The ordinary application path therefore does not expose a credential input or additional session control.
 
-- the credential is random/opaque and configured server-side only;
-- it is never a provider credential;
-- it is never committed to the repository;
-- it is never emitted in logs, URLs, query parameters, telemetry, audit payloads or UI state;
-- the browser may hold it in memory only for the active preview session;
-- it must not be persisted in `localStorage`, `sessionStorage`, cookies, build-time frontend environment variables, source code or generated static assets;
-- snapshot and SSE requests use the same `Authorization: Bearer ...` credential and the same injected `OperationsReadBoundary` authorization decision;
-- denied, missing or malformed credentials fail closed with no snapshot or SSE payload;
-- authorization grants read access only and cannot create Writer, approval, execution, deploy, unlock, policy override or other mutation capability.
+## SSE browser transport
 
-The preview credential may be supplied interactively to the browser session or by the isolated E2E harness. The exact UI entry surface is implementation detail and must not weaken the no-secret-persistence rules above.
+Fetch-based SSE remains the selected Phase 4 DEVELOPMENT/PREVIEW transport because caller-defined Authorization headers are required.
 
-## SSE browser transport decision
+The client:
 
-Because the selected DEVELOPMENT/PREVIEW authorization uses an `Authorization` request header, the browser live client will use **fetch-based SSE streaming**, not native `EventSource`.
+- sends the bearer credential for snapshot and SSE;
+- requires successful HTTP responses;
+- requires `text/event-stream` for event reads;
+- parses canonical live-event frames only;
+- runs sequence/state validation before state application;
+- treats disconnect, malformed framing, authorization loss, sequence gaps and state drift fail-closed;
+- never infers authority from connection state alone.
 
-This choice is constrained to the current preview credential transport. It does not make fetch-based SSE a permanent production requirement.
+## Dedicated Render preview service
 
-The fetch-based client must:
+Confirmed DEVELOPMENT/PREVIEW service:
 
-- send the same bearer credential used for snapshot reads;
-- require an HTTP success response with `text/event-stream` content type;
-- parse only canonical SSE frames that contain the existing `LiveEventEnvelope` representation;
-- feed events through the existing sequence/state-version validation before any domain-state application;
-- treat disconnect, malformed framing, authorization loss, sequence gaps and state drift as fail-closed resilience events;
-- never infer authority from a connected stream alone.
-
-## Development/preview hosting decision
-
-The intended physical Phase 4 preview target is a **new dedicated Render web service** in the confirmed `ventomlabs` workspace, region Frankfurt, separate from `alpha-agent-orchestrator-render-read-proxy`.
-
-Required deployment properties when deployment is later authorized:
-
+- service: `alpha-agent-orchestrator-operations-preview`;
+- Render service id: `srv-dam5g5gu01pc73bia2t0`;
+- endpoint: `https://alpha-agent-orchestrator-operations.onrender.com`;
 - repository: `alpha-phoenix-labs/alpha-agent-orchestrator`;
-- branch: the current Phase 4 development branch or a later explicitly approved preview branch;
-- purpose: Operations Read Gateway DEVELOPMENT/PREVIEW only;
+- branch: `phase4/premium-mission-control-remediation`;
 - auto-deploy: disabled;
-- no reuse of the existing Render provider-proxy client token or provider token;
-- no provider credentials exposed to the gateway browser boundary;
-- no write capability;
-- no production domain or production traffic;
-- explicit Human Gate required before service creation, secret provisioning or deploy.
+- runtime: Python;
+- start command: `python scripts/operations_preview_server.py`;
+- health route: `/healthz`;
+- purpose: Operations Read Gateway DEVELOPMENT/PREVIEW only;
+- no provider credentials exposed to browser;
+- no write capability.
 
-A deployment must be tied to an exact commit SHA with green CI and must be re-verified after deployment.
+Last independently confirmed live deploy:
+
+- deploy id: `dep-dam5q5m5vjqs73bs36qg`;
+- commit: `b4ae402ba192c953fa86b56d16c1446b4fc16068`;
+- status: live.
+
+Later branch commits are not treated as deployed merely because repository CI is green.
+
+## Current runtime verification
+
+External CI smoke verifies the deployed service for:
+
+- health contract;
+- missing credential -> 401 with no snapshot body;
+- authenticated snapshot;
+- canonical SSE response;
+- SHADOW / writes disabled semantics;
+- POST mutation attempt -> 405.
+
+The mounted browser session is separately verified through the controlled HTTP/SSE E2E runtime harness for reconnect, sequence gap, resync, failed resync, stale and authority-unavailable behavior.
+
+These evidence classes are intentionally kept distinct:
+
+- external Render smoke proves the real deployed protected gateway;
+- deterministic browser runtime proves the mounted client resilience behavior;
+- neither is used to invent unsupported authority data.
 
 ## Security and authority invariants
 
-The following remain mandatory:
+Unchanged:
 
 - backend/Control Plane remains authority;
 - `TELEMETRY != AUTHORITY`;
 - connection success != current authoritative snapshot;
 - reconnect success alone != restored authority;
 - UNKNOWN / STALE / UNAVAILABLE remain explicit;
-- snapshot + SSE share one authorization decision;
 - provider credentials remain behind provider-specific server-side boundaries;
 - no default-allow path;
 - no browser secret persistence;
 - no Phase 5 mutation controls;
 - no production deploy.
 
-## Implementation consequence
+## Deferred
 
-The architecture gate for browser credential transport and development/preview hosting is now selected.
+Production identity/auth remains unresolved.
 
-The next implementation may add a fail-closed HTTP adapter for the Operations Read Gateway and a fetch-based browser SSE client, but it must remain non-deploying until:
+No claim is made that the DEVELOPMENT_OPERATOR bearer model is suitable for production.
 
-1. gateway unit/integration tests are green;
-2. browser E2E proves snapshot + SSE use the same authorization boundary;
-3. disconnect/gap/resync/stale/unavailable behavior is proven;
-4. the preview service creation + credential provisioning step receives a separate explicit Human Gate.
-
-## Exit condition for this decision
-
-This decision is satisfied when code and tests prove the selected DEVELOPMENT/PREVIEW auth/transport contract without creating or exposing a real secret and without provisioning a service.
-
-Production identity/auth remains explicitly unresolved and belongs to a later gate.
+Any future production identity mechanism, origin/CORS topology, session model or secret rotation requires its own evidence and Human Gate.
