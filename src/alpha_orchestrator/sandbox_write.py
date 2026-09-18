@@ -355,6 +355,19 @@ class SandboxPipeline:
         self._execution_state: dict[str, dict[str, str]] = {}
         self._post_verify_state: dict[str, dict[str, str]] = {}
 
+
+    def _invalidate_approval(self, order_id: str, reason: str) -> None:
+        state = self._approval_state.get(order_id)
+        if state is None:
+            return
+        if state.get("state") != "APPROVED":
+            return
+        state["state"] = "INVALIDATED"
+        self.core.audit.append(
+            "HUMAN_APPROVAL_INVALIDATED",
+            {"order_id": order_id, "reason": reason},
+        )
+
     def _sync_target_state(self) -> tuple[str, str]:
         base_sha = self.target.current_head()
         snapshot = self.core.state.update(
@@ -479,6 +492,7 @@ class SandboxPipeline:
         if observed_sha != request.base_sha:
             self.core.state.update({"sandbox_base_sha": observed_sha})
             order.status = OrderStatus.BLOCKED
+            self._invalidate_approval(order.order_id, "SANDBOX_BASE_SHA_CHANGED")
             self.core.audit.append(
                 "EXECUTION_BLOCKED",
                 {"order_id": order.order_id, "reason": "SANDBOX_BASE_SHA_CHANGED"},
@@ -507,20 +521,35 @@ class SandboxPipeline:
             )
             if not gate.allowed:
                 order.status = OrderStatus.BLOCKED
+                self._invalidate_approval(order.order_id, gate.reason)
                 self.core.audit.append(
                     "EXECUTION_BLOCKED",
                     {"order_id": order.order_id, "reason": gate.reason},
                 )
                 return ExecutionResult("NONE", False, gate.reason, {})
 
-            capability = self.core.approvals.mint_capability(
-                approval_id,
-                order_id=order.order_id,
-                action=order.action,
-                target=order.target,
-                plan_hash=order.plan_hash,
-                current_state_version=current_state_version,
-            )
+            try:
+                capability = self.core.approvals.mint_capability(
+                    approval_id,
+                    order_id=order.order_id,
+                    action=order.action,
+                    target=order.target,
+                    plan_hash=order.plan_hash,
+                    current_state_version=current_state_version,
+                )
+            except PermissionError as exc:
+                order.status = OrderStatus.BLOCKED
+                reason = "APPROVAL_INVALIDATED"
+                self._invalidate_approval(order.order_id, reason)
+                self.core.audit.append(
+                    "EXECUTION_BLOCKED",
+                    {
+                        "order_id": order.order_id,
+                        "reason": reason,
+                        "error_type": type(exc).__name__,
+                    },
+                )
+                return ExecutionResult("NONE", False, reason, {})
             self._capability_state[order.order_id] = {
                 "capability_id": capability.capability_id,
                 "scope": order.action,
@@ -550,7 +579,8 @@ class SandboxPipeline:
                 order=order,
                 capability=capability,
             )
-            self._capability_state[order.order_id]["consumed_state"] = "CONSUMED"
+            if result.capability_consumed:
+                self._capability_state[order.order_id]["consumed_state"] = "CONSUMED"
             self._execution_state[order.order_id] = {
                 "execution_id": execution_id,
                 "state": "COMPLETED" if result.success else "FAILED",
