@@ -127,4 +127,4 @@ class WriteProxy:
 
         if not isinstance(output, dict) or output.get("ok") is False:
             return ExecutionResult(execution_id, False, "EXECUTOR_REPORTED_FAILURE", output if isinstance(output, dict) else {})
-        return ExecutionResult(execution_id, True, "MOCK_EXECUTION_OK", output)
+        success_detail = str(output.get("execution_detail", "MOCK_EXECUTION_OK"))\n        return ExecutionResult(execution_id, True, success_detail, output)
