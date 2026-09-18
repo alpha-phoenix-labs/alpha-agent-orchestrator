@@ -61,6 +61,11 @@ def test_request_read_verify_finding_plan_path_is_hard_no_write():
     result = task_runner.run(request=request(), independent_reviewer=reviewer)
 
     assert len(transport.calls) == 1
+    assert result.order.order_id == result.plan.order_id
+    assert result.order.status.value == "VERIFIED"
+    assert result.order.evidence_verified is True
+    assert result.order.independent_review_confirmed is True
+    assert result.order.plan_hash == result.plan.plan_hash
     assert len(result.findings) == 1
     assert len(reviewed) == 1
     assert result.findings[0].provenance["verification_state"] == "READ_VALIDATED"
