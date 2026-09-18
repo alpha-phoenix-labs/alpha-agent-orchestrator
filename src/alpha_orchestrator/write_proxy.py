@@ -18,6 +18,7 @@ class ExecutionResult:
     success: bool
     detail: str
     output: dict[str, Any]
+    capability_consumed: bool = False
 
 
 class WriteProxy:
@@ -131,9 +132,27 @@ class WriteProxy:
         try:
             output = executor(order)
         except Exception as exc:
-            return ExecutionResult(execution_id, False, "EXECUTOR_ERROR_FAIL_CLOSED", {"error_type": type(exc).__name__})
+            return ExecutionResult(
+                execution_id,
+                False,
+                "EXECUTOR_ERROR_FAIL_CLOSED",
+                {"error_type": type(exc).__name__},
+                capability_consumed=True,
+            )
 
         if not isinstance(output, dict) or output.get("ok") is False:
-            return ExecutionResult(execution_id, False, "EXECUTOR_REPORTED_FAILURE", output if isinstance(output, dict) else {})
+            return ExecutionResult(
+                execution_id,
+                False,
+                "EXECUTOR_REPORTED_FAILURE",
+                output if isinstance(output, dict) else {},
+                capability_consumed=True,
+            )
         success_detail = str(output.get("execution_detail", "MOCK_EXECUTION_OK"))
-        return ExecutionResult(execution_id, True, success_detail, output)
+        return ExecutionResult(
+            execution_id,
+            True,
+            success_detail,
+            output,
+            capability_consumed=True,
+        )
