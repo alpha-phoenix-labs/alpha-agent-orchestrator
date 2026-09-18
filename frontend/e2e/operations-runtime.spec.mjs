@@ -19,7 +19,7 @@ test('mounted Operations session automatically reconnects, resyncs, and fails cl
     })
   })
 
-  await page.goto(OPERATIONS_DEV_URL)
+  await page.goto(`${OPERATIONS_DEV_URL}/?operationsPreview=read`)
 
   const unauthorized = await page.evaluate(async () => {
     const response = await fetch('/v1/operations/snapshot', {
