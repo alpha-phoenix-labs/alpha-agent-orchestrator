@@ -153,6 +153,16 @@ describe('OperationsLiveSession', () => {
     expect(updated?.transportSnapshot?.state_version).toBe('state-v2')
     expect(updated?.resilience.snapshotStatus).toBe('CURRENT')
     expect(updated?.snapshot?.systemState?.fields.state_version.value).toBe('state-v2')
+    expect(updated?.recentEvents).toEqual([
+      {
+        sequence: 1,
+        emittedAt: '2026-09-18T00:00:00+00:00',
+        eventType: 'VIEW_CONTRACT_SYSTEM_STATE',
+        stateVersion: 'state-v2',
+        contract: 'SYSTEM_STATE',
+        sourceClass: 'AUTHORITATIVE',
+      },
+    ])
   })
 
   it('preserves RESYNC_REQUIRED when authoritative snapshot resync fails', async () => {
