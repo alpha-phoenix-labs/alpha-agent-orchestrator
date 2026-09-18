@@ -33,6 +33,12 @@ test('mounted Operations session automatically reconnects, resyncs, and fails cl
   await page.getByLabel('Development preview read token').fill(PREVIEW_TOKEN)
   await page.getByRole('button', { name: 'Connect read session' }).click()
 
+  const recentEvents = page.getByRole('region', { name: 'Recent Events' })
+  await expect(recentEvents).toContainText('VIEW_CONTRACT_SYSTEM_STATE', { timeout: 15_000 })
+  await expect(recentEvents).toContainText('SYSTEM_STATE')
+  await expect(recentEvents).toContainText('AUTHORITATIVE')
+  await expect(recentEvents).toContainText('#1')
+
   await page.getByRole('link', { name: 'Work Orders' }).click()
   await expect(page.getByLabel('Overview').getByText('git_commit', { exact: true })).toBeVisible()
   await expect(page.getByText('VERIFIED', { exact: true }).first()).toBeVisible()
