@@ -19,6 +19,10 @@ class SourceClass(str, Enum):
     EVIDENCE = "EVIDENCE"
     RUNTIME = "RUNTIME"
     TELEMETRY = "TELEMETRY"
+    APPROVAL = "APPROVAL"
+    CAPABILITY = "CAPABILITY"
+    EXECUTION = "EXECUTION"
+    POST_VERIFY = "POST_VERIFY"
     LOCAL_UI = "LOCAL_UI"
 
 
@@ -156,6 +160,25 @@ _EXPECTED_SOURCES: dict[ContractName, dict[str, SourceClass]] = {
     ContractName.TELEMETRY: {
         "metrics": SourceClass.TELEMETRY,
         "observed_at": SourceClass.TELEMETRY,
+    },
+    ContractName.APPROVAL: {
+        name: SourceClass.AUTHORITATIVE
+        for name in (
+            "approval_id", "order_id", "action", "target", "base_sha",
+            "base_state_version", "plan_hash", "risk", "expires_at", "state",
+        )
+    },
+    ContractName.CAPABILITY: {
+        name: SourceClass.AUTHORITATIVE
+        for name in ("capability_id", "order_id", "scope", "target", "expires_at", "consumed_state")
+    },
+    ContractName.EXECUTION: {
+        name: SourceClass.AUTHORITATIVE
+        for name in ("execution_id", "order_id", "state", "detail")
+    },
+    ContractName.POST_VERIFY: {
+        name: SourceClass.AUTHORITATIVE
+        for name in ("order_id", "state", "reason", "observed_sha", "artifact_digest")
     },
 }
 
@@ -406,6 +429,96 @@ def audit_view(event: AuditEvent) -> ViewContract:
         SourceClass.AUTHORITATIVE, "RAW_AUDIT_PAYLOAD_NOT_UI_SAFE"
     )
     return ViewContract(ContractName.AUDIT, data)
+
+
+def approval_view(
+    *,
+    approval_id: str,
+    order_id: str,
+    action: str,
+    target: str,
+    base_sha: str,
+    base_state_version: str,
+    plan_hash: str,
+    risk: str,
+    expires_at: str,
+    state: str,
+) -> ViewContract:
+    return ViewContract(
+        ContractName.APPROVAL,
+        _known(
+            SourceClass.AUTHORITATIVE,
+            approval_id=approval_id,
+            order_id=order_id,
+            action=action,
+            target=target,
+            base_sha=base_sha,
+            base_state_version=base_state_version,
+            plan_hash=plan_hash,
+            risk=risk,
+            expires_at=expires_at,
+            state=state,
+        ),
+    )
+
+
+def capability_view(
+    *,
+    capability_id: str,
+    order_id: str,
+    scope: str,
+    target: str,
+    expires_at: str,
+    consumed_state: str,
+) -> ViewContract:
+    return ViewContract(
+        ContractName.CAPABILITY,
+        _known(
+            SourceClass.AUTHORITATIVE,
+            capability_id=capability_id,
+            order_id=order_id,
+            scope=scope,
+            target=target,
+            expires_at=expires_at,
+            consumed_state=consumed_state,
+        ),
+    )
+
+
+def execution_view(
+    *, execution_id: str, order_id: str, state: str, detail: str
+) -> ViewContract:
+    return ViewContract(
+        ContractName.EXECUTION,
+        _known(
+            SourceClass.AUTHORITATIVE,
+            execution_id=execution_id,
+            order_id=order_id,
+            state=state,
+            detail=detail,
+        ),
+    )
+
+
+def post_verify_view(
+    *,
+    order_id: str,
+    state: str,
+    reason: str,
+    observed_sha: str,
+    artifact_digest: str,
+) -> ViewContract:
+    return ViewContract(
+        ContractName.POST_VERIFY,
+        _known(
+            SourceClass.AUTHORITATIVE,
+            order_id=order_id,
+            state=state,
+            reason=reason,
+            observed_sha=observed_sha,
+            artifact_digest=artifact_digest,
+        ),
+    )
 
 
 def runtime_view_unavailable(reason: str) -> ViewContract:
