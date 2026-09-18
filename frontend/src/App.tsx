@@ -6,6 +6,7 @@ import { EvidenceAudit } from './evidence-audit'
 import { I18nProvider, useI18n } from './i18n'
 import { MissionControl } from './mission-control'
 import { OperationsDataProvider } from './operations-data'
+import { OperationsLiveProvider } from './operations-live-provider'
 import { SystemSwarm } from './system-swarm'
 import { TraceWaterfall } from './trace-waterfall'
 import { premiumVisualQaSnapshot } from './visual-qa-fixture'
@@ -82,14 +83,18 @@ export function App() {
 
   return (
     <I18nProvider>
-      <OperationsDataProvider snapshot={visualQa ? premiumVisualQaSnapshot : null}>
-        {visualQa ? (
+      {visualQa ? (
+        <OperationsDataProvider snapshot={premiumVisualQaSnapshot}>
           <div className="visual-qa-fixture-banner" role="status">
             VISUAL QA FIXTURE · NOT LIVE AUTHORITY
           </div>
-        ) : null}
-        <RouterProvider router={router} />
-      </OperationsDataProvider>
+          <RouterProvider router={router} />
+        </OperationsDataProvider>
+      ) : (
+        <OperationsLiveProvider>
+          <RouterProvider router={router} />
+        </OperationsLiveProvider>
+      )}
     </I18nProvider>
   )
 }
