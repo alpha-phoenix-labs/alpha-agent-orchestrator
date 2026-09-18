@@ -13,6 +13,26 @@ export type LiveEventEnvelope = {
   payload: Record<string, unknown>
 }
 
+export type RecentLiveEvent = Readonly<{
+  sequence: number
+  emittedAt: string
+  eventType: string
+  stateVersion: string
+  contract: string | null
+  sourceClass: string | null
+}>
+
+export function projectRecentLiveEvent(event: LiveEventEnvelope): RecentLiveEvent {
+  return {
+    sequence: event.sequence,
+    emittedAt: event.emitted_at,
+    eventType: event.event_type,
+    stateVersion: event.state_version,
+    contract: typeof event.payload.contract === 'string' ? event.payload.contract : null,
+    sourceClass: typeof event.payload.source_class === 'string' ? event.payload.source_class : null,
+  }
+}
+
 export type LiveEventCursor = {
   lastSequence: number
   currentStateVersion: string
