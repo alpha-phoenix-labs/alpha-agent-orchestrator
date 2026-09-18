@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { readAvailableField, readUnavailableReason, type ViewContract } from './contracts'
 import { useI18n } from './i18n'
 import { useOperationsData } from './operations-data'
+import { Phase5SandboxControlPanel } from './phase5-control'
 
 function ContractValue({
   contract,
@@ -99,6 +100,8 @@ export function WorkOrders() {
       ) : null}
 
       <p className="text-xs leading-5 text-slate-500">{t('work.relationshipNote')}</p>
+
+      <Phase5SandboxControlPanel />
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Section title={t('work.overview')}>
