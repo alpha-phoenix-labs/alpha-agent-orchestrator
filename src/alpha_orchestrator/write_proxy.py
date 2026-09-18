@@ -21,10 +21,12 @@ class ExecutionResult:
 
 
 class WriteProxy:
-    """Deterministic final write choke point. Mock-only until an explicit later phase.
+    """Deterministic final write choke point for explicitly registered executors.
 
     Security invariants are revalidated immediately before executor dispatch. The proxy owns no
-    credentials and receives trusted runtime state from the deterministic control plane.
+    provider credentials and receives trusted runtime state from the deterministic control plane.
+    Registering an executor does not bypass mode, state, lock, scope, capability, replay or
+    execution-limit checks.
     """
 
     CODE_ACTIONS = CODE_ACTIONS
@@ -53,8 +55,14 @@ class WriteProxy:
         self._executions_by_order: dict[str, int] = {}
         self._mutex = threading.RLock()
 
-    def register_mock_executor(self, action: str, fn: Callable[[WorkOrder], dict[str, Any]]) -> None:
+    def register_executor(self, action: str, fn: Callable[[WorkOrder], dict[str, Any]]) -> None:
+        if action not in (self.CODE_ACTIONS | self.INFRA_ACTIONS):
+            raise ValueError("Executor action is outside the canonical action schema")
         self._executors[action] = fn
+
+    def register_mock_executor(self, action: str, fn: Callable[[WorkOrder], dict[str, Any]]) -> None:
+        """Backward-compatible Phase-2 registration path."""
+        self.register_executor(action, fn)
 
     def _runtime_gate(self, *, writer_role: str, order: WorkOrder,
                       capability: Capability) -> str | None:
@@ -127,4 +135,5 @@ class WriteProxy:
 
         if not isinstance(output, dict) or output.get("ok") is False:
             return ExecutionResult(execution_id, False, "EXECUTOR_REPORTED_FAILURE", output if isinstance(output, dict) else {})
-        success_detail = str(output.get("execution_detail", "MOCK_EXECUTION_OK"))\n        return ExecutionResult(execution_id, True, success_detail, output)
+        success_detail = str(output.get("execution_detail", "MOCK_EXECUTION_OK"))
+        return ExecutionResult(execution_id, True, success_detail, output)
