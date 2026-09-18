@@ -138,6 +138,7 @@ jobs:
       - name: Start isolated Operations network harness
         env:
           ALPHA_E2E_OPERATIONS_PREVIEW_TOKEN: phase4-e2e-preview-token
+          ALPHA_GITHUB_READ_TOKEN: ${{ github.token }}
         run: |
           PYTHONPATH=../src nohup python ../scripts/operations_gateway_e2e_server.py \
             --host 127.0.0.1 --port 4180 >/tmp/alpha-operations-e2e.log 2>&1 &
