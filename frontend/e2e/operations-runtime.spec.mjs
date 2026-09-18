@@ -33,6 +33,17 @@ test('mounted Operations session automatically reconnects, resyncs, and fails cl
   await page.getByLabel('Development preview read token').fill(PREVIEW_TOKEN)
   await page.getByRole('button', { name: 'Connect read session' }).click()
 
+  await page.getByRole('link', { name: 'Work Orders' }).click()
+  await expect(page.getByText('git_commit', { exact: true })).toBeVisible()
+  await expect(page.getByText('VERIFIED', { exact: true }).first()).toBeVisible()
+  await expect(page.getByText('READ_VALIDATED', { exact: true })).toBeVisible()
+  await expect(page.getByText('code_writer', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText('repo://alpha-phoenix-labs/alpha-agent-orchestrator/docs/phase4-shadow-observation', {
+      exact: true,
+    }).first(),
+  ).toBeVisible()
+
   const context = page.getByRole('region', { name: 'Active context' })
   await expect(context).toContainText('UNAVAILABLE · UNAVAILABLE · STALE', { timeout: 15_000 })
   await expect(context).toContainText('System modeUNKNOWN')
