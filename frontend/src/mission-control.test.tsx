@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import type { OperationsSnapshot, SourceClass, ViewContract, ViewField } from './contracts'
 import { MissionControl } from './mission-control'
+import type { RecentLiveEvent } from './live-events'
 import { OperationsDataProvider } from './operations-data'
 
 afterEach(cleanup)
@@ -19,9 +20,9 @@ function view(contract: string, fields: Record<string, ViewField>): ViewContract
   return { contract, fields }
 }
 
-function renderMissionControl(snapshot?: OperationsSnapshot | null) {
+function renderMissionControl(snapshot?: OperationsSnapshot | null, recentEvents: readonly RecentLiveEvent[] = []) {
   render(
-    <OperationsDataProvider snapshot={snapshot}>
+    <OperationsDataProvider snapshot={snapshot} recentEvents={recentEvents}>
       <MissionControl />
     </OperationsDataProvider>,
   )
@@ -109,6 +110,17 @@ const snapshot: OperationsSnapshot = {
   ],
 }
 
+const recentEvents: readonly RecentLiveEvent[] = [
+  {
+    sequence: 1,
+    emittedAt: '2026-09-18T00:00:00+00:00',
+    eventType: 'VIEW_CONTRACT_SYSTEM_STATE',
+    stateVersion: 'state-v2',
+    contract: 'SYSTEM_STATE',
+    sourceClass: 'AUTHORITATIVE',
+  },
+]
+
 describe('Phase 4.5 Mission Control', () => {
   it('fails closed and exposes no operational controls without a backend snapshot', () => {
     renderMissionControl()
@@ -130,7 +142,7 @@ describe('Phase 4.5 Mission Control', () => {
       'Live Topology',
       'Agent Grid',
       'Evidence Summary',
-      'Audit Timeline',
+      'Recent Events',
     ]) {
       expect(screen.getByRole('region', { name: panelName })).toBeInTheDocument()
     }
@@ -140,7 +152,7 @@ describe('Phase 4.5 Mission Control', () => {
   })
 
   it('renders the premium three-zone read-only composition from backend contracts', () => {
-    renderMissionControl(snapshot)
+    renderMissionControl(snapshot, recentEvents)
 
     const topology = screen.getByRole('region', { name: 'Live Topology' })
     expect(topology).toHaveTextContent('leader')
@@ -151,9 +163,12 @@ describe('Phase 4.5 Mission Control', () => {
     expect(agentGrid).toHaveTextContent('reader-01')
     expect(agentGrid).toHaveTextContent('NO_AUTHORITATIVE_AGENT_HEALTH')
 
-    const audit = screen.getByRole('region', { name: 'Audit Timeline' })
-    expect(audit).toHaveTextContent('17')
-    expect(audit).toHaveTextContent('WORK_ORDER_OBSERVED')
+    const events = screen.getByRole('region', { name: 'Recent Events' })
+    expect(events).toHaveTextContent('VIEW_CONTRACT_SYSTEM_STATE')
+    expect(events).toHaveTextContent('SYSTEM_STATE')
+    expect(events).toHaveTextContent('AUTHORITATIVE')
+    expect(events).toHaveTextContent('state-v2')
+    expect(events).not.toHaveTextContent('WORK_ORDER_OBSERVED')
 
     expect(screen.getByLabelText('Mission Control rail')).toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
