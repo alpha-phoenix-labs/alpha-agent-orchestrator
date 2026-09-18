@@ -34,7 +34,7 @@ test('mounted Operations session automatically reconnects, resyncs, and fails cl
   await page.getByRole('button', { name: 'Connect read session' }).click()
 
   await page.getByRole('link', { name: 'Work Orders' }).click()
-  await expect(page.getByText('git_commit', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Overview').getByText('git_commit', { exact: true })).toBeVisible()
   await expect(page.getByText('VERIFIED', { exact: true }).first()).toBeVisible()
   await expect(page.getByText('READ_VALIDATED', { exact: true })).toBeVisible()
   await expect(page.getByText('code_writer', { exact: true })).toBeVisible()
